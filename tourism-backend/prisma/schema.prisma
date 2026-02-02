@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tour {
+  id          String      @id @default(uuid())
+  title       String
+  slug        String      @unique
+  description String
+  price       Float
+  duration    String      // ✅ დაბრუნდა String
+  status      Boolean     @default(true)  // ✅ დაბრუნდა status
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  images      TourImage[]
+}
+model TourImage {
+  id        String   @id @default(uuid())
+  tourId    String
+  imageUrl  String
+  createdAt DateTime @default(now())
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  
+  @@index([tourId])
+}

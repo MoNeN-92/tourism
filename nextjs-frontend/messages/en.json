@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Home",
+    "tours": "Tours",
+    "about": "About",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "home": {
+    "title": "Welcome to Tourism Explorer",
+    "subtitle": "Discover amazing destinations around the world"
+  },
+  "tours": {
+    "title": "Available Tours",
+    "subtitle": "Discover your next adventure",
+    "noTours": "No tours available at the moment",
+    "checkBack": "Check back soon for new adventures",
+    "perPerson": "/person",
+    "notFound": "Tour not found",
+    "notFoundDesc": "The tour you're looking for doesn't exist"
+  },
+  "footer": {
+    "description": "Discover amazing destinations around the world with our curated tours and experiences.",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "rights": "All rights reserved"
+  }
+}

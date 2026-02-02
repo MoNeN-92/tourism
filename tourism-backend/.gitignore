@@ -1,0 +1,30 @@
+# VS Code-ში შექმენი/შეამოწმე .gitignore root-ში
+```
+
+**`.gitignore`:**
+```
+# Dependencies
+node_modules/
+
+# Environment
+.env
+
+# Build
+dist/
+build/
+
+# Prisma
+*.db
+*.db-journal
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

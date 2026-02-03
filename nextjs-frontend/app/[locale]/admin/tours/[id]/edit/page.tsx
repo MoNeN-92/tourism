@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
 
-export default function CreateTourPage() {
+export default function EditTourPage() {
   const router = useRouter()
   const params = useParams()
   const locale = params.locale as string
+  const tourId = params.id as string
 
   const [formData, setFormData] = useState({
     title_ka: '',
@@ -24,7 +25,41 @@ export default function CreateTourPage() {
     status: true,
   })
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetchTour()
+  }, [tourId])
+
+  const fetchTour = async () => {
+  try {
+    setFetching(true)
+    // ✅ შეცვლილია: ვიყენებთ findOne endpoint-ს id-ით
+    const response = await api.get(`/admin/tours/${tourId}`)
+    const tour = response.data
+    
+    setFormData({
+      title_ka: tour.title_ka || '',
+      title_en: tour.title_en || '',
+      title_ru: tour.title_ru || '',
+      description_ka: tour.description_ka || '',
+      description_en: tour.description_en || '',
+      description_ru: tour.description_ru || '',
+      location_ka: tour.location_ka || '',
+      location_en: tour.location_en || '',
+      location_ru: tour.location_ru || '',
+      price: tour.price || '',
+      duration: tour.duration || '',
+      status: tour.status ?? true,
+    })
+    setError('')
+  } catch (err: any) {
+    setError(err.response?.data?.message || 'Failed to load tour')
+  } finally {
+    setFetching(false)
+  }
+}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -49,18 +84,30 @@ export default function CreateTourPage() {
     setError('')
 
     try {
-      await api.post('/admin/tours', formData)
+      await api.put(`/admin/tours/${tourId}`, formData)
       router.push(`/${locale}/admin/tours`)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create tour')
+      setError(err.response?.data?.message || 'Failed to update tour')
       setLoading(false)
     }
+  }
+
+  if (fetching) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading tour...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Create New Tour</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Tour</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-8">
           
@@ -278,7 +325,7 @@ export default function CreateTourPage() {
               disabled={loading}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Tour'}
+              {loading ? 'Updating...' : 'Update Tour'}
             </button>
             <button
               type="button"

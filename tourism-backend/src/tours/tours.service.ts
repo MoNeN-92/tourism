@@ -18,14 +18,27 @@ export class ToursService {
 
   async findAll() {
     return this.prisma.tour.findMany({
-      where: { status: true }, // ✅ გამოყენებულია status
+      where: { status: true },
+      include: { images: true },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  // ✅ დამატებული: findOne by ID
+  async findOne(id: string) {
+    const tour = await this.prisma.tour.findUnique({
+      where: { id },
+      include: { images: true },
+    });
+
+    if (!tour) throw new NotFoundException('Tour not found');
+    return tour;
   }
 
   async findBySlug(slug: string) {
     const tour = await this.prisma.tour.findUnique({
       where: { slug },
+      include: { images: true },
     });
 
     if (!tour) throw new NotFoundException('Tour not found');
@@ -33,7 +46,7 @@ export class ToursService {
   }
 
   async create(createTourDto: CreateTourDto) {
-    const slug = this.generateSlug(createTourDto.title);
+    const slug = this.generateSlug(createTourDto.title_en);
 
     const existingTour = await this.prisma.tour.findUnique({
       where: { slug },
@@ -47,10 +60,12 @@ export class ToursService {
       data: {
         ...createTourDto,
         slug,
-        // Prisma Client-ისთვის ტიპების დაზუსტება
+        title: createTourDto.title_en,
+        description: createTourDto.description_en,
         duration: String(createTourDto.duration),
         status: createTourDto.status ?? true,
       },
+      include: { images: true },
     });
   }
 
@@ -59,8 +74,9 @@ export class ToursService {
     if (!tour) throw new NotFoundException('Tour not found');
 
     let slug = tour.slug;
-    if (updateTourDto.title && updateTourDto.title !== tour.title) {
-      slug = this.generateSlug(updateTourDto.title);
+    
+    if (updateTourDto.title_en && updateTourDto.title_en !== tour.title_en) {
+      slug = this.generateSlug(updateTourDto.title_en);
       const existing = await this.prisma.tour.findUnique({ where: { slug } });
       if (existing && existing.id !== id) {
         throw new ConflictException('Tour already exists');
@@ -72,9 +88,11 @@ export class ToursService {
       data: {
         ...updateTourDto,
         slug,
-        // თუ duration მოდის, ვინახავთ როგორც string
+        ...(updateTourDto.title_en && { title: updateTourDto.title_en }),
+        ...(updateTourDto.description_en && { description: updateTourDto.description_en }),
         ...(updateTourDto.duration && { duration: String(updateTourDto.duration) }),
       },
+      include: { images: true },
     });
   }
 

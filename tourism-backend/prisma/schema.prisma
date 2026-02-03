@@ -20,16 +20,33 @@ model Admin {
 
 model Tour {
   id          String      @id @default(uuid())
-  title       String
+  
+  // Multi-language fields
+  title_ka       String
+  title_en       String
+  title_ru       String
+  description_ka String
+  description_en String
+  description_ru String
+  location_ka    String?
+  location_en    String?
+  location_ru    String?
+  
+  // Legacy fields (kept for backward compatibility)
+  title       String      @default("")
   slug        String      @unique
-  description String
+  description String      @default("")
+  
+  // Non-translatable fields
   price       Float
-  duration    String      // ✅ დაბრუნდა String
-  status      Boolean     @default(true)  // ✅ დაბრუნდა status
+  duration    String
+  status      Boolean     @default(true)
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   images      TourImage[]
 }
+
 model TourImage {
   id        String   @id @default(uuid())
   tourId    String

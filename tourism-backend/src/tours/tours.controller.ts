@@ -33,6 +33,12 @@ export class ToursController {
 export class AdminToursController {
   constructor(private toursService: ToursService) {}
 
+  // ✅ დამატებული: GET single tour by ID
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.toursService.findOne(id);
+  }
+
   @Post()
   create(@Body() createTourDto: CreateTourDto) {
     return this.toursService.create(createTourDto);

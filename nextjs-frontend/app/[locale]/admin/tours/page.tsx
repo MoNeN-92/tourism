@@ -1,4 +1,3 @@
-// app/[locale]/admin/tours/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -21,6 +20,7 @@ export default function AdminToursPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTours()
@@ -40,8 +40,26 @@ export default function AdminToursPage() {
     }
   }
 
-  const handleDelete = (id: string) => {
-    console.log('Delete tour:', id)
+  const handleDelete = async (id: string, title: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setDeleting(id)
+      await api.delete(`/admin/tours/${id}`)
+      
+      // Remove from list immediately
+      setTours(tours.filter(tour => tour.id !== id))
+      setError('')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete tour')
+      console.error(err)
+    } finally {
+      setDeleting(null)
+    }
   }
 
   if (loading) {
@@ -130,10 +148,11 @@ export default function AdminToursPage() {
                         Edit
                       </Link>
                       <button
-                        onClick={() => handleDelete(tour.id)}
-                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleDelete(tour.id, tour.title)}
+                        disabled={deleting === tour.id}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Delete
+                        {deleting === tour.id ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>

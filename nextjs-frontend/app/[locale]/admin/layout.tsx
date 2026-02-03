@@ -17,11 +17,9 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // Check if current page is login page
   const isLoginPage = pathname.endsWith('/admin/login')
 
   useEffect(() => {
-    // Skip auth check on login page
     if (isLoginPage) {
       setLoading(false)
       return
@@ -40,10 +38,10 @@ export default function AdminLayout({
 
   const handleLogout = () => {
     localStorage.removeItem('token')
+    document.cookie = 'token=; path=/; max-age=0'
     router.push(`/${locale}/admin/login`)
   }
 
-  // Render login page without admin layout
   if (isLoginPage) {
     return <>{children}</>
   }

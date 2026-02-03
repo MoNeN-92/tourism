@@ -2,36 +2,75 @@
 'use client'
 
 import Link from 'next/link'
-import { useParams, usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
+  const langDropdownRef = useRef<HTMLDivElement>(null)
   const params = useParams()
   const pathname = usePathname()
+  const router = useRouter()
   const t = useTranslations('nav')
   
   const locale = params.locale as string
   
   const locales = [
-    { code: 'ka', name: 'ქარ' },
-    { code: 'en', name: 'Eng' },
-    { code: 'ru', name: 'Рус' }
+    { code: 'ka', name: 'KA', flag: '🇬🇪' },
+    { code: 'en', name: 'EN', flag: '🇬🇧' },
+    { code: 'ru', name: 'RU', flag: '🇷🇺' }
   ]
+
+  const currentLocale = locales.find(loc => loc.code === locale) || locales[0]
+  const otherLocales = locales.filter(loc => loc.code !== locale)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token')
+      setIsLoggedIn(!!token)
+    }
+
+    checkAuth()
+    
+    window.addEventListener('storage', checkAuth)
+    
+    return () => window.removeEventListener('storage', checkAuth)
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    setIsLoggedIn(!!token)
+  }, [pathname])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const switchLocale = (newLocale: string) => {
     const segments = pathname.split('/')
     segments[1] = newLocale
-    return segments.join('/')
+    const newPath = segments.join('/')
+    router.push(newPath)
+    setIsLangDropdownOpen(false)
   }
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          <Link href={`/${locale}`} className="text-2xl font-bold text-blue-600">
-            Tourism Explorer
+        <div className="flex justify-between items-center py-3">
+          <Link href={`/${locale}`} className="flex flex-col">
+            <span className="text-3xl font-bold text-blue-600">Geo Vibe</span>
+            <span className="text-sm text-blue-500 -mt-1">Welcome to Georgia</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -51,28 +90,47 @@ export default function Header() {
               {t('contact')}
             </Link>
 
-            <div className="flex gap-2 ml-4 border-l pl-4">
-              {locales.map((loc) => (
-                <Link
-                  key={loc.code}
-                  href={switchLocale(loc.code)}
-                  className={`px-2 py-1 rounded text-sm transition-colors ${
-                    locale === loc.code
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+            <div className="relative ml-4 border-l pl-4" ref={langDropdownRef}>
+              <button
+                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-xl">{currentLocale.flag}</span>
+                <span className="text-sm font-medium text-gray-700">{currentLocale.name}</span>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
                 >
-                  {loc.name}
-                </Link>
-              ))}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isLangDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white border rounded-lg shadow-lg py-1 min-w-[120px]">
+                  {otherLocales.map((loc) => (
+                    <button
+                      key={loc.code}
+                      onClick={() => switchLocale(loc.code)}
+                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition-colors text-left"
+                    >
+                      <span className="text-xl">{loc.flag}</span>
+                      <span className="text-sm font-medium text-gray-700">{loc.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <Link
-              href={`/${locale}/admin/login`}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              Admin
-            </Link>
+            {isLoggedIn && (
+              <Link
+                href={`/${locale}/admin`}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Dashboard
+              </Link>
+            )}
           </nav>
 
           <button
@@ -108,30 +166,36 @@ export default function Header() {
               {t('contact')}
             </Link>
             
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="flex flex-col gap-2 pt-4 border-t">
+              <div className="text-sm font-medium text-gray-500 mb-1">Language</div>
               {locales.map((loc) => (
-                <Link
+                <button
                   key={loc.code}
-                  href={switchLocale(loc.code)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                  onClick={() => {
+                    switchLocale(loc.code)
+                    setIsMenuOpen(false)
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${
                     locale === loc.code
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
                 >
-                  {loc.name}
-                </Link>
+                  <span className="text-xl">{loc.flag}</span>
+                  <span>{loc.name}</span>
+                </button>
               ))}
             </div>
 
-            <Link
-              href={`/${locale}/admin/login`}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-center"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Admin
-            </Link>
+            {isLoggedIn && (
+              <Link
+                href={`/${locale}/admin`}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-center"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
           </nav>
         )}
       </div>

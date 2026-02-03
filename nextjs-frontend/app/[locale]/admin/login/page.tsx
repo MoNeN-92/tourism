@@ -35,13 +35,15 @@ export default function AdminLoginPage() {
         setLoading(false)
         return
       }
+      
       console.log('LOGIN RESPONSE:', data)
       localStorage.setItem('token', data.access_token)
-
-      // ✅ აქ არის მთავარი FIX
       
+      // Set cookie for middleware
+      document.cookie = `token=${data.access_token}; path=/; max-age=86400; SameSite=Lax`
 
       router.push(`/${locale}/admin`)
+      router.refresh()
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {

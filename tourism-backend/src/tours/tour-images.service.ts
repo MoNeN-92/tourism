@@ -1,55 +1,67 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class TourImagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   async uploadImages(tourId: string, files: Express.Multer.File[]) {
-    const tour = await this.prisma.tour.findUnique({
-      where: { id: tourId },
-    });
+    // ატვირთეთ ყველა ფაილი Cloudinary-ზე
+    const uploadPromises = files.map((file) =>
+      this.cloudinaryService.uploadImage(file),
+    );
 
-    if (!tour) {
-      throw new NotFoundException('Tour not found');
-    }
+    const uploadResults = await Promise.all(uploadPromises);
 
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No files provided');
-    }
+    // შევინახოთ database-ში
+    const imageRecords = await Promise.all(
+      uploadResults.map((result) =>
+        this.prisma.tourImage.create({
+          data: {
+            url: result.secure_url,
+            publicId: result.public_id,
+            tourId,
+          },
+        }),
+      ),
+    );
 
-    const uploadedImages: any[] = [];
-
-    for (const file of files) {
-      const imageUrl = `/uploads/tours/${file.filename}`;
-
-      const tourImage = await this.prisma.tourImage.create({
-        data: {
-          tourId,
-          imageUrl,
-        },
-      });
-
-      uploadedImages.push(tourImage);
-    }
-
-    return uploadedImages;
+    return imageRecords;
   }
 
-  async getTourImages(tourSlug: string) {
-    const tour = await this.prisma.tour.findUnique({
-      where: { slug: tourSlug },
-      include: {
-        images: {
-          orderBy: { createdAt: 'asc' },
-        },
+  async addImageToTour(tourId: string, url: string, publicId: string) {
+    return this.prisma.tourImage.create({
+      data: {
+        url,
+        publicId,
+        tourId,
       },
     });
+  }
 
-    if (!tour) {
-      throw new NotFoundException('Tour not found');
-    }
+  async getTourImages(slug: string) {
+    // პირველ რიგში ვიპოვოთ tour slug-ით
+    const tour = await this.prisma.tour.findUnique({
+      where: { slug },
+      include: { images: true },
+    });
 
-    return tour.images;
+    return tour?.images || [];
+  }
+
+  async deleteImage(imageId: string) {
+    return this.prisma.tourImage.delete({
+      where: { id: imageId },
+    });
+  }
+
+  async deleteImagesByTourId(tourId: string) {
+    return this.prisma.tourImage.deleteMany({
+      where: { tourId },
+    });
   }
 }

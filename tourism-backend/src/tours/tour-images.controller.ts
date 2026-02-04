@@ -3,27 +3,30 @@ import {
   Post,
   Get,
   Param,
+  Body,
   UseGuards,
-  UseInterceptors,
-  UploadedFiles,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { TourImagesService } from './tour-images.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { multerConfig } from './interceptors/file-validation.interceptor';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('admin/tours')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminTourImagesController {
   constructor(private tourImagesService: TourImagesService) {}
 
   @Post(':id/images')
-  @UseInterceptors(FilesInterceptor('images', 10, multerConfig))
-  uploadImages(
+  @Roles('admin')
+  async attachImage(
     @Param('id') tourId: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: { url: string; publicId: string },
   ) {
-    return this.tourImagesService.uploadImages(tourId, files);
+    return this.tourImagesService.addImageToTour(
+      tourId,
+      body.url,
+      body.publicId,
+    );
   }
 }
 

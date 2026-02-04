@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, Min, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 export class UpdateTourDto {
   // Multi-language fields
@@ -57,7 +57,6 @@ export class UpdateTourDto {
 
   // Non-translatable fields
   @IsNumber()
-  @Min(0)
   @IsOptional()
   price?: number;
 

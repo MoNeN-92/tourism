@@ -38,20 +38,24 @@ model Tour {
   description String      @default("")
   
   // Non-translatable fields
-  price       Float
+  price       Float?
   duration    String
   status      Boolean     @default(true)
   
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  
+  // Relations
   images      TourImage[]
 }
 
 model TourImage {
   id        String   @id @default(uuid())
+  url       String
+  publicId  String
   tourId    String
-  imageUrl  String
   createdAt DateTime @default(now())
+  
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
   
   @@index([tourId])

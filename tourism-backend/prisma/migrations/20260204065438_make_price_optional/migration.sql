@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Tour" ALTER COLUMN "price" DROP NOT NULL;

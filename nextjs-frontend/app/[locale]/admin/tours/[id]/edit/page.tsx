@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
 
+interface TourImage {
+  id: string
+  url: string
+  publicId: string
+  createdAt: string
+}
+
 export default function EditTourPage() {
   const router = useRouter()
   const params = useParams()
@@ -20,46 +27,53 @@ export default function EditTourPage() {
     location_ka: '',
     location_en: '',
     location_ru: '',
-    price: '',
     duration: '',
     status: true,
   })
+  const [images, setImages] = useState<TourImage[]>([])
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
+  const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
     fetchTour()
   }, [tourId])
 
   const fetchTour = async () => {
-  try {
-    setFetching(true)
-    // ✅ შეცვლილია: ვიყენებთ findOne endpoint-ს id-ით
-    const response = await api.get(`/admin/tours/${tourId}`)
-    const tour = response.data
-    
-    setFormData({
-      title_ka: tour.title_ka || '',
-      title_en: tour.title_en || '',
-      title_ru: tour.title_ru || '',
-      description_ka: tour.description_ka || '',
-      description_en: tour.description_en || '',
-      description_ru: tour.description_ru || '',
-      location_ka: tour.location_ka || '',
-      location_en: tour.location_en || '',
-      location_ru: tour.location_ru || '',
-      price: tour.price || '',
-      duration: tour.duration || '',
-      status: tour.status ?? true,
-    })
-    setError('')
-  } catch (err: any) {
-    setError(err.response?.data?.message || 'Failed to load tour')
-  } finally {
-    setFetching(false)
+    try {
+      setFetching(true)
+      const response = await api.get(`/admin/tours/${tourId}`)
+      const tour = response.data
+      
+      setFormData({
+        title_ka: tour.title_ka || '',
+        title_en: tour.title_en || '',
+        title_ru: tour.title_ru || '',
+        description_ka: tour.description_ka || '',
+        description_en: tour.description_en || '',
+        description_ru: tour.description_ru || '',
+        location_ka: tour.location_ka || '',
+        location_en: tour.location_en || '',
+        location_ru: tour.location_ru || '',
+        duration: tour.duration || '',
+        status: tour.status ?? true,
+      })
+
+      // Fetch tour images
+      if (tour.images && Array.isArray(tour.images)) {
+        setImages(tour.images)
+      }
+
+      setError('')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load tour')
+    } finally {
+      setFetching(false)
+    }
   }
-}
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -76,6 +90,57 @@ export default function EditTourPage() {
       ...prev,
       status: e.target.checked
     }))
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0])
+      setUploadError('')
+    }
+  }
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) {
+      setUploadError('Please select an image file')
+      return
+    }
+
+    setUploading(true)
+    setUploadError('')
+
+    try {
+      // Step 1: Upload to Cloudinary
+      const formData = new FormData()
+      formData.append('image', selectedFile)
+
+      const uploadResponse = await api.post('/admin/uploads', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const { secure_url, public_id } = uploadResponse.data
+
+      // Step 2: Attach to tour
+      const attachResponse = await api.post(`/admin/tours/${tourId}/images`, {
+        url: secure_url,
+        publicId: public_id,
+      })
+
+      // Step 3: Update local state
+      setImages(prev => [...prev, attachResponse.data])
+      setSelectedFile(null)
+      
+      // Reset file input
+      const fileInput = document.getElementById('image-upload') as HTMLInputElement
+      if (fileInput) {
+        fileInput.value = ''
+      }
+    } catch (err: any) {
+      setUploadError(err.response?.data?.message || 'Failed to upload image')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -265,22 +330,7 @@ export default function EditTourPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">General Information</h2>
 
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                Price ($)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price === '' ? '' : formData.price}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
+           
 
             <div>
               <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
@@ -311,6 +361,75 @@ export default function EditTourPage() {
                 Active
               </label>
             </div>
+          </div>
+
+          {/* Images Section */}
+          <div className="border-t border-gray-200 pt-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">📷 Images</h2>
+            
+            {/* Upload Form */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Image
+                  </label>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleFileSelect}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Accepted formats: JPG, PNG, GIF, WebP (Max 5MB)
+                  </p>
+                </div>
+
+                {selectedFile && (
+                  <div className="text-sm text-gray-600">
+                    Selected: {selectedFile.name}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleImageUpload}
+                  disabled={!selectedFile || uploading}
+                  className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-4 focus:ring-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Image'}
+                </button>
+
+                {uploadError && (
+                  <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                    {uploadError}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Image Gallery */}
+            {images.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {images.map((image) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.url}
+                      alt="Tour"
+                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      {new Date(image.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No images uploaded yet
+              </div>
+            )}
           </div>
 
           {error && (

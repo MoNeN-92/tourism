@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 
 @Injectable()
 export class ToursService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinary: CloudinaryService,
+  ) {}
 
   private generateSlug(title: string): string {
     return title
@@ -24,7 +28,6 @@ export class ToursService {
     });
   }
 
-  // ✅ დამატებული: findOne by ID
   async findOne(id: string) {
     const tour = await this.prisma.tour.findUnique({
       where: { id },
@@ -103,4 +106,22 @@ export class ToursService {
     await this.prisma.tour.delete({ where: { id } });
     return { message: 'Tour deleted successfully' };
   }
+
+  async deleteImage(imageId: string) {
+  const image = await this.prisma.tourImage.findUnique({
+    where: { id: imageId },
+  });
+
+  if (!image) {
+    throw new NotFoundException(`Image with ID ${imageId} not found`);
+  }
+
+  await this.cloudinary.deleteImage(image.publicId);
+
+  await this.prisma.tourImage.delete({
+    where: { id: imageId },
+  });
+
+  return { success: true, message: 'Image deleted successfully' };
+}
 }

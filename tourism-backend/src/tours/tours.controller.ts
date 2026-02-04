@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -33,7 +34,6 @@ export class ToursController {
 export class AdminToursController {
   constructor(private toursService: ToursService) {}
 
-  // ✅ დამატებული: GET single tour by ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.toursService.findOne(id);
@@ -53,4 +53,9 @@ export class AdminToursController {
   delete(@Param('id') id: string) {
     return this.toursService.delete(id);
   }
+
+  @Delete('images/:imageId')
+deleteImage(@Param('imageId') imageId: string) {
+  return this.toursService.deleteImage(imageId);
+}
 }

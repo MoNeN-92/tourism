@@ -143,6 +143,20 @@ export default function EditTourPage() {
     }
   }
 
+  const handleDeleteImage = async (imageId: string) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) {
+      return
+    }
+
+    try {
+      await api.delete(`/admin/tours/images/${imageId}`)
+      
+      setImages(prev => prev.filter(img => img.id !== imageId))
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete image')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -419,6 +433,12 @@ export default function EditTourPage() {
                       alt="Tour"
                       className="w-full h-48 object-cover rounded-lg border border-gray-200"
                     />
+                    <button
+                      onClick={() => handleDeleteImage(image.id)}
+                      className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm font-medium"
+                    >
+                      Delete
+                    </button>
                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                       {new Date(image.createdAt).toLocaleDateString()}
                     </div>

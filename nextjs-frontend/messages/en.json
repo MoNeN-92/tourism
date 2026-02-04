@@ -24,5 +24,81 @@
     "contact": "Contact",
     "followUs": "Follow Us",
     "rights": "All rights reserved"
+  },
+
+  "about": {
+    "title": "About Us",
+    "subtitle": "Discover Georgia with Us",
+    "story": {
+      "title": "Our Story",
+      "content": "We are Georgia's leading tour platform, offering unique tours throughout the country. Our mission is to introduce you to Georgia's most beautiful places, rich culture, and ancient traditions. We believe that every journey should be an unforgettable experience."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "content": "Our mission is to provide safe, comfortable, and unforgettable travel experiences. We help travelers discover Georgia's most beautiful corners and deeply understand Georgian culture."
+    },
+    "vision": {
+      "title": "Our Vision",
+      "content": "To become the leading tourism platform in Georgia, known for high-quality service, innovative approaches, and customer-oriented service."
+    },
+    "whyChooseUs": {
+      "title": "Why Choose Us",
+      "expertise": {
+        "title": "Local Expertise",
+        "description": "We know every corner of Georgia and offer the best routes"
+      },
+      "guides": {
+        "title": "Experienced Guides",
+        "description": "Our team consists of professional and certified guides"
+      },
+      "destinations": {
+        "title": "Unique Routes",
+        "description": "We offer unforgettable journeys to Georgia's most beautiful places"
+      },
+      "safety": {
+        "title": "Safety",
+        "description": "Your safety and comfort are our priority"
+      }
+    },
+    "team": {
+      "title": "Our Team",
+      "description": "Our team consists of experienced professionals who work every day to make your journey unforgettable."
+    }
+  },
+  
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We're here to answer your questions",
+    "form": {
+      "title": "Send us a Message",
+      "name": "Full Name",
+      "namePlaceholder": "Enter your full name",
+      "email": "Email",
+      "emailPlaceholder": "example@email.com",
+      "phone": "Phone (optional)",
+      "phonePlaceholder": "+995 555 123 456",
+      "message": "Message",
+      "messagePlaceholder": "Write your message here...",
+      "submit": "Send Message",
+      "sending": "Sending...",
+      "successTitle": "Success!",
+      "successMessage": "Your message has been received. We will contact you soon.",
+      "errorTitle": "Error!",
+      "errorMessage": "Failed to send message. Please try again.",
+      "required": "This field is required",
+      "invalidEmail": "Please enter a valid email"
+    },
+    "info": {
+      "title": "Contact Information",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "addressValue": "Tbilisi, Georgia",
+      "hours": "Working Hours",
+      "hoursValue": "Mon-Fri: 9:00 AM - 6:00 PM"
+    },
+    "map": {
+      "title": "Our Location"
+    }
   }
 }

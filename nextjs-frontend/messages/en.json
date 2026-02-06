@@ -2,13 +2,61 @@
   "nav": {
     "home": "Home",
     "tours": "Tours",
-    "about": "About",
+    "about": "About Us",
     "blog": "Blog",
     "contact": "Contact"
   },
   "home": {
-    "title": "Welcome to Tourism Explorer",
-    "subtitle": "Discover amazing destinations around the world"
+    "hero": {
+      "title": "Discover Georgia",
+      "subtitle": "Unforgettable journeys through Georgia's most beautiful corners",
+      "ctaViewTours": "View Tours",
+      "ctaContact": "Contact Us"
+    },
+    "featuredTours": {
+      "title": "Featured Tours",
+      "subtitle": "Choose the best routes from our collection"
+    },
+    "whyChooseUs": {
+      "title": "Why Choose Us",
+      "subtitle": "We care about your comfort and safety",
+      "expertise": {
+        "title": "Expert Guides",
+        "description": "Our experienced guides ensure an unforgettable experience"
+      },
+      "safety": {
+        "title": "Safety First",
+        "description": "Your safety is our top priority"
+      },
+      "quality": {
+        "title": "High Quality",
+        "description": "All tours are prepared with high standards"
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Our team is always at your disposal"
+      }
+    },
+    "destinations": {
+      "title": "Popular Destinations",
+      "subtitle": "Discover Georgia's best locations",
+      "svaneti": "Svaneti",
+      "kazbegi": "Kazbegi",
+      "batumi": "Batumi",
+      "tbilisi": "Tbilisi",
+      "kakheti": "Kakheti",
+      "gudauri": "Gudauri"
+    },
+    "cta": {
+      "title": "Ready for Adventure?",
+      "subtitle": "Start your unforgettable journey in Georgia today",
+      "button": "View All Tours"
+    },
+    "latestBlog": {
+      "title": "Latest News",
+      "subtitle": "Read our latest articles and travel tips",
+      "viewAll": "All Articles"
+    }
   },
   "tours": {
     "title": "Available Tours",
@@ -19,14 +67,7 @@
     "notFound": "Tour not found",
     "notFoundDesc": "The tour you're looking for doesn't exist"
   },
-  "footer": {
-    "description": "Discover amazing destinations around the world with our curated tours and experiences.",
-    "contact": "Contact",
-    "followUs": "Follow Us",
-    "rights": "All rights reserved"
-  },
-
-  "about": {
+ "about": {
     "title": "About Us",
     "subtitle": "Discover Georgia with Us",
     "story": {
@@ -65,7 +106,28 @@
       "description": "Our team consists of experienced professionals who work every day to make your journey unforgettable."
     }
   },
-  
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Discover our latest news and travel tips",
+    "readMore": "Read More",
+    "publishedOn": "Published on",
+    "by": "By",
+    "noPosts": "No blog posts available",
+    "noPostsDesc": "New articles coming soon",
+    "backToBlog": "Back to Blog",
+    "categories": "Categories",
+    "allPosts": "All Posts",
+    "travelTips": "Travel Tips",
+    "destinations": "Destinations",
+    "culture": "Culture",
+    "adventure": "Adventure",
+    "food": "Food & Cuisine",
+    "toggleMenu": "Toggle Menu",
+    "shareArticle": "Share Article",
+    "relatedPosts": "Related Posts",
+    "postNotFound": "Post Not Found",
+    "postNotFoundDesc": "The post you're looking for doesn't exist"
+  },
   "contact": {
     "title": "Contact Us",
     "subtitle": "We're here to answer your questions",
@@ -100,5 +162,11 @@
     "map": {
       "title": "Our Location"
     }
+  },
+  "footer": {
+    "description": "Discover amazing destinations around the world with our curated tours and experiences.",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "rights": "All rights reserved"
   }
 }

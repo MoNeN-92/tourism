@@ -14,20 +14,24 @@ export default function AdminLoginPage() {
   const params = useParams()
   const locale = params.locale as string
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setError('')
+  setLoading(true)
 
-    try {
-      const res = await fetch('http://localhost:3001/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
+  try {
+    // განვიხილავთ ცვლადს, თუ არ არსებობს - ვიყენებთ ლოკალჰოსტს
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+    const res = await fetch(`${apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    // აქ გააგრძელე შენი ლოგიკა (მაგ. res.json() და ა.შ.)
       const data = await res.json()
 
       if (!res.ok) {

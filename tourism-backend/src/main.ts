@@ -9,15 +9,10 @@ async function bootstrap() {
 
   // CORS-ის ჩასწორებული კონფიგურაცია
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://p40c888k0oocg0owokskkwo0.46.225.96.181.sslip.io', // შენი ფრონტენდის URL
-      'https://p40c888k0oocg0owokskkwo0.46.225.96.181.sslip.io' // ყოველი შემთხვევისთვის HTTPS ვერსიაც
-    ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-  });
+  origin: ['https://vibegeorgia.com', 'http://localhost:3000'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+});
 
   app.useGlobalPipes(
     new ValidationPipe({

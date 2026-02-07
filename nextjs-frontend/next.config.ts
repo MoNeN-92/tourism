@@ -6,16 +6,13 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
   images: {
+    // ძველი მეთოდი (loader-ის გარეშე), რომელიც უფრო მარტივია
+    domains: ['res.cloudinary.com', 'images.unsplash.com'],
+    // ახალი მეთოდი უფრო გაშლილი სახით
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**', // ნებისმიერი სურათი Unsplash-დან
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        pathname: '/**', // ნებისმიერი სურათი Cloudinary-დან
+        hostname: '**', // ეს ნებისმიერ ჰოსტს დაუშვებს (დიაგნოსტიკისთვის)
       },
     ],
   },

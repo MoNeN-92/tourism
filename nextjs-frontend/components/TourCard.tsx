@@ -10,6 +10,7 @@ interface Tour {
   description: string
   price: number
   duration: string
+  image?: string // დავამატოთ image ინტერფეისში
 }
 
 interface TourCardProps {
@@ -19,13 +20,17 @@ interface TourCardProps {
 export default function TourCard({ tour }: TourCardProps) {
   const t = useTranslations('tours')
   
+  // თუ ბაზიდან სურათი არ მოვიდა, გამოვიყენოთ fallback სურათი
+  const tourImage = tour.image || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80";
+  
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-100 flex flex-col h-full">
       <div className="relative h-48 w-full bg-gray-200">
         <Image
-          src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80"
+          src={tourImage} // ახლა უკვე დინამიურ ლინკს იყენებს
           alt={tour.title}
           fill
+          unoptimized // ეს აგვარებს 400 ერორს
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />

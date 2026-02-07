@@ -10,10 +10,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+        pathname: '/**', // ნებისმიერი სურათი Unsplash-დან
       },
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
+        pathname: '/**', // ნებისმიერი სურათი Cloudinary-დან
       },
     ],
   },

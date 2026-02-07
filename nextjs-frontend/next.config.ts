@@ -6,20 +6,17 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
   images: {
-    // 1. ძველი მეთოდი (საიმედოობისთვის)
-    domains: ['res.cloudinary.com', 'images.unsplash.com'],
-    // 2. ახალი მეთოდი (დეტალური დაშვებით)
+    // ეს ხაზი თიშავს პრობლემურ ოპტიმიზაციას და პირდაპირ აჩვენებს სურათებს
+    unoptimized: true, 
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        port: '',
-        pathname: '/**', // ეს მნიშვნელოვანია! უშვებს ნებისმიერ ქვედირექტორიას
+        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        port: '',
         pathname: '/**',
       },
     ],

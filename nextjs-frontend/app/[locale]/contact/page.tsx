@@ -235,7 +235,7 @@ export default function ContactPage() {
                         href="mailto:info@tourism.ge"
                         className="text-base sm:text-lg text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        info@tourism.ge
+                        info@vibegeorgia.com
                       </Link>
                     </div>
                   </div>
@@ -250,10 +250,10 @@ export default function ContactPage() {
                         {t('info.phone')}
                       </p>
                       <Link 
-                        href="tel:+995555123456"
+                        href="https://wa.me/995596550099"
                         className="text-base sm:text-lg text-gray-900 hover:text-blue-600 font-medium"
                       >
-                        +995 555 123 456
+                        +995 596 55 00 99
                       </Link>
                     </div>
                   </div>

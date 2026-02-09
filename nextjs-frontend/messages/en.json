@@ -7,9 +7,15 @@
     "contact": "Contact"
   },
   "home": {
+    "seo": {
+      "title": "Vibe Georgia | Tours in Georgia - Discover Mountains, Wine & Culture",
+      "description": "Plan your unforgettable journey in Georgia with Vibe Georgia. Tours in Svaneti, Kazbegi, Kakheti. Local guides, safety, best prices. Book your adventure today.",
+      "keywords": "Georgia tours, travel Georgia, Svaneti, Kazbegi, Kakheti, Batumi, Tbilisi, wine tours, mountain tours, Vibe Georgia, Caucasus travel"
+    },
     "hero": {
       "title": "Discover Georgia",
       "subtitle": "Unforgettable journeys through Georgia's most beautiful corners",
+      "imageAlt": "Georgia Mountains - Vibe Georgia",
       "ctaViewTours": "View Tours",
       "ctaContact": "Contact Us"
     },
@@ -67,7 +73,12 @@
     "notFound": "Tour not found",
     "notFoundDesc": "The tour you're looking for doesn't exist"
   },
- "about": {
+  "about": {
+    "seo": {
+      "title": "About Us | Vibe Georgia - Leading Tourism Platform in Georgia",
+      "description": "Vibe Georgia is Georgia's leading tourism platform offering unique tours, experienced guides, and unforgettable travel experiences across the country.",
+      "keywords": "Georgia, tours, travel agency, tourism Georgia, Vibe Georgia, Tbilisi, Svaneti, Kazbegi, travel platform"
+    },
     "title": "About Us",
     "subtitle": "Discover Georgia with Us",
     "story": {

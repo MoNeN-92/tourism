@@ -53,7 +53,7 @@ export const mockTours: MockTour[] = [
     excerpt_ka: 'დასასვენებელი ტური ბათუმის სანაპიროზე',
     excerpt_en: 'Relaxing tour on Batumi coast',
     excerpt_ru: 'Расслабляющий тур на побережье Батуми',
-    coverImage: 'https://images.unsplash.com/photo-1502301103665-0b95cc738daf?w=800&q=80',
+    coverImage: 'https://api.visitbatumi.com/media/image/ec568ecc98e84a9db0c9d34c051c2191.jpg',
     duration: '5 დღე',
     price: 550,
   },

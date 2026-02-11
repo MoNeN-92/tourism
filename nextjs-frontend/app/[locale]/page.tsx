@@ -136,7 +136,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     },
     {
       name: t('destinations.batumi'),
-      image: 'https://images.unsplash.com/photo-1502301103665-0b95cc738daf?w=800&q=80',
+      image: 'https://api.visitbatumi.com/media/image/ec568ecc98e84a9db0c9d34c051c2191.jpg',
     },
     {
       name: t('destinations.tbilisi'),

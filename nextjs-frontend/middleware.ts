@@ -1,4 +1,3 @@
-// middleware.ts
 import createMiddleware from 'next-intl/middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { locales, defaultLocale } from './i18n/config'
@@ -12,11 +11,20 @@ const intlMiddleware = createMiddleware({
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Extract locale from pathname
+  // 1. გამოვტოვოთ სტატიკური ფაილები (manifest.json, favicon.ico, images და ა.შ.)
+  if (
+    pathname.includes('.') || 
+    pathname.startsWith('/_next') || 
+    pathname.startsWith('/api')
+  ) {
+    return NextResponse.next();
+  }
+
+  // 2. ენის ექსტრაქცია URL-დან
   const pathnameLocale = pathname.split('/')[1];
   const locale = locales.includes(pathnameLocale as any) ? pathnameLocale : defaultLocale;
   
-  // Check if route is admin (excluding login)
+  // 3. ადმინ პანელის დაცვა
   const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login');
   
   if (isAdminRoute) {
@@ -32,5 +40,6 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
+  // მატჩერი, რომელიც გამორიცხავს სტანდარტულ სერვისულ მისამართებს
+  matcher: ['/((?!api|_next|_vercel|[\\w-]+\\.\\w+).*)']
 }

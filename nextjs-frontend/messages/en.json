@@ -179,5 +179,29 @@
     "contact": "Contact",
     "followUs": "Follow Us",
     "rights": "All rights reserved"
+  },
+   "cookies": {
+    "title": "We Use Cookies",
+    "description": "We use cookies to improve your experience and for website analytics.",
+    "learnMore": "Learn more",
+    "acceptAll": "Accept All",
+    "rejectAll": "Reject Optional",
+    "customize": "Customize",
+    "preferencesTitle": "Cookie Preferences",
+    "alwaysActive": "Always Active",
+    "savePreferences": "Save Preferences",
+    "cancel": "Cancel",
+    "necessary": {
+      "title": "Necessary Cookies",
+      "description": "These cookies are essential for the website to function and cannot be disabled."
+    },
+    "analytics": {
+      "title": "Analytics Cookies",
+      "description": "These cookies help us understand how you use the website to improve user experience."
+    },
+    "marketing": {
+      "title": "Marketing Cookies",
+      "description": "These cookies are used to show you relevant advertisements."
+    }
   }
 }

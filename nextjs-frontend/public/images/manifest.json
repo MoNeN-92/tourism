@@ -1,0 +1,23 @@
+{
+  "name": "Vibe Georgia - Luxury Private Tours",
+  "short_name": "Vibe Georgia",
+  "description": "Discover Georgia with unique luxury private tours",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

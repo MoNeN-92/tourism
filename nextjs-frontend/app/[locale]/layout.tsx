@@ -4,10 +4,11 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { locales } from '@/i18n/config'
-import { GoogleAnalytics } from '@next/third-parties/google' // იმპორტი ანალიტიკისთვის
+import { GoogleAnalytics } from '@next/third-parties/google'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import CookieBanner from '@/components/CookieBanner'
 
 export const metadata: Metadata = {
   title: {
@@ -18,6 +19,20 @@ export const metadata: Metadata = {
   keywords: ['travel Georgia', 'Tbilisi tours', 'Georgian wine tours', 'mountain adventures', 'Vibe Georgia tours'],
   authors: [{ name: 'Vibe Georgia' }],
   metadataBase: new URL('https://vibegeorgia.com'),
+  
+  // ✅ აიქონების დამატებული სექცია
+  icons: {
+    icon: [
+      { url: '/images/favicon.ico' }, // თუ favicon პირდაპირ public-შია, დატოვე '/favicon.ico'
+      { url: '/images/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/images/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/images/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
+
   alternates: {
     canonical: '/',
     languages: {
@@ -33,7 +48,7 @@ export const metadata: Metadata = {
     siteName: 'Vibe Georgia',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/images/og-image.jpg', // მივუთითე images საქაღალდე
         width: 1200,
         height: 630,
         alt: 'Vibe Georgia Tours',
@@ -43,8 +58,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   verification: {
-    // შენი Google Search Console კოდი
-    google: 'sc-domain:vibegeorgia.com', 
+    google: 'sc-domain:vibegeorgia.com',
   },
   robots: {
     index: true,
@@ -81,10 +95,10 @@ export default async function LocaleLayout({
               {children}
             </main>
             <Footer />
+            <CookieBanner />
           </div>
         </NextIntlClientProvider>
         
-        {/* Google Analytics - ჩასმულია body-ს ბოლოში ოპტიმიზაციისთვის */}
         <GoogleAnalytics gaId="G-ZNGHZ2EQ9P" />
       </body>
     </html>

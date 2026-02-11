@@ -140,7 +140,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     },
     {
       name: t('destinations.tbilisi'),
-      image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800&q=80',
+      image: 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/13/b0/81/77/narikala-fortress-largejpg.jpg?w=700&h=-1&s=1',
     },
     {
       name: t('destinations.kakheti'),

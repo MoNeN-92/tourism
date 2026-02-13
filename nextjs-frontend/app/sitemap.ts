@@ -1,12 +1,14 @@
 import { MetadataRoute } from 'next'
+import { mockBlogPosts } from '@/lib/mockBlogData' // დარწმუნდი, რომ გზა სწორია
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://vibegeorgia.com'
   const locales = ['en', 'ka', 'ru']
-  const pages = ['', '/tours', '/about', '/blog', '/contact']
+  const staticPages = ['', '/tours', '/about', '/blog', '/contact']
 
-  const routes = locales.flatMap((locale) =>
-    pages.map((page) => ({
+  // 1. სტატიკური გვერდების გენერაცია ყველა ენისთვის
+  const staticRoutes = locales.flatMap((locale) =>
+    staticPages.map((page) => ({
       url: `${baseUrl}/${locale}${page}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
@@ -14,5 +16,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   )
 
-  return routes
+  // 2. დინამიური ბლოგ-პოსტების გენერაცია (Tbilisi, Kazbegi და ა.შ.)
+  const blogRoutes = locales.flatMap((locale) =>
+    mockBlogPosts.map((post) => ({
+      url: `${baseUrl}/${locale}/blog/${post.slug}`,
+      lastModified: new Date(post.publishedDate || new Date()),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  )
+
+  return [...staticRoutes, ...blogRoutes]
 }

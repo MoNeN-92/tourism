@@ -40,6 +40,10 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // მატჩერი, რომელიც გამორიცხავს სტანდარტულ სერვისულ მისამართებს
-  matcher: ['/((?!api|_next|_vercel|[\\w-]+\\.\\w+).*)']
+  // მატჩერი გამორიცხავს api-ს, _next-ს, სერვისულ ფაილებს (sitemap, robots, manifest) 
+  // და ნებისმიერ ფაილს გაფართოებით (მაგ. .png, .ico)
+  matcher: [
+    '/((?!api|_next|_vercel|sitemap\\.xml|robots\\.txt|manifest\\.json|[\\w-]+\\.\\w+).*)'
+  ]
 }
+

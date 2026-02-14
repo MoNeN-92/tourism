@@ -8,6 +8,7 @@ export class UploadsService {
 
   async uploadToCloudinary(file: Express.Multer.File): Promise<UploadResponseDto> {
     try {
+      // იძახებს ზემოთ მოცემულ განახლებულ uploadImage ფუნქციას
       const result = await this.cloudinaryService.uploadImage(file);
 
       return {

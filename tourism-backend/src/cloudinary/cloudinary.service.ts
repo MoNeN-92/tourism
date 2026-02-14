@@ -20,6 +20,8 @@ export class CloudinaryService {
         {
           folder: 'tourism-platform',
           resource_type: 'image',
+          // აქ მივუთითებთ თქვენს პრესეტს ავტომატური ვოთერმარკისთვის
+          upload_preset: 'watermark vibegeorgia',
         },
         (error, result) => {
           if (error) return reject(error);

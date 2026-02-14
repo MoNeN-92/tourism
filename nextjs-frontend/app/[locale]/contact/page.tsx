@@ -78,7 +78,7 @@ export default function ContactPage() {
     try {
       // 1. გზავნის მეილს ადმინისტრატორთან (შენთან)
       await emailjs.send(
-        'service_0zudsj4', 
+        'service_i1yw3p8', 
         'template_c0o332m', 
         templateParams,
         'NlwK4cZbuSEu6RCdL'
@@ -86,7 +86,7 @@ export default function ContactPage() {
 
       // 2. გზავნის ავტო-პასუხს მომხმარებელთან
       await emailjs.send(
-        'service_0zudsj4', 
+        'service_i1yw3p8', 
         'template_5s1lpl7', 
         templateParams,
         'NlwK4cZbuSEu6RCdL'

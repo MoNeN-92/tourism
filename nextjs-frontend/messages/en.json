@@ -203,5 +203,22 @@
       "title": "Marketing Cookies",
       "description": "These cookies are used to show you relevant advertisements."
     }
+  },
+  "Terms": {
+    "title": "Terms of Service",
+    "section1_title": "1. Booking and Cancellation",
+    "section1_text": "Bookings are confirmed upon receipt of payment. Cancellations made 48 hours before the tour starts are eligible for a full refund.",
+    "section2_title": "2. Liability",
+    "section2_text": "Vibe Georgia is not responsible for personal injuries or loss of property during the tours, although we take all necessary safety measures."
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "intro": "At Vibe Georgia, we value your privacy.",
+    "section1_title": "1. Information Collection",
+    "section1_text": "We collect only the necessary information (name, email, phone) to process your bookings.",
+    "section2_title": "2. Data Usage",
+    "section2_text": "Your data is used strictly for communication and tour organization. We never sell your data to third parties.",
+    "section3_title": "3. Cookies",
+    "section3_text": "Our website uses cookies to improve your browsing experience."
   }
 }

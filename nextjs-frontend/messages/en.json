@@ -75,47 +75,27 @@
   },
   "about": {
     "seo": {
-      "title": "About Us | Vibe Georgia - Leading Tourism Platform in Georgia",
-      "description": "Vibe Georgia is Georgia's leading tourism platform offering unique tours, experienced guides, and unforgettable travel experiences across the country.",
-      "keywords": "Georgia, tours, travel agency, tourism Georgia, Vibe Georgia, Tbilisi, Svaneti, Kazbegi, travel platform"
+      "title": "About Us | Vibe Georgia - 15 Years Experience in Tourism",
+      "description": "Vibe Georgia - Professional inbound tourism company in Georgia with 15 years of experience. Full travel services, individual approach.",
+      "keywords": "Georgia tourism, inbound tourism, Vibe Georgia, travel services, hotel reservations, transfers"
     },
     "title": "About Us",
-    "subtitle": "Discover Georgia with Us",
-    "story": {
-      "title": "Our Story",
-      "content": "We are Georgia's leading tour platform, offering unique tours throughout the country. Our mission is to introduce you to Georgia's most beautiful places, rich culture, and ancient traditions. We believe that every journey should be an unforgettable experience."
+    "subtitle": "15 Years of Experience in Georgian Tourism",
+    "intro": "Our company is a professional inbound tourism agency specializing in travel services across Georgia, founded on 15 years of hands-on experience in the tourism and hospitality industry.",
+    "experience": "Years of expertise in tourism, hotel operations, service management, and hospitality have enabled us to create a company dedicated to delivering seamless, comfortable, and high-quality travel experiences throughout Georgia.",
+    "fullService": "We provide full-service travel solutions from the moment our guests arrive in Georgia until their departure — with every detail carefully planned and tailored to individual needs and preferences.",
+    "servicesTitle": "Our Services",
+    "services": {
+      "hotels": "Hotel reservations across Georgia",
+      "tours": "Individual and group tour planning",
+      "transfers": "Airport transfers and transportation services",
+      "corporate": "Corporate and themed tours",
+      "concierge": "Concierge and full hospitality services"
     },
-    "mission": {
-      "title": "Our Mission",
-      "content": "Our mission is to provide safe, comfortable, and unforgettable travel experiences. We help travelers discover Georgia's most beautiful corners and deeply understand Georgian culture."
-    },
-    "vision": {
-      "title": "Our Vision",
-      "content": "To become the leading tourism platform in Georgia, known for high-quality service, innovative approaches, and customer-oriented service."
-    },
-    "whyChooseUs": {
-      "title": "Why Choose Us",
-      "expertise": {
-        "title": "Local Expertise",
-        "description": "We know every corner of Georgia and offer the best routes"
-      },
-      "guides": {
-        "title": "Experienced Guides",
-        "description": "Our team consists of professional and certified guides"
-      },
-      "destinations": {
-        "title": "Unique Routes",
-        "description": "We offer unforgettable journeys to Georgia's most beautiful places"
-      },
-      "safety": {
-        "title": "Safety",
-        "description": "Your safety and comfort are our priority"
-      }
-    },
-    "team": {
-      "title": "Our Team",
-      "description": "Our team consists of experienced professionals who work every day to make your journey unforgettable."
-    }
+    "whyTitle": "Why Choose Us",
+    "whyParagraph1": "We prioritize high service standards, efficient communication, and detail-oriented planning. Each itinerary is customized according to our guests' interests, timeframe, and budget.",
+    "whyParagraph2": "Our strong local partner network allows us to deliver reliable service, competitive rates, and authentic travel experiences across all regions of Georgia.",
+    "whyConclusion": "We don't just plan trips — we create memorable experiences that inspire our guests to return."
   },
   "blog": {
     "title": "Blog",
@@ -180,7 +160,7 @@
     "followUs": "Follow Us",
     "rights": "All rights reserved"
   },
-   "cookies": {
+  "cookies": {
     "title": "We Use Cookies",
     "description": "We use cookies to improve your experience and for website analytics.",
     "learnMore": "Learn more",
@@ -203,22 +183,5 @@
       "title": "Marketing Cookies",
       "description": "These cookies are used to show you relevant advertisements."
     }
-  },
-  "Terms": {
-    "title": "Terms of Service",
-    "section1_title": "1. Booking and Cancellation",
-    "section1_text": "Bookings are confirmed upon receipt of payment. Cancellations made 48 hours before the tour starts are eligible for a full refund.",
-    "section2_title": "2. Liability",
-    "section2_text": "Vibe Georgia is not responsible for personal injuries or loss of property during the tours, although we take all necessary safety measures."
-  },
-  "Privacy": {
-    "title": "Privacy Policy",
-    "intro": "At Vibe Georgia, we value your privacy.",
-    "section1_title": "1. Information Collection",
-    "section1_text": "We collect only the necessary information (name, email, phone) to process your bookings.",
-    "section2_title": "2. Data Usage",
-    "section2_text": "Your data is used strictly for communication and tour organization. We never sell your data to third parties.",
-    "section3_title": "3. Cookies",
-    "section3_text": "Our website uses cookies to improve your browsing experience."
   }
 }

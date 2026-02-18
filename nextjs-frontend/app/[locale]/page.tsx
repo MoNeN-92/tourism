@@ -195,7 +195,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {/* Hero Section */}
         <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
           <Image
-            src="https://images.unsplash.com/photo-1464207687429-7505649dae38?w=1920&q=80"
+            src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg"
             alt={t('hero.imageAlt')}
             fill
             className="object-cover"

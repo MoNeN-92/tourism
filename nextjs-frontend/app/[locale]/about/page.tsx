@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -57,7 +58,7 @@ export default function AboutPage() {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
     name: 'Vibe Georgia',
-    description: t('story.content'),
+    description: t('intro'),
     url: 'https://vibegeorgia.com',
     telephone: '+995596550099',
     email: '[email protected]',
@@ -66,6 +67,7 @@ export default function AboutPage() {
       addressLocality: 'Tbilisi',
       addressCountry: 'GE',
     },
+    foundingDate: '2010',
   }
 
   return (
@@ -75,60 +77,80 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="min-h-screen bg-gray-50">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
-                {t('title')}
-              </h1>
-              <p className="text-lg sm:text-xl lg:text-2xl text-blue-100">
-                {t('subtitle')}
-              </p>
+        {/* Hero Section with Tbilisi Background */}
+        <section className="relative h-[400px] sm:h-[500px] lg:h-[600px]">
+          <Image
+            src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771399055/Tbilisi_panorama_nk1rmx.jpg"
+            alt="Tbilisi Panorama"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-cyan-400/30" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="max-w-3xl text-white">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
+                  {t('title')}
+                </h1>
+                <p className="text-lg sm:text-xl lg:text-2xl text-blue-100">
+                  {t('subtitle')}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Company Story Section */}
+        {/* Main Content */}
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <div className="max-w-4xl mx-auto">
             <article className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
-                {t('story.title')}
-              </h2>
-              <p className="text-base sm:text-lg text-gray-700 leading-relaxed">
-                {t('story.content')}
-              </p>
+              <div className="prose prose-lg max-w-none">
+                <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                  {t('intro')}
+                </p>
+                <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                  {t('experience')}
+                </p>
+                <p className="text-lg text-gray-700 leading-relaxed">
+                  {t('fullService')}
+                </p>
+              </div>
             </article>
           </div>
         </section>
 
-        {/* Mission & Vision Section */}
+        {/* Services Section */}
         <section className="bg-white py-12 sm:py-16 lg:py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
-                {/* Mission */}
-                <article className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-md">
-                  <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">🎯</div>
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-                    {t('mission.title')}
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                    {t('mission.content')}
-                  </p>
-                </article>
-
-                {/* Vision */}
-                <article className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-md">
-                  <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">🌟</div>
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-                    {t('vision.title')}
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                    {t('vision.content')}
-                  </p>
-                </article>
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 text-center">
+                {t('servicesTitle')}
+              </h2>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-md">
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl" aria-hidden="true">🏨</span>
+                    <span className="text-lg text-gray-700">{t('services.hotels')}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl" aria-hidden="true">🗺️</span>
+                    <span className="text-lg text-gray-700">{t('services.tours')}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl" aria-hidden="true">✈️</span>
+                    <span className="text-lg text-gray-700">{t('services.transfers')}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl" aria-hidden="true">🏢</span>
+                    <span className="text-lg text-gray-700">{t('services.corporate')}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-2xl" aria-hidden="true">🛎️</span>
+                    <span className="text-lg text-gray-700">{t('services.concierge')}</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -136,70 +158,23 @@ export default function AboutPage() {
 
         {/* Why Choose Us Section */}
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-8 sm:mb-12 lg:mb-16">
-              {t('whyChooseUs.title')}
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 text-center">
+              {t('whyTitle')}
             </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {/* Local Expertise */}
-              <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 sm:p-8 text-center">
-                <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">🗺️</div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {t('whyChooseUs.expertise.title')}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {t('whyChooseUs.expertise.description')}
+            <article className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
+              <div className="prose prose-lg max-w-none">
+                <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                  {t('whyParagraph1')}
                 </p>
-              </article>
-
-              {/* Experienced Guides */}
-              <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 sm:p-8 text-center">
-                <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">👥</div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {t('whyChooseUs.guides.title')}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {t('whyChooseUs.guides.description')}
+                <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                  {t('whyParagraph2')}
                 </p>
-              </article>
-
-              {/* Unique Destinations */}
-              <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 sm:p-8 text-center">
-                <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">🏔️</div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {t('whyChooseUs.destinations.title')}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {t('whyChooseUs.destinations.description')}
+                <p className="text-lg text-gray-700 leading-relaxed font-medium text-blue-700">
+                  {t('whyConclusion')}
                 </p>
-              </article>
-
-              {/* Safety */}
-              <article className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 sm:p-8 text-center">
-                <div className="text-4xl sm:text-5xl mb-4" aria-hidden="true">🛡️</div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                  {t('whyChooseUs.safety.title')}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {t('whyChooseUs.safety.description')}
-                </p>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* Team Section */}
-        <section className="bg-gray-100 py-12 sm:py-16 lg:py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                {t('team.title')}
-              </h2>
-              <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                {t('team.description')}
-              </p>
-            </div>
+              </div>
+            </article>
           </div>
         </section>
       </main>

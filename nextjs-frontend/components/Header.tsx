@@ -68,10 +68,22 @@ export default function Header() {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-3">
-          <Link href={`/${locale}`} className="flex flex-col">
-            <span className="text-3xl font-bold text-blue-600">Geo Vibe</span>
-            <span className="text-sm text-blue-500 -mt-1">Welcome to Georgia</span>
-          </Link>
+   <Link href={`/${locale}`} className="flex flex-col items-center group transition-all duration-300">
+  {/* მთავარი ტექსტი - ცენტრში გასწორებული */}
+  <div className="flex items-baseline tracking-tight justify-center">
+    <span className="text-3xl font-serif font-bold text-gray-900">Geo</span>
+    <span className="text-3xl font-serif font-bold text-[#B48C36]">Vibe</span>
+  </div>
+  
+  {/* ქვედა სლოგანი - ხაზებით და ცენტრირებით */}
+  <div className="flex items-center gap-2 -mt-1 w-full justify-center">
+    <div className="h-[1px] w-4 bg-[#B48C36]"></div>
+    <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-gray-500 whitespace-nowrap">
+      Luxury Private Tours
+    </span>
+    <div className="h-[1px] w-4 bg-[#B48C36]"></div>
+  </div>
+</Link>
 
           <nav className="hidden md:flex items-center gap-8">
             <Link href={`/${locale}`} className="text-gray-700 hover:text-blue-600 transition-colors">

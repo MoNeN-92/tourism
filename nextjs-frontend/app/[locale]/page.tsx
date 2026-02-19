@@ -1,8 +1,15 @@
 import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
-import { mockBlogPosts, mockTours } from '@/lib/mockData'
+import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
+
+interface TourImage {
+  id: string
+  url: string
+  publicId: string
+  createdAt: string
+}
 
 interface Tour {
   id: string
@@ -10,12 +17,17 @@ interface Tour {
   title_ka: string
   title_en: string
   title_ru: string
-  excerpt_ka: string
-  excerpt_en: string
-  excerpt_ru: string
-  coverImage: string
+  description_ka: string
+  description_en: string
+  description_ru: string
+  location_ka: string | null
+  location_en: string | null
+  location_ru: string | null
   duration: string
-  price?: number
+  status: boolean
+  images: TourImage[]
+  createdAt: string
+  updatedAt: string
 }
 
 interface BlogPost {
@@ -33,7 +45,7 @@ interface BlogPost {
 
 function getLocalizedField<T extends Tour | BlogPost>(
   item: T,
-  field: 'title' | 'excerpt',
+  field: 'title' | 'excerpt' | 'description' | 'location',
   locale: string
 ): string {
   const fieldMap: Record<string, keyof T> = {
@@ -61,6 +73,34 @@ function formatDate(dateString: string, locale: string): string {
     locale === 'ka' ? 'ka-GE' : locale === 'ru' ? 'ru-RU' : 'en-US',
     options
   )
+}
+
+// ✅ Backend-დან ტურების წამოღება
+async function getFeaturedTours(): Promise<Tour[]> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const res = await fetch(`${apiUrl}/tours`, {
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    })
+    
+    if (!res.ok) {
+      console.error('Failed to fetch tours:', res.status)
+      return []
+    }
+    
+    const allTours: Tour[] = await res.json()
+    
+    // Filter only active tours
+    const activeTours = allTours.filter(tour => tour.status === true)
+    
+    // Random shuffle and take max 4
+    const shuffled = [...activeTours].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, Math.min(4, shuffled.length))
+  } catch (error) {
+    console.error('Error fetching featured tours:', error)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -122,10 +162,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params
   const t = await getTranslations('home')
 
-  // ✅ Random 4 tours (or all if less than 4)
-  const shuffledTours = [...mockTours].sort(() => Math.random() - 0.5)
-  const featuredTours = shuffledTours.slice(0, Math.min(4, mockTours.length))
-  
+  // ✅ Backend API-დან ტურები
+  const featuredTours = await getFeaturedTours()
   const latestPosts = mockBlogPosts.slice(0, 3)
 
   const destinations = [
@@ -182,7 +220,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         itemOffered: {
           '@type': 'TouristTrip',
           name: getLocalizedField(tour, 'title', locale),
-          description: getLocalizedField(tour, 'excerpt', locale),
+          description: getLocalizedField(tour, 'description', locale),
         },
       })),
     },
@@ -244,37 +282,49 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {featuredTours.map((tour) => {
-                const title = getLocalizedField(tour, 'title', locale)
-                const excerpt = getLocalizedField(tour, 'excerpt', locale)
+            {featuredTours.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                {featuredTours.map((tour) => {
+                  const title = getLocalizedField(tour, 'title', locale)
+                  const description = getLocalizedField(tour, 'description', locale)
+                  const coverImage = tour.images.length > 0 
+                    ? tour.images[0].url 
+                    : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80'
 
-                return (
-                  <article
-                    key={tour.id}
-                    className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    <Link href={`/${locale}/tours/${tour.slug}`}>
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
-                          src={tour.coverImage}
-                          alt={title}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
-                      </div>
-                      <div className="p-5">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                          {title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{excerpt}</p>
-                      </div>
-                    </Link>
-                  </article>
-                )
-              })}
-            </div>
+                  return (
+                    <article
+                      key={tour.id}
+                      className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    >
+                      <Link href={`/${locale}/tours/${tour.slug}`}>
+                        <div className="relative h-48 overflow-hidden">
+                          <Image
+                            src={coverImage}
+                            alt={title}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          />
+                        </div>
+                        <div className="p-5">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                            {title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{description}</p>
+                          <div className="text-sm text-gray-500">
+                            ⏱️ {tour.duration}
+                          </div>
+                        </div>
+                      </Link>
+                    </article>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600">{t('tours.noTours')}</p>
+              </div>
+            )}
           </div>
         </section>
 

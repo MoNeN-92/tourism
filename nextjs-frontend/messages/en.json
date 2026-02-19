@@ -64,14 +64,14 @@
       "viewAll": "All Articles"
     }
   },
-  "tours": {
-    "title": "Available Tours",
-    "subtitle": "Discover your next adventure",
-    "noTours": "No tours available at the moment",
-    "checkBack": "Check back soon for new adventures",
-    "perPerson": "/person",
-    "notFound": "Tour not found",
-    "notFoundDesc": "The tour you're looking for doesn't exist"
+     "tours": {
+    "title": "Explore Tours",
+    "subtitle": "Discover amazing destinations and unforgettable experiences",
+    "loading": "Loading tours...",
+    "noTours": "No Tours Available",
+    "checkBack": "Check back later for exciting tour packages!",
+    "viewDetails": "View Details",
+    "perPerson": "/person"
   },
   "about": {
     "seo": {

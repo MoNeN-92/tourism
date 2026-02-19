@@ -122,7 +122,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params
   const t = await getTranslations('home')
 
-  const featuredTours = mockTours.slice(0, 4)
+  // ✅ Random 4 tours (or all if less than 4)
+  const shuffledTours = [...mockTours].sort(() => Math.random() - 0.5)
+  const featuredTours = shuffledTours.slice(0, Math.min(4, mockTours.length))
+  
   const latestPosts = mockBlogPosts.slice(0, 3)
 
   const destinations = [

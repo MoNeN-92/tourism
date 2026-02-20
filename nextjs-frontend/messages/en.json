@@ -4,7 +4,8 @@
     "tours": "Tours",
     "about": "About Us",
     "blog": "Blog",
-    "contact": "Contact"
+    "contact": "Contact",
+    "faq": "FAQ"
   },
   "home": {
     "seo": {
@@ -183,5 +184,89 @@
       "title": "Marketing Cookies",
       "description": "These cookies are used to show you relevant advertisements."
     }
+  },
+   "faq": {
+    "seo": {
+      "title": "Frequently Asked Questions (FAQ) | Vibe Georgia - Tours in Georgia",
+      "description": "Find answers to the most frequently asked questions about Vibe Georgia tours, bookings, payments, and travel in Georgia. Contact us for more information.",
+      "keywords": "FAQ, frequent questions, tour booking, payment, cancellation, Georgia tours, Vibe Georgia, travel tips, Georgia visa, travel insurance"
+    },
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to your questions",
+    "booking": {
+      "category": "Booking & Reservations",
+      "q1": {
+        "question": "How can I book a tour?",
+        "answer": "To book a tour, select your desired tour on our website, fill out the booking form, and pay online or contact us at [email protected] or call +995 596 55 00 99."
+      },
+      "q2": {
+        "question": "Can I cancel my booking?",
+        "answer": "Yes, cancellations are possible up to 48 hours before the tour starts with a full refund. Cancellations within 48 hours are non-refundable."
+      },
+      "q3": {
+        "question": "How far in advance should I book?",
+        "answer": "We recommend booking at least 7 days in advance. During peak season (May-September), booking 2-3 weeks ahead is preferable."
+      },
+      "q4": {
+        "question": "What happens in case of bad weather?",
+        "answer": "In case of extreme weather conditions (heavy rain, snow, dangerous conditions), we can reschedule your tour or provide a full refund."
+      }
+    },
+    "tours": {
+      "category": "About Tours",
+      "q1": {
+        "question": "What's included in the tour price?",
+        "answer": "Tour price includes: transportation, professional guide, entrance tickets to attractions, and insurance. Food and personal expenses are not included unless specified."
+      },
+      "q2": {
+        "question": "In what languages are tours conducted?",
+        "answer": "Our tours are conducted in Georgian, English, and Russian. Other languages can be requested with advance notice."
+      },
+      "q3": {
+        "question": "Are tours suitable for children?",
+        "answer": "Many of our tours are family-friendly. However, some trekking and adventure tours are recommended for ages 12+. Contact us for details."
+      },
+      "q4": {
+        "question": "Can I request a private custom tour?",
+        "answer": "Yes! We offer fully customized private tours tailored to your preferences, budget, and schedule. Contact us to create your perfect itinerary."
+      }
+    },
+    "payment": {
+      "category": "Payment & Pricing",
+      "q1": {
+        "question": "What payment methods do you accept?",
+        "answer": "We accept: credit/debit cards (Visa, Mastercard), bank transfers, and cash at our office. For international payments, we use secure online payment systems."
+      },
+      "q2": {
+        "question": "Can I pay in installments?",
+        "answer": "Yes, you can pay 50% at booking and the remaining 50% up to 3 days before the tour starts."
+      },
+      "q3": {
+        "question": "Are there group discounts?",
+        "answer": "Yes! We offer 10% discount for groups of 6+ people and 15% for groups of 10+. Student and children discounts also available."
+      }
+    },
+    "travel": {
+      "category": "Travel & Visa",
+      "q1": {
+        "question": "Do I need a visa to visit Georgia?",
+        "answer": "Citizens of 90+ countries can enter Georgia visa-free for up to 1 year. Check visa requirements for your country with the Georgian embassy."
+      },
+      "q2": {
+        "question": "What's the best season to visit Georgia?",
+        "answer": "May-October is ideal for mountains and nature. Winter (December-March) is perfect for ski resorts. Spring and autumn are great for wine tours."
+      },
+      "q3": {
+        "question": "What currency do I need?",
+        "answer": "Georgia's official currency is the Lari (GEL). You can exchange money at airports, banks, or exchange offices. Many places accept international cards."
+      },
+      "q4": {
+        "question": "Is it safe to travel in Georgia?",
+        "answer": "Yes! Georgia is considered a safe country for tourists. Our team ensures all safety standards during tours. Travel insurance is recommended."
+      }
+    },
+    "contactTitle": "Didn't find your answer?",
+    "contactSubtitle": "Contact us and our team will help you",
+    "contactButton": "Contact Us"
   }
 }

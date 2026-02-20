@@ -101,6 +101,12 @@ export default function Header() {
             <Link href={`/${locale}/contact`} className="text-gray-700 hover:text-blue-600 transition-colors">
               {t('contact')}
             </Link>
+          <Link 
+  href={`/${locale}/faq`} 
+  className="text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm sm:text-base"
+>
+  {t('faq')}
+</Link>
 
             <div className="relative ml-4 border-l pl-4" ref={langDropdownRef}>
               <button

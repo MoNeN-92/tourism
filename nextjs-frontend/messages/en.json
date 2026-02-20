@@ -24,6 +24,9 @@
       "title": "Featured Tours",
       "subtitle": "Choose the best routes from our collection"
     },
+    "tours": {
+      "noTours": "No Tours Available"
+    },
     "whyChooseUs": {
       "title": "Why Choose Us",
       "subtitle": "We care about your comfort and safety",
@@ -65,7 +68,7 @@
       "viewAll": "All Articles"
     }
   },
-     "tours": {
+  "tours": {
     "title": "Explore Tours",
     "subtitle": "Discover amazing destinations and unforgettable experiences",
     "loading": "Loading tours...",
@@ -185,7 +188,7 @@
       "description": "These cookies are used to show you relevant advertisements."
     }
   },
-   "faq": {
+  "faq": {
     "seo": {
       "title": "Frequently Asked Questions (FAQ) | Vibe Georgia - Tours in Georgia",
       "description": "Find answers to the most frequently asked questions about Vibe Georgia tours, bookings, payments, and travel in Georgia. Contact us for more information.",

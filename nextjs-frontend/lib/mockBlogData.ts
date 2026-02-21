@@ -116,9 +116,23 @@ export const mockBlogPosts: BlogPost[] = [
     author_en: 'Ana Japaridze',
     author_ru: 'Ана Джапаридзе',
   },
+  {
+    id: '7',
+    slug: 'robert-slovakia-travel-story-georgia',
+    title_ka: 'საქართველო რობერტის თვალით: რაბათის ციხე და რჩევები',
+    title_en: 'Georgia Through Robert’s Lens: Rabati Castle and Tips',
+    title_ru: 'Грузия глазами Роберта: Крепость Рабат и советы',
+    excerpt_ka: 'რობერტი სლოვაკეთიდან გვიზიარებს თავის გამოცდილებას რაბათზე და პრაქტიკულ რჩევებს საქართველოში მოგზაურობის შესახებ.',
+    excerpt_en: 'Robert from Slovakia shares his experience about Rabati Castle and practical tips for traveling in Georgia.',
+    excerpt_ru: 'Роберт из Словакии делится опытом о крепости Рабат и практическими советами для путешествия по Грузии.',
+    coverImage: 'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771677121/2vyfo99xz2k71_u3ahur.webp', // ჩაანაცვლე რობერტის ფოტოს ლინკით
+    publishedDate: '2026-02-21',
+    author_ka: 'რობერტი (სლოვაკეთი)',
+    author_en: 'Robert (Slovakia)',
+    author_ru: 'Роберт (Словакия)',
+  },
 ]
 
-// Blog content for each post
 export const blogContentData: Record<string, Record<string, BlogContent>> = {
   'discover-svaneti-mountains': {
     ka: {
@@ -382,6 +396,50 @@ export const blogContentData: Record<string, Record<string, BlogContent>> = {
         'Лыжные школы и прокат оборудования'
       ],
       conclusion: 'Гудаури - отличный выбор для любителей снега. Курорт предлагает современную инфраструктуру, хороший снег и прекрасные горные виды.'
+    }
+  },
+  'robert-slovakia-travel-story-georgia': {
+    ka: {
+      intro: 'რობერტი, 26 წლის მოგზაური სლოვაკეთიდან, გვიზიარებს თავის გამოცდილებას საქართველოში მოგზაურობის შესახებ. მისი თქმით, საქართველო არის მრავალფეროვანი, უნიკალური და მეგობრული.',
+      section1Title: 'რაბათის ციხე - მოგზაურობის კულმინაცია',
+      section1Content: 'რობერტისთვის მოგზაურობის ყველაზე შთამბეჭდავი ნაწილი რაბათის ციხე აღმოჩნდა: "ეს ნამდვილად ერთ-ერთი ულამაზესი ციხესიმაგრეა, რაც კი ოდესმე მინახავს. ის ფაქტი, რომ ციხის ტერიტორიაზე სასტუმრო ნომრის დაჯავშნა შეგიძლია, გამოცდილებას კიდევ უფრო განსაკუთრებულს ხდის."',
+      section2Title: 'რჩევები რობერტისგან',
+      section2Content: 'რობერტი გვირჩევს, რომ მანქანის ქირაობისას მზად ვიყოთ სხვადასხვა ხარისხის გზებისთვის. ასევე, აუცილებლად შეიძინეთ ადგილობრივი სიმ-ბარათი კავშირისთვის და გაითვალისწინეთ, რომ რეგიონებში ინგლისური ენა ყველამ არ იცის.',
+      listItems: [
+        'ეწვიეთ რაბათის ციხეს და დარჩით იქაურ სასტუმროში',
+        'მოემზადეთ ქართული გზების მრავალფეროვნებისთვის',
+        'ყოველთვის გქონდეთ ადგილობრივი ინტერნეტი (სიმ-ბარათი)',
+        'გამოიყენეთ ჟესტების ენა ან ისწავლეთ საბაზისო ქართული სიტყვები'
+      ],
+      conclusion: 'რობერტის ისტორია გვახსენებს, რომ საქართველო ევროპელი მოგზაურებისთვის საოცარ თავგადასავლებს მალავს. მადლობა მას ასეთი გულწრფელი რჩევებისთვის!'
+    },
+    en: {
+      intro: 'Robert, a 26-year-old traveler from Slovakia, shares his experience traveling in Georgia. In his words, Georgia is "diverse, unique, and friendly."',
+      section1Title: 'Rabati Castle - The Highlight',
+      section1Content: 'The most impressive part of the trip for Robert was Rabati Castle: "It was truly one of the most beautiful castles I have ever seen. The fact that you can book a room right there makes it even better."',
+      section2Title: 'Robert\'s Travel Tips',
+      section2Content: 'Robert advises that if you rent a car, you should be prepared for roads of various quality. He also recommends buying a local sim card and notes that English isn\'t widely spoken in the countryside.',
+      listItems: [
+        'Visit Rabati Castle and stay in the hotel there',
+        'Be prepared for diverse road conditions',
+        'Always have local internet (SIM card)',
+        'Learn basic Georgian words or use gestures in rural areas'
+      ],
+      conclusion: 'Robert\'s story reminds us that Georgia hides amazing adventures for European travelers. Many thanks to him for these honest tips!'
+    },
+    ru: {
+      intro: 'Роберт, 26-летний путешественник из Словакии, делится своим опытом поездки в Грузию. По его словам, Грузия "многогранная, уникальная и дружелюбная".',
+      section1Title: 'Крепость Рабат - Главное впечатление',
+      section1Content: 'Самой впечатляющей частью поездки для Роберта стала крепость Рабат: "Это действительно одна из самых красивых крепостей, которые я когда-либо видел. Тот факт, что там можно забронировать номер, делает ее еще лучше."',
+      section2Title: 'Советы от Роберта',
+      section2Content: 'Роберт советует при аренде авто быть готовым к разному качеству дорог. Также он рекомендует купить местную сим-карту и отмечает, что в сельской местности не многие говорят по-английски.',
+      listItems: [
+        'Посетите крепость Рабат и остановитесь в местном отеле',
+        'Будьте готовы к разным дорожным условиям',
+        'Всегда имейте местный интернет (сим-карта)',
+        'Выучите базовые слова или используйте жесты в деревнях'
+      ],
+      conclusion: 'История Роберта напоминает нам, что Грузия скрывает удивительные приключения для европейских туристов. Спасибо ему за честные советы!'
     }
   }
 }

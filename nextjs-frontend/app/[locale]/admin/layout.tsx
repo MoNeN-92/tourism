@@ -1,6 +1,6 @@
-// app/[locale]/admin/layout.tsx
 'use client'
 
+// app/[locale]/admin/layout.tsx
 import { useEffect, useState } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -81,6 +81,14 @@ export default function AdminLayout({
                 className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Tours
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={`/${locale}/admin/blog`}
+                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Blog
               </Link>
             </li>
           </ul>

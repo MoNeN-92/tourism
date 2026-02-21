@@ -1,35 +1,40 @@
 'use client'
 
+// app/[locale]/blog/page.tsx
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { mockBlogPosts, type BlogPost } from '@/lib/mockBlogData'
+import api from '@/lib/api'
 
-/**
- * Returns localized field value with fallback to Georgian
- */
+interface ApiBlogPost {
+  id: string
+  slug: string
+  title_ka: string
+  title_en: string
+  title_ru: string
+  excerpt_ka: string
+  excerpt_en: string
+  excerpt_ru: string
+  coverImage: string
+  publishedAt: string | null
+  author_ka: string
+  author_en: string
+  author_ru: string
+}
+
 function getLocalizedField(
-  post: BlogPost,
+  post: BlogPost | ApiBlogPost,
   field: 'title' | 'excerpt' | 'author',
   locale: string
 ): string {
-  const fieldMap: Record<string, keyof BlogPost> = {
-    ka: `${field}_ka` as keyof BlogPost,
-    en: `${field}_en` as keyof BlogPost,
-    ru: `${field}_ru` as keyof BlogPost,
-  }
-
-  const key = fieldMap[locale] || fieldMap['ka']
-  const value = post[key]
-  const fallback = post[`${field}_ka` as keyof BlogPost]
-
-  return (value as string) || (fallback as string) || ''
+  const key = `${field}_${locale}` as keyof typeof post
+  const fallback = `${field}_ka` as keyof typeof post
+  return (post[key] as string) || (post[fallback] as string) || ''
 }
 
-/**
- * Formats date in a consistent way across server and client
- */
 function formatDate(dateString: string, locale: string): string {
   const date = new Date(dateString)
   const day = date.getDate()
@@ -37,63 +42,36 @@ function formatDate(dateString: string, locale: string): string {
   const monthIndex = date.getMonth()
 
   const months = {
-    ka: [
-      'იანვარი',
-      'თებერვალი',
-      'მარტი',
-      'აპრილი',
-      'მაისი',
-      'ივნისი',
-      'ივლისი',
-      'აგვისტო',
-      'სექტემბერი',
-      'ოქტომბერი',
-      'ნოემბერი',
-      'დეკემბერი',
-    ],
-    en: [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ],
-    ru: [
-      'января',
-      'февраля',
-      'марта',
-      'апреля',
-      'мая',
-      'июня',
-      'июля',
-      'августа',
-      'сентября',
-      'октября',
-      'ноября',
-      'декабря',
-    ],
+    ka: ['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    ru: ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'],
   }
 
   const monthNames = months[locale as keyof typeof months] || months.en
   const month = monthNames[monthIndex]
 
-  if (locale === 'ka') {
-    return `${day} ${month}, ${year}`
-  }
-
-  if (locale === 'ru') {
-    return `${day} ${month} ${year}`
-  }
-
-  // default English
+  if (locale === 'ka') return `${day} ${month}, ${year}`
+  if (locale === 'ru') return `${day} ${month} ${year}`
   return `${month} ${day}, ${year}`
+}
+
+// Convert ApiBlogPost to unified format for rendering
+function normalizeApiPost(post: ApiBlogPost): BlogPost {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title_ka: post.title_ka,
+    title_en: post.title_en,
+    title_ru: post.title_ru,
+    excerpt_ka: post.excerpt_ka,
+    excerpt_en: post.excerpt_en,
+    excerpt_ru: post.excerpt_ru,
+    coverImage: post.coverImage,
+    publishedDate: post.publishedAt || new Date().toISOString(),
+    author_ka: post.author_ka,
+    author_en: post.author_en,
+    author_ru: post.author_ru,
+  }
 }
 
 export default function BlogPage() {
@@ -101,7 +79,26 @@ export default function BlogPage() {
   const locale = params.locale as string
   const t = useTranslations('blog')
 
-  const posts = mockBlogPosts
+  const [apiPosts, setApiPosts] = useState<BlogPost[]>([])
+
+  useEffect(() => {
+    const fetchApiPosts = async () => {
+      try {
+        const response = await api.get('/blog')
+        const normalized = response.data.map(normalizeApiPost)
+        setApiPosts(normalized)
+      } catch (err) {
+        // API პოსტები ვერ მოიტანა, მხოლოდ mock-ები ჩანს
+        console.error('Failed to fetch blog posts from API', err)
+      }
+    }
+    fetchApiPosts()
+  }, [])
+
+  // გააერთიანე: API პოსტები პირველი, შემდეგ mock-ები (დუბლიკატების გარეშე)
+  const apiSlugs = new Set(apiPosts.map(p => p.slug))
+  const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
+  const posts = [...apiPosts, ...filteredMock]
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -141,7 +138,6 @@ export default function BlogPage() {
                   href={`/${locale}/blog/${post.slug}`}
                   className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  {/* Image */}
                   <div className="relative aspect-[16/9] overflow-hidden bg-gray-200">
                     <Image
                       src={post.coverImage}
@@ -153,45 +149,29 @@ export default function BlogPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
 
-                  {/* Content */}
                   <div className="flex flex-col flex-grow p-5 sm:p-6">
-                    {/* Date */}
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                       <span>📅</span>
                       <time dateTime={post.publishedDate}>{date}</time>
                     </div>
 
-                    {/* Title */}
                     <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors sm:text-xl">
                       {title}
                     </h3>
 
-                    {/* Excerpt */}
                     <p className="text-gray-600 mb-5 line-clamp-3 flex-grow text-sm sm:text-base">
                       {excerpt}
                     </p>
 
-                    {/* Footer */}
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span>✍️</span>
                         <span>{author}</span>
                       </div>
-
                       <div className="flex items-center gap-1.5 text-blue-600 font-medium text-sm group-hover:gap-2 transition-all">
                         <span>{t('readMore')}</span>
-                        <svg
-                          className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
+                        <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
                     </div>

@@ -1,194 +1,153 @@
 'use client'
 
-// app/[locale]/blog/page.tsx
+// app/[locale]/admin/blog/page.tsx
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
-import { mockBlogPosts, type BlogPost } from '@/lib/mockBlogData'
+import Link from 'next/link'
 import api from '@/lib/api'
 
-interface ApiBlogPost {
+interface BlogPost {
   id: string
   slug: string
   title_ka: string
-  title_en: string
-  title_ru: string
-  excerpt_ka: string
-  excerpt_en: string
-  excerpt_ru: string
-  coverImage: string
-  publishedAt: string | null
-  author_ka: string
-  author_en: string
-  author_ru: string
+  published: boolean
+  createdAt: string
 }
 
-function getLocalizedField(
-  post: BlogPost | ApiBlogPost,
-  field: 'title' | 'excerpt' | 'author',
-  locale: string
-): string {
-  const key = `${field}_${locale}` as keyof typeof post
-  const fallback = `${field}_ka` as keyof typeof post
-  return (post[key] as string) || (post[fallback] as string) || ''
-}
-
-function formatDate(dateString: string, locale: string): string {
-  const date = new Date(dateString)
-  const day = date.getDate()
-  const year = date.getFullYear()
-  const monthIndex = date.getMonth()
-
-  const months = {
-    ka: ['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'],
-    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
-    ru: ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'],
-  }
-
-  const monthNames = months[locale as keyof typeof months] || months.en
-  const month = monthNames[monthIndex]
-
-  if (locale === 'ka') return `${day} ${month}, ${year}`
-  if (locale === 'ru') return `${day} ${month} ${year}`
-  return `${month} ${day}, ${year}`
-}
-
-function normalizeApiPost(post: ApiBlogPost): BlogPost {
-  return {
-    id: post.id,
-    slug: post.slug,
-    title_ka: post.title_ka,
-    title_en: post.title_en,
-    title_ru: post.title_ru,
-    excerpt_ka: post.excerpt_ka,
-    excerpt_en: post.excerpt_en,
-    excerpt_ru: post.excerpt_ru,
-    coverImage: post.coverImage,
-    publishedDate: post.publishedAt || new Date().toISOString(),
-    author_ka: post.author_ka,
-    author_en: post.author_en,
-    author_ru: post.author_ru,
-  }
-}
-
-export default function BlogPage() {
+export default function AdminBlogPage() {
   const params = useParams()
   const locale = params.locale as string
-  const t = useTranslations('blog')
 
-  const [apiPosts, setApiPosts] = useState<BlogPost[]>([])
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchApiPosts = async () => {
-      try {
-        const response = await api.get('/blog')
-        const normalized = response.data.map(normalizeApiPost)
-        setApiPosts(normalized)
-      } catch (err) {
-        console.error('Failed to fetch blog posts from API', err)
-      }
-    }
-    fetchApiPosts()
+    fetchPosts()
   }, [])
 
-  const apiSlugs = new Set(apiPosts.map(p => p.slug))
-  const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-  const posts = [...apiPosts, ...filteredMock]
+  const fetchPosts = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/admin/blog')
+      setPosts(response.data)
+      setError('')
+    } catch (err) {
+      setError('Failed to load blog posts')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero - სურათით */}
-      <div className="relative h-48 sm:h-56 lg:h-64">
-        <Image
-          src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771054787/tourism-platform/osepfgijh6dcvq0lztim.jpg"
-          alt="Blog Hero"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl mb-3 sm:mb-4 text-white">
-                {t('title')}
-              </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-white/90">
-                {t('subtitle')}
-              </p>
-            </div>
-          </div>
+  const handleDelete = async (id: string, title: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
+    )
+    if (!confirmed) return
+
+    try {
+      setDeleting(id)
+      await api.delete(`/admin/blog/${id}`)
+      setPosts(posts.filter(post => post.id !== id))
+      setError('')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete post')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
+    )
+  }
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
-        {posts.length === 0 ? (
-          <div className="text-center py-16 max-w-md mx-auto">
-            <div className="text-6xl mb-6">📝</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('noPosts')}</h2>
-            <p className="text-gray-600">{t('noPostsDesc')}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => {
-              const title = getLocalizedField(post, 'title', locale)
-              const excerpt = getLocalizedField(post, 'excerpt', locale)
-              const author = getLocalizedField(post, 'author', locale)
-              const date = formatDate(post.publishedDate, locale)
+  return (
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Blog Posts</h1>
+          <Link
+            href={`/${locale}/admin/blog/create`}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Add New Post
+          </Link>
+        </div>
 
-              return (
-                <Link
-                  key={post.id}
-                  href={`/${locale}/blog/${post.slug}`}
-                  className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-gray-200">
-                    <Image
-                      src={post.coverImage}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-
-                  <div className="flex flex-col flex-grow p-5 sm:p-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                      <span>📅</span>
-                      <time dateTime={post.publishedDate}>{date}</time>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors sm:text-xl">
-                      {title}
-                    </h3>
-
-                    <p className="text-gray-600 mb-5 line-clamp-3 flex-grow text-sm sm:text-base">
-                      {excerpt}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span>✍️</span>
-                        <span>{author}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-blue-600 font-medium text-sm group-hover:gap-2 transition-all">
-                        <span>{t('readMore')}</span>
-                        <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+        {error && (
+          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6">
+            {error}
           </div>
         )}
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {posts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No blog posts yet</p>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title (KA)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {posts.map((post) => (
+                  <tr key={post.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{post.title_ka}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{post.slug}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        post.published
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {post.published ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link
+                        href={`/${locale}/admin/blog/${post.id}/edit`}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(post.id, post.title_ka)}
+                        disabled={deleting === post.id}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deleting === post.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   )

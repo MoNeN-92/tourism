@@ -55,7 +55,6 @@ function formatDate(dateString: string, locale: string): string {
   return `${month} ${day}, ${year}`
 }
 
-// Convert ApiBlogPost to unified format for rendering
 function normalizeApiPost(post: ApiBlogPost): BlogPost {
   return {
     id: post.id,
@@ -88,30 +87,39 @@ export default function BlogPage() {
         const normalized = response.data.map(normalizeApiPost)
         setApiPosts(normalized)
       } catch (err) {
-        // API პოსტები ვერ მოიტანა, მხოლოდ mock-ები ჩანს
         console.error('Failed to fetch blog posts from API', err)
       }
     }
     fetchApiPosts()
   }, [])
 
-  // გააერთიანე: API პოსტები პირველი, შემდეგ mock-ები (დუბლიკატების გარეშე)
   const apiSlugs = new Set(apiPosts.map(p => p.slug))
   const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
   const posts = [...apiPosts, ...filteredMock]
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-        <div className="container mx-auto px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="max-w-3xl">
-            <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl mb-3 sm:mb-4">
-              {t('title')}
-            </h1>
-            <p className="text-base sm:text-lg lg:text-xl text-blue-100">
-              {t('subtitle')}
-            </p>
+      {/* Hero - სურათით */}
+      <div className="relative h-48 sm:h-56 lg:h-64">
+        <Image
+          src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771054787/tourism-platform/osepfgijh6dcvq0lztim.jpg"
+          alt="Blog Hero"
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl">
+              <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl mb-3 sm:mb-4 text-white">
+                {t('title')}
+              </h1>
+              <p className="text-base sm:text-lg lg:text-xl text-white/90">
+                {t('subtitle')}
+              </p>
+            </div>
           </div>
         </div>
       </div>

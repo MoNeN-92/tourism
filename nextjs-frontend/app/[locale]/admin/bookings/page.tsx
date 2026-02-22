@@ -1,31 +1,23 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useTranslations } from 'next-intl'
+// app/[locale]/admin/bookings/page.tsx
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import api from '@/lib/api'
-
-type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-type RoomType = 'single' | 'double' | 'twin' | 'triple' | 'family'
-type NoteActionType = 'approve' | 'reject' | 'approveChange' | 'rejectChange'
-
-interface BookingChangeRequest {
-  id: string
-  requestedDate: string
-  reason?: string | null
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-  adminNote?: string | null
-}
 
 interface Booking {
   id: string
   desiredDate: string
   adults: number
   children: number
-  roomType: RoomType
-  note?: string | null
-  adminNote?: string | null
-  status: BookingStatus
+  roomType: string
+  note: string | null
+  adminNote: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+  approvedAt: string | null
+  rejectedAt: string | null
+  cancelledAt: string | null
+  createdAt: string
   user: {
     id: string
     firstName: string
@@ -35,64 +27,62 @@ interface Booking {
   }
   tour: {
     id: string
-    slug: string
     title_ka: string
     title_en: string
     title_ru: string
+    slug: string
   }
-  changeRequests: BookingChangeRequest[]
+  changeRequests: ChangeRequest[]
 }
 
-interface NoteDialogState {
-  type: NoteActionType
-  bookingId?: string
-  requestId?: string
+interface ChangeRequest {
+  id: string
+  requestedDate: string
+  reason: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+  adminNote: string | null
+  createdAt: string
 }
 
-interface EditFormState {
-  desiredDate: string
-  adults: string
-  children: string
-  roomType: RoomType
-  adminNote: string
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  APPROVED: 'bg-green-100 text-green-800',
+  REJECTED: 'bg-red-100 text-red-800',
+  CANCELLED: 'bg-gray-100 text-gray-700',
 }
 
-function toDateOnly(value: string) {
-  return new Date(value).toISOString().slice(0, 10)
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'განხილვაში',
+  APPROVED: 'დამტკიცებული',
+  REJECTED: 'უარყოფილი',
+  CANCELLED: 'გაუქმებული',
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString()
+const ROOM_TYPE_LABELS: Record<string, string> = {
+  single: 'ერთადგილიანი',
+  double: 'ორადგილიანი',
+  twin: 'ტვინი',
+  triple: 'სამადგილიანი',
+  family: 'საოჯახო',
 }
-
-function badgeClass(status: BookingStatus) {
-  if (status === 'APPROVED') return 'bg-green-100 text-green-800'
-  if (status === 'REJECTED') return 'bg-red-100 text-red-800'
-  if (status === 'CANCELLED') return 'bg-gray-100 text-gray-700'
-  return 'bg-yellow-100 text-yellow-800'
-}
-
-const ROOM_TYPES: RoomType[] = ['single', 'double', 'twin', 'triple', 'family']
 
 export default function AdminBookingsPage() {
   const params = useParams()
-  const locale = (params.locale as string) || 'en'
-  const t = useTranslations('admin.bookings')
-  const [items, setItems] = useState<Booking[]>([])
+  const locale = (params.locale as string) || 'ka'
+
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [status, setStatus] = useState<BookingStatus | 'ALL'>('ALL')
-  const [actionId, setActionId] = useState<string | null>(null)
-  const [noteDialog, setNoteDialog] = useState<NoteDialogState | null>(null)
-  const [noteValue, setNoteValue] = useState('')
-  const [editTarget, setEditTarget] = useState<Booking | null>(null)
-  const [editForm, setEditForm] = useState<EditFormState>({
-    desiredDate: '',
-    adults: '1',
-    children: '0',
-    roomType: 'double',
-    adminNote: '',
-  })
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+
+  // Modal states
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'approve' | 'reject' | 'reschedule' | 'note' | 'change_request' | ''>('')
+  const [adminNote, setAdminNote] = useState('')
+  const [newDate, setNewDate] = useState('')
+  const [selectedChangeRequest, setSelectedChangeRequest] = useState<ChangeRequest | null>(null)
 
   const getTourTitle = (tour: Booking['tour']) => {
     if (locale === 'ka') return tour.title_ka || tour.title_en
@@ -100,21 +90,15 @@ export default function AdminBookingsPage() {
     return tour.title_en || tour.title_ka
   }
 
-  const visibleItems = useMemo(() => {
-    if (status === 'ALL') {
-      return items
-    }
-    return items.filter((item) => item.status === status)
-  }, [items, status])
-
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/bookings')
-      setItems(response.data)
+      const query = filterStatus ? `?status=${filterStatus}` : ''
+      const response = await api.get(`/admin/bookings${query}`)
+      setBookings(response.data)
       setError('')
-    } catch (requestError: any) {
-      setError(requestError?.response?.data?.message || t('loadFailed'))
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'ჯავშნების ჩატვირთვა ვერ მოხერხდა')
     } finally {
       setLoading(false)
     }
@@ -122,352 +106,396 @@ export default function AdminBookingsPage() {
 
   useEffect(() => {
     fetchBookings()
-  }, [])
+  }, [filterStatus])
 
-  const openNoteDialog = (dialog: NoteDialogState) => {
-    setEditTarget(null)
-    setNoteDialog(dialog)
-    setNoteValue('')
+  const openModal = (type: typeof modalType, booking: Booking, changeRequest?: ChangeRequest) => {
+    setSelectedBooking(booking)
+    setModalType(type)
+    setAdminNote('')
+    setNewDate(booking.desiredDate.slice(0, 10))
+    setSelectedChangeRequest(changeRequest || null)
+    setShowModal(true)
   }
 
-  const openEditDialog = (booking: Booking) => {
-    setNoteDialog(null)
-    setEditTarget(booking)
-    setEditForm({
-      desiredDate: toDateOnly(booking.desiredDate),
-      adults: String(booking.adults),
-      children: String(booking.children),
-      roomType: booking.roomType,
-      adminNote: booking.adminNote || '',
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedBooking(null)
+    setAdminNote('')
+    setNewDate('')
+    setSelectedChangeRequest(null)
+  }
+
+  const handleApprove = async () => {
+    if (!selectedBooking) return
+    setActionLoading(true)
+    try {
+      await api.post(`/admin/bookings/${selectedBooking.id}/approve`, { adminNote })
+      await fetchBookings()
+      closeModal()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'შეცდომა')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!selectedBooking) return
+    setActionLoading(true)
+    try {
+      await api.post(`/admin/bookings/${selectedBooking.id}/reject`, { adminNote })
+      await fetchBookings()
+      closeModal()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'შეცდომა')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleReschedule = async () => {
+    if (!selectedBooking || !newDate) return
+    setActionLoading(true)
+    try {
+      await api.patch(`/admin/bookings/${selectedBooking.id}`, {
+        desiredDate: new Date(newDate).toISOString(),
+        adminNote,
+      })
+      await fetchBookings()
+      closeModal()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'შეცდომა')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleSaveNote = async () => {
+    if (!selectedBooking) return
+    setActionLoading(true)
+    try {
+      await api.patch(`/admin/bookings/${selectedBooking.id}`, { adminNote })
+      await fetchBookings()
+      closeModal()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'შეცდომა')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleChangeRequestDecision = async (approve: boolean) => {
+    if (!selectedChangeRequest) return
+    setActionLoading(true)
+    try {
+      const endpoint = approve
+        ? `/admin/bookings/change-requests/${selectedChangeRequest.id}/approve`
+        : `/admin/bookings/change-requests/${selectedChangeRequest.id}/reject`
+      await api.post(endpoint, { adminNote })
+      await fetchBookings()
+      closeModal()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'შეცდომა')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('ka-GE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     })
   }
 
-  const getNoteDialogTitle = (dialogType: NoteActionType) => {
-    if (dialogType === 'approve') return t('approve')
-    if (dialogType === 'reject') return t('reject')
-    if (dialogType === 'approveChange') return `${t('approve')} • ${t('pendingChangeRequests')}`
-    return `${t('reject')} • ${t('pendingChangeRequests')}`
-  }
-
-  const getNoteErrorMessage = (dialogType: NoteActionType) => {
-    if (dialogType === 'approve') return t('approveFailed')
-    if (dialogType === 'reject') return t('rejectFailed')
-    if (dialogType === 'approveChange') return t('approveChangeFailed')
-    return t('rejectChangeFailed')
-  }
-
-  const submitNoteAction = async () => {
-    if (!noteDialog) return
-
-    const targetId = noteDialog.bookingId || noteDialog.requestId
-    if (!targetId) return
-
-    try {
-      setActionId(targetId)
-      if (noteDialog.type === 'approve') {
-        await api.post(`/admin/bookings/${targetId}/approve`, { adminNote: noteValue })
-      } else if (noteDialog.type === 'reject') {
-        await api.post(`/admin/bookings/${targetId}/reject`, { adminNote: noteValue })
-      } else if (noteDialog.type === 'approveChange') {
-        await api.post(`/admin/bookings/change-requests/${targetId}/approve`, { adminNote: noteValue })
-      } else {
-        await api.post(`/admin/bookings/change-requests/${targetId}/reject`, { adminNote: noteValue })
-      }
-
-      await fetchBookings()
-      setNoteDialog(null)
-      setNoteValue('')
-    } catch (requestError: any) {
-      setError(requestError?.response?.data?.message || getNoteErrorMessage(noteDialog.type))
-    } finally {
-      setActionId(null)
-    }
-  }
-
-  const submitEdit = async () => {
-    if (!editTarget) return
-
-    const adults = Number(editForm.adults)
-    const children = Number(editForm.children)
-
-    if (!editForm.desiredDate || Number.isNaN(adults) || adults < 1 || Number.isNaN(children) || children < 0) {
-      setError(t('editValidation'))
-      return
-    }
-
-    try {
-      setActionId(editTarget.id)
-      await api.patch(`/admin/bookings/${editTarget.id}`, {
-        desiredDate: editForm.desiredDate,
-        adults,
-        children,
-        roomType: editForm.roomType,
-        adminNote: editForm.adminNote,
-      })
-      await fetchBookings()
-      setEditTarget(null)
-    } catch (requestError: any) {
-      setError(requestError?.response?.data?.message || t('editFailed'))
-    } finally {
-      setActionId(null)
-    }
-  }
-
-  if (loading) {
-    return <p className="text-gray-600 p-8">{t('loading')}</p>
-  }
-
   return (
-    <div className="p-8">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">ჯავშნების მართვა</h1>
+          <div className="flex gap-2">
             <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value as BookingStatus | 'ALL')}
-              className="px-3 py-2 rounded-lg border border-gray-300"
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700"
             >
-              <option value="ALL">{t('allStatuses')}</option>
-              <option value="PENDING">{t('pending')}</option>
-              <option value="APPROVED">{t('approved')}</option>
-              <option value="REJECTED">{t('rejected')}</option>
-              <option value="CANCELLED">{t('cancelled')}</option>
+              <option value="">ყველა სტატუსი</option>
+              <option value="PENDING">განხილვაში</option>
+              <option value="APPROVED">დამტკიცებული</option>
+              <option value="REJECTED">უარყოფილი</option>
+              <option value="CANCELLED">გაუქმებული</option>
             </select>
             <button
               onClick={fetchBookings}
-              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
             >
-              {t('refresh')}
+              განახლება
             </button>
           </div>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700">{error}</div>}
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700">{error}</div>
+        )}
 
-        <div className="space-y-4">
-          {visibleItems.map((booking) => {
-            const pendingChangeRequests = booking.changeRequests.filter(
-              (request) => request.status === 'PENDING',
-            )
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">იტვირთება...</div>
+        ) : bookings.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">ჯავშნები არ არის</div>
+        ) : (
+          <div className="space-y-4">
+            {bookings.map(booking => (
+              <div key={booking.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  
+                  {/* Left: Info */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="font-bold text-gray-900 text-lg">{getTourTitle(booking.tour)}</h3>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[booking.status]}`}>
+                        {STATUS_LABELS[booking.status]}
+                      </span>
+                    </div>
 
-            return (
-              <article key={booking.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">{getTourTitle(booking.tour)}</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {booking.user.firstName} {booking.user.lastName} | {booking.user.email} | {booking.user.phone}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {t('date')}: {formatDate(booking.desiredDate)} | {t('adults')}: {booking.adults} |{' '}
-                      {t('children')}: {booking.children} | {t('room')}: {booking.roomType}
-                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-gray-600">
+                      <div>👤 <span className="font-medium">{booking.user.firstName} {booking.user.lastName}</span></div>
+                      <div>📧 {booking.user.email}</div>
+                      <div>📞 {booking.user.phone}</div>
+                      <div>📅 <span className="font-medium">{formatDate(booking.desiredDate)}</span></div>
+                      <div>👥 მოზრდილი: {booking.adults} | ბავშვი: {booking.children}</div>
+                      <div>🛏️ {ROOM_TYPE_LABELS[booking.roomType] || booking.roomType}</div>
+                    </div>
+
                     {booking.note && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {t('userNote')}: {booking.note}
-                      </p>
+                      <div className="text-sm bg-gray-50 rounded-lg px-3 py-2 text-gray-700">
+                        💬 მომხმარებლის შენიშვნა: {booking.note}
+                      </div>
                     )}
+
                     {booking.adminNote && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {t('adminNote')}: {booking.adminNote}
-                      </p>
+                      <div className="text-sm bg-blue-50 rounded-lg px-3 py-2 text-blue-700">
+                        📝 ადმინის შენიშვნა: {booking.adminNote}
+                      </div>
+                    )}
+
+                    {/* Change Requests */}
+                    {booking.changeRequests && booking.changeRequests.filter(cr => cr.status === 'PENDING').length > 0 && (
+                      <div className="mt-2">
+                        {booking.changeRequests.filter(cr => cr.status === 'PENDING').map(cr => (
+                          <div key={cr.id} className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-sm">
+                            <span className="font-medium text-yellow-800">📆 თარიღის შეცვლის მოთხოვნა: </span>
+                            <span className="text-yellow-700">{formatDate(cr.requestedDate)}</span>
+                            {cr.reason && <span className="text-yellow-600"> — {cr.reason}</span>}
+                            <button
+                              onClick={() => openModal('change_request', booking, cr)}
+                              className="ml-2 text-xs bg-yellow-200 hover:bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded transition-colors"
+                            >
+                              განხილვა
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badgeClass(booking.status)}`}>
-                      {t(booking.status.toLowerCase())}
-                    </span>
+                  {/* Right: Actions */}
+                  <div className="flex flex-row lg:flex-col gap-2 flex-wrap">
                     {booking.status === 'PENDING' && (
                       <>
                         <button
-                          onClick={() => openNoteDialog({ type: 'approve', bookingId: booking.id })}
-                          disabled={actionId === booking.id}
-                          className="px-3 py-1.5 rounded-lg border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-60"
+                          onClick={() => openModal('approve', booking)}
+                          className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          {t('approve')}
+                          ✓ დამტკიცება
                         </button>
                         <button
-                          onClick={() => openNoteDialog({ type: 'reject', bookingId: booking.id })}
-                          disabled={actionId === booking.id}
-                          className="px-3 py-1.5 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60"
+                          onClick={() => openModal('reject', booking)}
+                          className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                         >
-                          {t('reject')}
+                          ✗ უარყოფა
                         </button>
                       </>
                     )}
                     <button
-                      onClick={() => openEditDialog(booking)}
-                      disabled={actionId === booking.id}
-                      className="px-3 py-1.5 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                      onClick={() => openModal('reschedule', booking)}
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      {t('edit')}
+                      📅 გადატანა
+                    </button>
+                    <button
+                      onClick={() => openModal('note', booking)}
+                      className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      📝 შენიშვნა
                     </button>
                   </div>
                 </div>
-
-                {pendingChangeRequests.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">{t('pendingChangeRequests')}</h3>
-                    <div className="space-y-2">
-                      {pendingChangeRequests.map((request) => (
-                        <div
-                          key={request.id}
-                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border rounded-lg p-3"
-                        >
-                          <p className="text-sm text-gray-700">
-                            {t('requestFor')} {formatDate(request.requestedDate)}
-                            {request.reason ? ` | ${t('reason')}: ${request.reason}` : ''}
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openNoteDialog({ type: 'approveChange', requestId: request.id })}
-                              disabled={actionId === request.id}
-                              className="px-3 py-1.5 rounded-lg border border-green-300 text-green-700 hover:bg-green-50 disabled:opacity-60"
-                            >
-                              {t('approve')}
-                            </button>
-                            <button
-                              onClick={() => openNoteDialog({ type: 'rejectChange', requestId: request.id })}
-                              disabled={actionId === request.id}
-                              className="px-3 py-1.5 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60"
-                            >
-                              {t('reject')}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </article>
-            )
-          })}
-
-          {visibleItems.length === 0 && <p className="text-gray-600">{t('noItems')}</p>}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {noteDialog && (
-        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900">{getNoteDialogTitle(noteDialog.type)}</h2>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {noteDialog.type === 'reject' || noteDialog.type === 'rejectChange'
-                  ? t('promptRejectionNote')
-                  : t('promptOptionalAdminNote')}
-              </label>
-              <textarea
-                value={noteValue}
-                onChange={(event) => setNoteValue(event.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+      {/* Modal */}
+      {showModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            
+            {/* Approve */}
+            {modalType === 'approve' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">ჯავშნის დამტკიცება</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  <span className="font-medium">{getTourTitle(selectedBooking.tour)}</span><br/>
+                  {selectedBooking.user.firstName} {selectedBooking.user.lastName} — {formatDate(selectedBooking.desiredDate)}
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">შენიშვნა (არასავალდებულო)</label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
+                  placeholder="შეიყვანეთ შენიშვნა..."
+                />
+                <div className="flex gap-3">
+                  <button onClick={handleApprove} disabled={actionLoading}
+                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : 'დამტკიცება'}
+                  </button>
+                  <button onClick={closeModal} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    გაუქმება
+                  </button>
+                </div>
+              </>
+            )}
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => setNoteDialog(null)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                {t('close')}
-              </button>
-              <button
-                onClick={submitNoteAction}
-                disabled={actionId === (noteDialog.bookingId || noteDialog.requestId)}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {actionId === (noteDialog.bookingId || noteDialog.requestId)
-                  ? t('saving')
-                  : noteDialog.type === 'approve' || noteDialog.type === 'approveChange'
-                  ? t('approve')
-                  : t('reject')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* Reject */}
+            {modalType === 'reject' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">ჯავშნის უარყოფა</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  <span className="font-medium">{getTourTitle(selectedBooking.tour)}</span><br/>
+                  {selectedBooking.user.firstName} {selectedBooking.user.lastName} — {formatDate(selectedBooking.desiredDate)}
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">მიზეზი (არასავალდებულო)</label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
+                  placeholder="უარყოფის მიზეზი..."
+                />
+                <div className="flex gap-3">
+                  <button onClick={handleReject} disabled={actionLoading}
+                    className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : 'უარყოფა'}
+                  </button>
+                  <button onClick={closeModal} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    გაუქმება
+                  </button>
+                </div>
+              </>
+            )}
 
-      {editTarget && (
-        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900">{t('edit')}</h2>
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptDesiredDate')}</label>
+            {/* Reschedule */}
+            {modalType === 'reschedule' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">თარიღის გადატანა</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  <span className="font-medium">{getTourTitle(selectedBooking.tour)}</span><br/>
+                  {selectedBooking.user.firstName} {selectedBooking.user.lastName}
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ახალი თარიღი</label>
                 <input
                   type="date"
-                  value={editForm.desiredDate}
-                  onChange={(event) => setEditForm((prev) => ({ ...prev, desiredDate: event.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newDate}
+                  onChange={e => setNewDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-3"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptRoomType')}</label>
-                <select
-                  value={editForm.roomType}
-                  onChange={(event) =>
-                    setEditForm((prev) => ({ ...prev, roomType: event.target.value as RoomType }))
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {ROOM_TYPES.map((roomType) => (
-                    <option key={roomType} value={roomType}>
-                      {roomType}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptAdults')}</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={editForm.adults}
-                  onChange={(event) => setEditForm((prev) => ({ ...prev, adults: event.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium text-gray-700 mb-1">შენიშვნა (არასავალდებულო)</label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
+                  placeholder="გადატანის მიზეზი..."
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptChildren')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={editForm.children}
-                  onChange={(event) => setEditForm((prev) => ({ ...prev, children: event.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
+                <div className="flex gap-3">
+                  <button onClick={handleReschedule} disabled={actionLoading || !newDate}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : 'გადატანა'}
+                  </button>
+                  <button onClick={closeModal} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    გაუქმება
+                  </button>
+                </div>
+              </>
+            )}
 
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptAdminNote')}</label>
-              <textarea
-                rows={3}
-                value={editForm.adminNote}
-                onChange={(event) => setEditForm((prev) => ({ ...prev, adminNote: event.target.value }))}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {/* Note */}
+            {modalType === 'note' && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">შენიშვნის დამატება</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  <span className="font-medium">{getTourTitle(selectedBooking.tour)}</span><br/>
+                  {selectedBooking.user.firstName} {selectedBooking.user.lastName}
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ადმინის შენიშვნა</label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
+                  placeholder={selectedBooking.adminNote || 'შეიყვანეთ შენიშვნა...'}
+                  defaultValue={selectedBooking.adminNote || ''}
+                />
+                <div className="flex gap-3">
+                  <button onClick={handleSaveNote} disabled={actionLoading}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : 'შენახვა'}
+                  </button>
+                  <button onClick={closeModal} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    გაუქმება
+                  </button>
+                </div>
+              </>
+            )}
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => setEditTarget(null)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                {t('close')}
-              </button>
-              <button
-                onClick={submitEdit}
-                disabled={actionId === editTarget.id}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {actionId === editTarget.id ? t('saving') : t('save')}
-              </button>
-            </div>
+            {/* Change Request */}
+            {modalType === 'change_request' && selectedChangeRequest && (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">თარიღის შეცვლის მოთხოვნა</h2>
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm text-gray-700 space-y-1">
+                  <p><span className="font-medium">ტური:</span> {getTourTitle(selectedBooking.tour)}</p>
+                  <p><span className="font-medium">მომხმარებელი:</span> {selectedBooking.user.firstName} {selectedBooking.user.lastName}</p>
+                  <p><span className="font-medium">მიმდინარე თარიღი:</span> {formatDate(selectedBooking.desiredDate)}</p>
+                  <p><span className="font-medium">მოთხოვნილი თარიღი:</span> {formatDate(selectedChangeRequest.requestedDate)}</p>
+                  {selectedChangeRequest.reason && <p><span className="font-medium">მიზეზი:</span> {selectedChangeRequest.reason}</p>}
+                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">შენიშვნა (არასავალდებულო)</label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
+                  placeholder="შენიშვნა..."
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => handleChangeRequestDecision(true)} disabled={actionLoading}
+                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : '✓ დამტკიცება'}
+                  </button>
+                  <button onClick={() => handleChangeRequestDecision(false)} disabled={actionLoading}
+                    className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+                    {actionLoading ? 'იტვირთება...' : '✗ უარყოფა'}
+                  </button>
+                  <button onClick={closeModal} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    გაუქმება
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

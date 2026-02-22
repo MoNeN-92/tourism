@@ -76,10 +76,30 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const excerpt = getLocalizedField(post, 'excerpt', locale)
 
   return {
+  title,
+  description: excerpt,
+  openGraph: {
     title,
     description: excerpt,
-    openGraph: { title, description: excerpt, images: [post.coverImage] },
-  }
+    url: `https://vibegeorgia.com/${locale}/blog/${slug}`,
+    siteName: 'Vibe Georgia',
+    type: 'article',
+    images: [
+      {
+        url: post.coverImage,
+        width: 1200,
+        height: 630,
+        alt: title,
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description: excerpt,
+    images: [post.coverImage],
+  },
+}
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {

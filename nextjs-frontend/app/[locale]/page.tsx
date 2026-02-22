@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
-import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
+// import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
 import type { Metadata } from 'next'
 
 interface TourImage {
@@ -136,17 +136,14 @@ async function getFeaturedTours(): Promise<Tour[]> {
 async function getLatestBlogPosts(): Promise<BlogPost[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/blog`, {
-      cache: 'no-store',
-    })
+    const res = await fetch(`${apiUrl}/blog`, { cache: 'no-store' })
 
     if (!res.ok) {
-      return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
+      return mockBlogPosts.slice(0, 3)
     }
 
     const apiPosts: ApiBlogPost[] = await res.json()
 
-    // Convert to BlogPost format
     const normalized: BlogPost[] = apiPosts.map(p => ({
       id: p.id,
       slug: p.slug,
@@ -160,20 +157,13 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
       publishedDate: p.publishedAt || new Date().toISOString(),
     }))
 
-    if (!normalized.length) {
-      return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
-    }
+    const apiSlugs = new Set(normalized.map(p => p.slug))
+    const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
+    const merged = [...normalized, ...filteredMock]
 
-    if (mergeMockWithApiContent()) {
-      const apiSlugs = new Set(normalized.map(p => p.slug))
-      const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-      const merged = [...normalized, ...filteredMock]
-      return merged.slice(0, 3)
-    }
-
-    return normalized.slice(0, 3)
+    return merged.slice(0, 3)
   } catch (error) {
-    return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
+    return mockBlogPosts.slice(0, 3)
   }
 }
 

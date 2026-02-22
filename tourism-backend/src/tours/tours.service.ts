@@ -28,6 +28,13 @@ export class ToursService {
     });
   }
 
+  async findAllAdmin() {
+    return this.prisma.tour.findMany({
+      include: { images: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findOne(id: string) {
     const tour = await this.prisma.tour.findUnique({
       where: { id },

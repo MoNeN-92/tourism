@@ -4,6 +4,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import api from '@/lib/api'
 
 export default function AdminLayout({
   children,
@@ -14,32 +16,55 @@ export default function AdminLayout({
   const params = useParams()
   const pathname = usePathname()
   const locale = params.locale as string
+  const t = useTranslations('admin.nav')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const isLoginPage = pathname.endsWith('/admin/login')
 
   useEffect(() => {
+    let cancelled = false
+
     if (isLoginPage) {
       setLoading(false)
       return
     }
 
-    const token = localStorage.getItem('token')
-    
-    if (!token) {
-      router.push(`/${locale}/admin/login`)
-    } else {
-      setIsAuthenticated(true)
+    const checkAuth = async () => {
+      try {
+        await api.get('/admin/profile')
+        if (!cancelled) {
+          setIsAuthenticated(true)
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAuthenticated(false)
+          router.replace(`/${locale}/admin/login`)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
     }
-    
-    setLoading(false)
+
+    checkAuth()
+
+    return () => {
+      cancelled = true
+    }
   }, [router, locale, isLoginPage])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // Best-effort logout to avoid blocking UI if API is temporarily unavailable.
+    }
+
     localStorage.removeItem('token')
-    document.cookie = 'token=; path=/; max-age=0'
-    router.push(`/${locale}/admin/login`)
+    router.replace(`/${locale}/admin/login`)
+    router.refresh()
   }
 
   if (isLoginPage) {
@@ -49,7 +74,7 @@ export default function AdminLayout({
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-gray-600">{t('loading')}</div>
       </div>
     )
   }
@@ -62,7 +87,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-100 flex">
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
         </div>
 
         <nav className="flex-1 p-4">
@@ -72,7 +97,7 @@ export default function AdminLayout({
                 href={`/${locale}/admin`}
                 className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
-                Dashboard
+                {t('dashboard')}
               </Link>
             </li>
             <li>
@@ -80,7 +105,31 @@ export default function AdminLayout({
                 href={`/${locale}/admin/tours`}
                 className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
-                Tours
+                {t('tours')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={`/${locale}/admin/bookings`}
+                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                {t('bookings')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={`/${locale}/admin/calendar`}
+                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                {t('calendar')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={`/${locale}/admin/users`}
+                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                {t('users')}
               </Link>
             </li>
             <li>
@@ -88,7 +137,7 @@ export default function AdminLayout({
                 href={`/${locale}/admin/blog`}
                 className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
-                Blog
+                {t('blog')}
               </Link>
             </li>
           </ul>
@@ -99,7 +148,7 @@ export default function AdminLayout({
             onClick={handleLogout}
             className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
           >
-            Logout
+            {t('logout')}
           </button>
         </div>
       </aside>

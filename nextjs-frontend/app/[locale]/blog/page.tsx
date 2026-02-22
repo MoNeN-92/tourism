@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { mockBlogPosts, type BlogPost } from '@/lib/mockBlogData'
 import api from '@/lib/api'
+import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
 
 interface ApiBlogPost {
   id: string
@@ -93,9 +94,22 @@ export default function BlogPage() {
     fetchApiPosts()
   }, [])
 
-  const apiSlugs = new Set(apiPosts.map(p => p.slug))
-  const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-  const posts = [...apiPosts, ...filteredMock]
+  const shouldMergeMockContent = mergeMockWithApiContent()
+  const fallbackWithMockContent = allowMockContent()
+
+  const posts = (() => {
+    if (shouldMergeMockContent) {
+      const apiSlugs = new Set(apiPosts.map(p => p.slug))
+      const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
+      return [...apiPosts, ...filteredMock]
+    }
+
+    if (apiPosts.length > 0) {
+      return apiPosts
+    }
+
+    return fallbackWithMockContent ? mockBlogPosts : []
+  })()
 
   return (
     <div className="min-h-screen bg-gray-50">

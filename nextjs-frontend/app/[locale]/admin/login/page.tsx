@@ -13,6 +13,8 @@ export default function AdminLoginPage() {
   const router = useRouter()
   const params = useParams()
   const locale = params.locale as string
+  const enableLegacyTokenStorage =
+    process.env.NEXT_PUBLIC_ENABLE_LEGACY_TOKEN === 'true'
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
@@ -25,6 +27,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     const res = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -40,11 +43,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         return
       }
       
-      console.log('LOGIN RESPONSE:', data)
-      localStorage.setItem('token', data.access_token)
-      
-      // Set cookie for middleware
-      document.cookie = `token=${data.access_token}; path=/; max-age=86400; SameSite=Lax`
+      if (enableLegacyTokenStorage && data?.access_token) {
+        localStorage.setItem('token', data.access_token)
+      } else {
+        localStorage.removeItem('token')
+      }
 
       router.push(`/${locale}/admin`)
       router.refresh()

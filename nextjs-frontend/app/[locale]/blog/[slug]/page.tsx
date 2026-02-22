@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogData'
+import { allowMockContent } from '@/lib/content-policy'
 
 interface ApiBlogPost {
   id: string
@@ -56,13 +57,19 @@ async function getPostBySlug(slug: string): Promise<{ post: BlogPost | ApiBlogPo
     // API ვერ მოიტანა, mock-ზე გადავდივართ
   }
 
-  const mockPost = mockBlogPosts.find(p => p.slug === slug)
-  if (mockPost) return { post: mockPost, isApi: false }
+  if (allowMockContent()) {
+    const mockPost = mockBlogPosts.find(p => p.slug === slug)
+    if (mockPost) return { post: mockPost, isApi: false }
+  }
 
   return null
 }
 
 function getRelatedPosts(currentSlug: string, limit: number = 3): BlogPost[] {
+  if (!allowMockContent()) {
+    return []
+  }
+
   return mockBlogPosts.filter(post => post.slug !== currentSlug).slice(0, limit)
 }
 

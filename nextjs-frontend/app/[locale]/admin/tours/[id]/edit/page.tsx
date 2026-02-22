@@ -38,6 +38,9 @@ export default function EditTourPage() {
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
   const [uploadError, setUploadError] = useState('')
+  const [imageDeleteError, setImageDeleteError] = useState('')
+  const [confirmDeleteImageId, setConfirmDeleteImageId] = useState<string | null>(null)
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTour()
@@ -149,13 +152,16 @@ export default function EditTourPage() {
   }
 
   const handleDeleteImage = async (imageId: string) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) return
-
     try {
+      setDeletingImageId(imageId)
       await api.delete(`/admin/tours/images/${imageId}`)
       setImages(prev => prev.filter(img => img.id !== imageId))
+      setConfirmDeleteImageId(null)
+      setImageDeleteError('')
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete image')
+      setImageDeleteError(err.response?.data?.message || 'Failed to delete image')
+    } finally {
+      setDeletingImageId(null)
     }
   }
 
@@ -344,6 +350,11 @@ export default function EditTourPage() {
                     {uploadError}
                   </div>
                 )}
+                {imageDeleteError && (
+                  <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                    {imageDeleteError}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -352,12 +363,30 @@ export default function EditTourPage() {
                 {images.map((image) => (
                   <div key={image.id} className="relative group">
                     <img src={image.url} alt="Tour" className="w-full h-48 object-cover rounded-lg border border-gray-200" />
-                    <button
-                      onClick={() => handleDeleteImage(image.id)}
-                      className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm font-medium"
-                    >
-                      Delete
-                    </button>
+                    {confirmDeleteImageId === image.id ? (
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        <button
+                          onClick={() => handleDeleteImage(image.id)}
+                          disabled={deletingImageId === image.id}
+                          className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 text-xs font-medium disabled:opacity-60"
+                        >
+                          {deletingImageId === image.id ? 'Deleting...' : 'Confirm'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteImageId(null)}
+                          className="bg-white text-gray-700 px-2 py-1 rounded text-xs font-medium border border-gray-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteImageId(image.id)}
+                        className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm font-medium"
+                      >
+                        Delete
+                      </button>
+                    )}
                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                       {new Date(image.createdAt).toLocaleDateString()}
                     </div>

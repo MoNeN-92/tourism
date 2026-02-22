@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
+import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
 import type { Metadata } from 'next'
 
 interface TourImage {
@@ -92,6 +93,27 @@ function formatDate(dateString: string, locale: string): string {
   )
 }
 
+function formatDuration(duration: string, locale: string): string {
+  const value = String(duration || '').trim()
+
+  if (!value) {
+    return ''
+  }
+
+  if (/^\d+$/.test(value)) {
+    const days = Number(value)
+    const labels = {
+      ka: 'დღე',
+      en: days === 1 ? 'day' : 'days',
+      ru: 'дн.',
+    }
+
+    return `${days} ${labels[locale as keyof typeof labels] || labels.en}`
+  }
+
+  return value
+}
+
 async function getFeaturedTours(): Promise<Tour[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -118,7 +140,9 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
       cache: 'no-store',
     })
 
-    if (!res.ok) return []
+    if (!res.ok) {
+      return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
+    }
 
     const apiPosts: ApiBlogPost[] = await res.json()
 
@@ -136,15 +160,20 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
       publishedDate: p.publishedAt || new Date().toISOString(),
     }))
 
-    // Merge: API first, then mock (no duplicates)
-    const apiSlugs = new Set(normalized.map(p => p.slug))
-    const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-    const merged = [...normalized, ...filteredMock]
+    if (!normalized.length) {
+      return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
+    }
 
-    return merged.slice(0, 3)
+    if (mergeMockWithApiContent()) {
+      const apiSlugs = new Set(normalized.map(p => p.slug))
+      const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
+      const merged = [...normalized, ...filteredMock]
+      return merged.slice(0, 3)
+    }
+
+    return normalized.slice(0, 3)
   } catch (error) {
-    // Fallback to mock only
-    return mockBlogPosts.slice(0, 3)
+    return allowMockContent() ? mockBlogPosts.slice(0, 3) : []
   }
 }
 
@@ -322,7 +351,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         <div className="p-5">
                           <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">{title}</h3>
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{description}</p>
-                          <div className="text-sm text-gray-500">⏱️ {tour.duration}</div>
+                          <div className="text-sm text-gray-500">⏱️ {formatDuration(tour.duration, locale)}</div>
                         </div>
                       </Link>
                     </article>

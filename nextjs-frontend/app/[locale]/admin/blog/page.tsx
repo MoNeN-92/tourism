@@ -22,6 +22,7 @@ export default function AdminBlogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPosts()
@@ -41,16 +42,12 @@ export default function AdminBlogPage() {
     }
   }
 
-  const handleDelete = async (id: string, title: string) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
-    )
-    if (!confirmed) return
-
+  const handleDelete = async (id: string) => {
     try {
       setDeleting(id)
       await api.delete(`/admin/blog/${id}`)
-      setPosts(posts.filter(post => post.id !== id))
+      setPosts((prev) => prev.filter((post) => post.id !== id))
+      setConfirmDeleteId(null)
       setError('')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete post')
@@ -134,13 +131,31 @@ export default function AdminBlogPage() {
                       >
                         Edit
                       </Link>
-                      <button
-                        onClick={() => handleDelete(post.id, post.title_ka)}
-                        disabled={deleting === post.id}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {deleting === post.id ? 'Deleting...' : 'Delete'}
-                      </button>
+                      {confirmDeleteId === post.id ? (
+                        <span className="inline-flex items-center gap-2">
+                          <button
+                            onClick={() => handleDelete(post.id)}
+                            disabled={deleting === post.id}
+                            className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {deleting === post.id ? 'Deleting...' : 'Confirm'}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(post.id)}
+                          disabled={deleting === post.id}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

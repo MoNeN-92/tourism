@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { useParams } from 'next/navigation'
 import { Mail, Phone, Facebook, Instagram, Send } from 'lucide-react'
 
 export default function Footer() {
   const t = useTranslations('footer')
+  const params = useParams()
+  const locale = (params.locale as string) || 'ka'
   
   return (
     <footer className="bg-gray-900 text-gray-300 mt-auto border-t border-gray-800">
@@ -94,8 +97,8 @@ export default function Footer() {
         <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-500">
           <p>&copy; {new Date().getFullYear()} Vibe Georgia. {t('rights')}</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href={`/${locale}/privacy`} className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href={`/${locale}/terms`} className="hover:text-white transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

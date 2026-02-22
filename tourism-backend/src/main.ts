@@ -7,12 +7,27 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // CORS-ის ჩასწორებული კონფიგურაცია
+  const configuredCorsOrigins =
+    process.env.CORS_ORIGINS?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? [];
+
+  const corsOrigins = Array.from(
+    new Set([
+      ...configuredCorsOrigins,
+      ...(process.env.NODE_ENV !== 'production'
+        ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+        : []),
+      'https://vibegeorgia.com',
+      'https://www.vibegeorgia.com',
+    ]),
+  );
+
   app.enableCors({
-  origin: ['https://vibegeorgia.com', 'http://localhost:3000'],
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-});
+    origin: corsOrigins,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -27,11 +42,11 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
+  const host = process.env.HOST || '::';
 
-  // 0.0.0.0 აუცილებელია, რომ კონტეინერმა გარედან მიიღოს მოთხოვნები
-  await app.listen(port, '0.0.0.0');
+  await app.listen(port, host);
 
-  console.log(`🚀 Backend running on port ${port}`);
+  console.log(`🚀 Backend running on ${host}:${port}`);
 }
 
 bootstrap();

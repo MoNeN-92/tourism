@@ -46,6 +46,27 @@ function getLocalizedField(tour: Tour, field: 'title' | 'description' | 'locatio
   return (localizedValue as string) || (fallbackValue as string) || ''
 }
 
+function formatDuration(duration: string, locale: string): string {
+  const value = String(duration || '').trim()
+
+  if (!value) {
+    return ''
+  }
+
+  if (/^\d+$/.test(value)) {
+    const days = Number(value)
+    const labels = {
+      ka: 'დღე',
+      en: days === 1 ? 'day' : 'days',
+      ru: 'дн.',
+    }
+
+    return `${days} ${labels[locale as keyof typeof labels] || labels.en}`
+  }
+
+  return value
+}
+
 async function getTours() {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -149,7 +170,7 @@ export default function ToursPage() {
                     {/* Duration Badge */}
                     <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
                       <span className="text-xs sm:text-sm font-medium text-gray-900 flex items-center gap-1">
-                        ⏱️ {tour.duration}
+                        ⏱️ {formatDuration(tour.duration, locale)}
                       </span>
                     </div>
                   </div>

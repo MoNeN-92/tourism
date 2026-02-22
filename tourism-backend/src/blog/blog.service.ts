@@ -47,12 +47,23 @@ export class BlogService {
   }
 
   async update(id: string, dto: UpdateBlogPostDto) {
-    await this.findOne(id)
+    const existing = await this.findOne(id)
+    const nextPublished = dto.published ?? existing.published
+    let publishedAt = existing.publishedAt
+
+    if (!existing.published && nextPublished) {
+      publishedAt = new Date()
+    }
+
+    if (existing.published && !nextPublished) {
+      publishedAt = null
+    }
+
     return this.prisma.blogPost.update({
       where: { id },
       data: {
         ...dto,
-        publishedAt: dto.published ? new Date() : null,
+        publishedAt,
       },
     })
   }

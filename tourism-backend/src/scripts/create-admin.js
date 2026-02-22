@@ -4,14 +4,32 @@ const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  const firstName = process.env.ADMIN_FIRST_NAME || 'Admin';
+  const lastName = process.env.ADMIN_LAST_NAME || 'User';
+
+  if (!email || !password) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required');
+  }
+
+  const existingAdmin = await prisma.admin.findUnique({
+    where: { email },
+  });
+
+  if (existingAdmin) {
+    console.log(`Admin already exists for email: ${email}`);
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const admin = await prisma.admin.create({
     data: {
-      email: 'admin@tourism.com',
+      email,
       password: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'User',
+      firstName,
+      lastName,
       role: 'admin',
     },
   });

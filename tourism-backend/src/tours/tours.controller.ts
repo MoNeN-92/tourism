@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   UseGuards,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -33,6 +32,11 @@ export class ToursController {
 @UseGuards(JwtAuthGuard)
 export class AdminToursController {
   constructor(private toursService: ToursService) {}
+
+  @Get()
+  findAll() {
+    return this.toursService.findAllAdmin();
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

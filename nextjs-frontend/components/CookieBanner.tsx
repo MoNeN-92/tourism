@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 export default function CookieBanner() {
   const [showBanner, setShowBanner] = useState(false)
   const [showPreferences, setShowPreferences] = useState(false)
   const t = useTranslations('cookies')
+  const params = useParams()
+  const locale = (params.locale as string) || 'ka'
 
   const [preferences, setPreferences] = useState({
     necessary: true, // Always true
@@ -95,7 +98,7 @@ export default function CookieBanner() {
                   </h3>
                   <p className="text-sm text-gray-600">
                     {t('description')}{' '}
-                    <Link href="/privacy" className="text-blue-600 hover:underline">
+                    <Link href={`/${locale}/privacy`} className="text-blue-600 hover:underline">
                       {t('learnMore')}
                     </Link>
                   </p>

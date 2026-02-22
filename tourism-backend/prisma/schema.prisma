@@ -18,9 +18,24 @@ model Admin {
   updatedAt DateTime @updatedAt
 }
 
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String
+  isActive      Boolean        @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]
+  notifications Notification[]
+}
+
 model Tour {
-  id          String      @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Multi-language fields
   title_ka       String
   title_en       String
@@ -31,22 +46,88 @@ model Tour {
   location_ka    String?
   location_en    String?
   location_ru    String?
-  
+
   // Legacy fields (kept for backward compatibility)
-  title       String      @default("")
-  slug        String      @unique
-  description String      @default("")
-  
+  title       String @default("")
+  slug        String @unique
+  description String @default("")
+
   // Non-translatable fields
-  price       Float?
-  duration    String
-  status      Boolean     @default(true)
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
+  price    Float?
+  duration String
+  status   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  images      TourImage[]
+  images   TourImage[]
+  bookings Booking[]
+}
+
+model Booking {
+  id             String                 @id @default(uuid())
+  userId         String
+  tourId         String
+  desiredDate    DateTime
+  adults         Int
+  children       Int                    @default(0)
+  roomType       RoomType
+  note           String?
+  adminNote      String?
+  status         BookingStatus          @default(PENDING)
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tour           Tour                   @relation(fields: [tourId], references: [id], onDelete: Restrict)
+  changeRequests BookingChangeRequest[]
+
+  @@index([desiredDate, status])
+  @@index([userId, createdAt])
+  @@index([tourId, desiredDate])
+}
+
+model BookingChangeRequest {
+  id            String                     @id @default(uuid())
+  bookingId     String
+  requestedDate DateTime
+  reason        String?
+  status        BookingChangeRequestStatus @default(PENDING)
+  adminNote     String?
+  resolvedAt    DateTime?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  booking       Booking                    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, status])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+}
+
+model EmailLog {
+  id             String         @id @default(uuid())
+  recipientEmail String
+  template       String
+  payload        Json?
+  status         EmailLogStatus
+  error          String?
+  createdAt      DateTime       @default(now())
 }
 
 model TourImage {
@@ -55,35 +136,74 @@ model TourImage {
   publicId  String
   tourId    String
   createdAt DateTime @default(now())
-  
-  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
-  
+
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
   @@index([tourId])
 }
+
 model BlogPost {
-  id          String   @id @default(uuid())
-  slug        String   @unique
-  
-  title_ka    String
-  title_en    String
-  title_ru    String
-  
-  excerpt_ka  String
-  excerpt_en  String
-  excerpt_ru  String
-  
-  content_ka  String
-  content_en  String
-  content_ru  String
-  
-  author_ka   String
-  author_en   String
-  author_ru   String
-  
+  id   String @id @default(uuid())
+  slug String @unique
+
+  title_ka String
+  title_en String
+  title_ru String
+
+  excerpt_ka String
+  excerpt_en String
+  excerpt_ru String
+
+  content_ka String
+  content_en String
+  content_ru String
+
+  author_ka String
+  author_en String
+  author_ru String
+
   coverImage  String
-  published   Boolean  @default(false)
+  published   Boolean   @default(false)
   publishedAt DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RoomType {
+  single
+  double
+  twin
+  triple
+  family
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum BookingChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  BOOKING_CHANGE_REQUESTED
+  BOOKING_CHANGE_APPROVED
+  BOOKING_CHANGE_REJECTED
+}
+
+enum EmailLogStatus {
+  SENT
+  FAILED
+  FALLBACK_LOGGED
 }

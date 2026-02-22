@@ -271,5 +271,23 @@
     "contactTitle": "Didn't find your answer?",
     "contactSubtitle": "Contact us and our team will help you",
     "contactButton": "Contact Us"
-  }
+  },
+  "Terms": {
+  "title": "Terms of Service",
+  "section1_title": "Acceptance of Terms",
+  "section1_text": "By using our website, you agree to these Terms of Service. Please read them carefully before using our services.",
+  "section2_title": "Use of Services",
+  "section2_text": "You agree to use our services for lawful purposes only and in a manner that does not infringe the rights of others."
+},
+"Privacy": {
+  "title": "Privacy Policy",
+  "intro": "Vibe Georgia respects your privacy and is committed to protecting your personal data.",
+  "section1_title": "Data Collection",
+  "section1_text": "We collect only the information necessary to provide our services: name, email address, and contact details.",
+  "section2_title": "Use of Data",
+  "section2_text": "Your data is used solely for processing bookings and communication. We do not sell your data to third parties.",
+  "section3_title": "Data Protection",
+  "section3_text": "We use modern security technologies to protect your personal information."
+}
+  
 }

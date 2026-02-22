@@ -55,6 +55,9 @@ npm run build
 npm run start:prod
 ```
 
+თუ გარემოში დაყენებულია `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` (ან `ADMIN_EMAIL`/`ADMIN_PASSWORD`),
+აპი სტარტისას ავტომატურად გააკეთებს admin ანგარიშის upsert/sync-ს.
+
 ## API Endpoints
 
 ### Public

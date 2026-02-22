@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 
 @Module({
   imports: [
@@ -31,6 +32,6 @@ import { BookingsModule } from './bookings/bookings.module';
     BookingsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AdminBootstrapService],
 })
 export class AppModule {}

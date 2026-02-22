@@ -6,6 +6,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import api from '@/lib/api'
+import { clearAdminAccessToken } from '@/lib/auth-token'
 
 interface AuthUser {
   firstName?: string
@@ -123,7 +124,7 @@ export default function Header() {
     } catch {
       // Best effort logout.
     } finally {
-      localStorage.removeItem('token')
+      clearAdminAccessToken()
       setAuthMode('guest')
       setAuthUser(null)
       setIsMenuOpen(false)

@@ -6,6 +6,7 @@ import { useRouter, useParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import api from '@/lib/api'
+import { clearAdminAccessToken } from '@/lib/auth-token'
 
 export default function AdminLayout({
   children,
@@ -62,7 +63,7 @@ export default function AdminLayout({
       // Best-effort logout to avoid blocking UI if API is temporarily unavailable.
     }
 
-    localStorage.removeItem('token')
+    clearAdminAccessToken()
     router.replace(`/${locale}/admin/login`)
     router.refresh()
   }

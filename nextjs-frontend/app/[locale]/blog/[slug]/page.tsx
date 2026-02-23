@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogData'
-import { allowMockContent } from '@/lib/content-policy'
 
 interface ApiBlogPost {
   id: string
@@ -57,19 +56,13 @@ async function getPostBySlug(slug: string): Promise<{ post: BlogPost | ApiBlogPo
     // API ვერ მოიტანა, mock-ზე გადავდივართ
   }
 
-  if (allowMockContent()) {
-    const mockPost = mockBlogPosts.find(p => p.slug === slug)
-    if (mockPost) return { post: mockPost, isApi: false }
-  }
+  const mockPost = mockBlogPosts.find(p => p.slug === slug)
+  if (mockPost) return { post: mockPost, isApi: false }
 
   return null
 }
 
 function getRelatedPosts(currentSlug: string, limit: number = 3): BlogPost[] {
-  if (!allowMockContent()) {
-    return []
-  }
-
   return mockBlogPosts.filter(post => post.slug !== currentSlug).slice(0, limit)
 }
 
@@ -83,30 +76,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const excerpt = getLocalizedField(post, 'excerpt', locale)
 
   return {
-  title,
-  description: excerpt,
-  openGraph: {
     title,
     description: excerpt,
-    url: `https://vibegeorgia.com/${locale}/blog/${slug}`,
-    siteName: 'Vibe Georgia',
-    type: 'article',
-    images: [
-      {
-        url: post.coverImage,
-        width: 1200,
-        height: 630,
-        alt: title,
-      }
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description: excerpt,
-    images: [post.coverImage],
-  },
-}
+    openGraph: {
+      title,
+      description: excerpt,
+      url: `https://vibegeorgia.com/${locale}/blog/${slug}`,
+      siteName: 'Vibe Georgia',
+      type: 'article',
+      images: [{ url: post.coverImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: excerpt,
+      images: [post.coverImage],
+    },
+  }
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {

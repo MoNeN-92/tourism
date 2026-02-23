@@ -1,11 +1,10 @@
 // app/[locale]/tours/[slug]/page.tsx
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import api from '@/lib/api'
 
 interface TourImage {
   id: string
@@ -32,8 +31,6 @@ interface Tour {
   createdAt: string
   updatedAt: string
 }
-
-type RoomType = 'single' | 'double' | 'twin' | 'triple' | 'family'
 
 function getLocalizedField(
   tour: Tour,
@@ -70,33 +67,19 @@ async function getTour(slug: string) {
 
 export default function TourPage() {
   const params = useParams()
-  const router = useRouter()
   const slug = params.slug as string
   const locale = params.locale as string
   const t = useTranslations('tours')
-  const bookingT = useTranslations('bookingForm')
 
   const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
-
-  const [desiredDate, setDesiredDate] = useState('')
-  const [adults, setAdults] = useState(1)
-  const [children, setChildren] = useState(0)
-  const [roomType, setRoomType] = useState<RoomType>('double')
-  const [note, setNote] = useState('')
-  const [bookingLoading, setBookingLoading] = useState(false)
-  const [bookingError, setBookingError] = useState('')
-  const [bookingSuccess, setBookingSuccess] = useState('')
-
-  const minDate = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
   useEffect(() => {
     const fetchTour = async () => {
       const data = await getTour(slug)
       setTour(data)
       setLoading(false)
-      setDesiredDate(new Date().toISOString().slice(0, 10))
     }
 
     fetchTour()
@@ -113,45 +96,6 @@ export default function TourPage() {
       document.body.style.overflow = 'unset'
     }
   }, [selectedImageIndex])
-
-  const handleBookingSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-
-    if (!tour) {
-      return
-    }
-
-    setBookingLoading(true)
-    setBookingError('')
-    setBookingSuccess('')
-
-    try {
-      await api.post('/bookings', {
-        tourId: tour.id,
-        desiredDate,
-        adults,
-        children,
-        roomType,
-        note: note.trim() || undefined,
-      })
-
-      setBookingSuccess(bookingT('success'))
-      setNote('')
-    } catch (error: any) {
-      const status = error?.response?.status
-      const message = error?.response?.data?.message
-
-      if (status === 401 || status === 403) {
-        const nextPath = encodeURIComponent(`/${locale}/tours/${slug}`)
-        router.push(`/${locale}/account/login?next=${nextPath}`)
-        return
-      }
-
-      setBookingError(message || bookingT('failed'))
-    } finally {
-      setBookingLoading(false)
-    }
-  }
 
   const openLightbox = (index: number) => {
     setSelectedImageIndex(index)
@@ -252,96 +196,6 @@ export default function TourPage() {
                 {description}
               </p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mt-6 sm:mt-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{bookingT('title')}</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              {bookingT('subtitle')}
-            </p>
-
-            <form onSubmit={handleBookingSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{bookingT('desiredDate')}</label>
-                  <input
-                    type="date"
-                    required
-                    min={minDate}
-                    value={desiredDate}
-                    onChange={(event) => setDesiredDate(event.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{bookingT('adults')}</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    required
-                    value={adults}
-                    onChange={(event) => setAdults(Number(event.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{bookingT('children')}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={50}
-                    required
-                    value={children}
-                    onChange={(event) => setChildren(Number(event.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{bookingT('roomType')}</label>
-                  <select
-                    value={roomType}
-                    onChange={(event) => setRoomType(event.target.value as RoomType)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="single">{bookingT('room.single')}</option>
-                    <option value="double">{bookingT('room.double')}</option>
-                    <option value="twin">{bookingT('room.twin')}</option>
-                    <option value="triple">{bookingT('room.triple')}</option>
-                    <option value="family">{bookingT('room.family')}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{bookingT('note')}</label>
-                <textarea
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder={bookingT('notePlaceholder')}
-                />
-              </div>
-
-              {bookingError && (
-                <div className="px-3 py-2 text-sm rounded-lg bg-red-50 text-red-700">{bookingError}</div>
-              )}
-              {bookingSuccess && (
-                <div className="px-3 py-2 text-sm rounded-lg bg-green-50 text-green-700">{bookingSuccess}</div>
-              )}
-
-              <button
-                type="submit"
-                disabled={bookingLoading}
-                className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {bookingLoading ? bookingT('submitting') : bookingT('submit')}
-              </button>
-            </form>
           </div>
 
           {tour.images.length > 1 && (

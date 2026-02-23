@@ -6,5 +6,5 @@ export default async function AccountIndexPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  redirect(`/${locale}/account/bookings`)
+  redirect(`/${locale}/account/notifications`)
 }

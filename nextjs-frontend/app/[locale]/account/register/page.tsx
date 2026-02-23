@@ -20,7 +20,7 @@ export default function AccountRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const next = searchParams.get('next') || `/${locale}/account/bookings`
+  const next = searchParams.get('next') || `/${locale}/account/notifications`
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

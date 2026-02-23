@@ -108,12 +108,6 @@ export default function AccountLayout({
 
             <nav className="space-y-2">
               <Link
-                href={`/${locale}/account/bookings`}
-                className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {t('myBookings')}
-              </Link>
-              <Link
                 href={`/${locale}/account/notifications`}
                 className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
               >

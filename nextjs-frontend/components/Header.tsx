@@ -165,7 +165,7 @@ export default function Header() {
       return (
         <div className="ml-4 border-l pl-4 flex items-center gap-2">
           <Link
-            href={`/${locale}/account/bookings`}
+            href={`/${locale}/account/notifications`}
             className="px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2 max-w-[220px]"
             title={accountLabel}
           >
@@ -236,7 +236,7 @@ export default function Header() {
       return (
         <div className="pt-4 border-t flex flex-col gap-2">
           <Link
-            href={`/${locale}/account/bookings`}
+            href={`/${locale}/account/notifications`}
             className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-center"
             onClick={() => setIsMenuOpen(false)}
           >

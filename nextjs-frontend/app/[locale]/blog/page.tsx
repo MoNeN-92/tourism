@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { mockBlogPosts, type BlogPost } from '@/lib/mockBlogData'
 import api from '@/lib/api'
+import ProgressiveImage from '@/components/ProgressiveImage'
 // import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
 
 interface ApiBlogPost {
@@ -104,14 +105,15 @@ export default function BlogPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero - სურათით */}
       <div className="relative h-48 sm:h-56 lg:h-64">
-        <Image
-          src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771054787/tourism-platform/osepfgijh6dcvq0lztim.jpg"
-          alt="Blog Hero"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
+  <ProgressiveImage
+    src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771054787/tourism-platform/osepfgijh6dcvq0lztim.jpg"
+    lowResSrc="https://res.cloudinary.com/dj7qaif1i/image/upload/w_20,q_10,e_blur:200/v1771054787/tourism-platform/osepfgijh6dcvq0lztim.jpg"
+    alt="Blog Hero"
+    priority
+    sizes="100vw"
+    className="object-cover"
+  />
+
         <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">

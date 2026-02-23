@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
-// import { allowMockContent, mergeMockWithApiContent } from '@/lib/content-policy'
+import ProgressiveImage from '@/components/ProgressiveImage'
 import type { Metadata } from 'next'
 
 interface TourImage {
@@ -95,11 +95,7 @@ function formatDate(dateString: string, locale: string): string {
 
 function formatDuration(duration: string, locale: string): string {
   const value = String(duration || '').trim()
-
-  if (!value) {
-    return ''
-  }
-
+  if (!value) return ''
   if (/^\d+$/.test(value)) {
     const days = Number(value)
     const labels = {
@@ -107,10 +103,8 @@ function formatDuration(duration: string, locale: string): string {
       en: days === 1 ? 'day' : 'days',
       ru: 'дн.',
     }
-
     return `${days} ${labels[locale as keyof typeof labels] || labels.en}`
   }
-
   return value
 }
 
@@ -121,9 +115,7 @@ async function getFeaturedTours(): Promise<Tour[]> {
       cache: 'no-store',
       next: { revalidate: 0 }
     })
-    
     if (!res.ok) return []
-    
     const allTours: Tour[] = await res.json()
     const activeTours = allTours.filter(tour => tour.status === true)
     const shuffled = [...activeTours].sort(() => Math.random() - 0.5)
@@ -137,13 +129,8 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const res = await fetch(`${apiUrl}/blog`, { cache: 'no-store' })
-
-    if (!res.ok) {
-      return mockBlogPosts.slice(0, 3)
-    }
-
+    if (!res.ok) return mockBlogPosts.slice(0, 3)
     const apiPosts: ApiBlogPost[] = await res.json()
-
     const normalized: BlogPost[] = apiPosts.map(p => ({
       id: p.id,
       slug: p.slug,
@@ -156,12 +143,9 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
       coverImage: p.coverImage,
       publishedDate: p.publishedAt || new Date().toISOString(),
     }))
-
     const apiSlugs = new Set(normalized.map(p => p.slug))
     const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-    const merged = [...normalized, ...filteredMock]
-
-    return merged.slice(0, 3)
+    return [...normalized, ...filteredMock].slice(0, 3)
   } catch (error) {
     return mockBlogPosts.slice(0, 3)
   }
@@ -170,11 +154,9 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'home' })
-  
   const title = t('seo.title')
   const description = t('seo.description')
   const url = `https://vibegeorgia.com/${locale}`
-  
   return {
     title,
     description,
@@ -187,12 +169,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: 'Vibe Georgia',
       locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
       type: 'website',
-      images: [{
-        url: 'https://vibegeorgia.com/og-home.jpg',
-        width: 1200,
-        height: 630,
-        alt: title,
-      }],
+      images: [{ url: 'https://vibegeorgia.com/og-home.jpg', width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -221,6 +198,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
   }
 }
+
+// Hero სურათები - Cloudinary ავტომატურად გენერირებს დაბალ ხარისხს
+const HERO_HIGH_RES = 'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg'
+const HERO_LOW_RES = 'https://res.cloudinary.com/dj7qaif1i/image/upload/w_20,q_10,e_blur:200/v1771396197/cover_1_secna5.jpg'
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -278,15 +259,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="min-h-screen">
+
         {/* Hero Section */}
         <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
-          <Image
-            src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg"
+          <ProgressiveImage
+            src={HERO_HIGH_RES}
+            lowResSrc={HERO_LOW_RES}
             alt={t('hero.imageAlt')}
-            fill
-            className="object-cover"
             priority
             sizes="100vw"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -320,7 +302,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {t('featuredTours.subtitle')}
               </p>
             </div>
-
             {featuredTours.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                 {featuredTours.map((tour) => {
@@ -329,7 +310,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   const coverImage = tour.images.length > 0
                     ? tour.images[0].url
                     : 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80'
-
                   return (
                     <article key={tour.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link href={`/${locale}/tours/${tour.slug}`}>
@@ -410,13 +390,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">{t('latestBlog.title')}</h2>
               <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">{t('latestBlog.subtitle')}</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-8">
               {latestPosts.map((post) => {
                 const title = getLocalizedField(post, 'title', locale)
                 const excerpt = getLocalizedField(post, 'excerpt', locale)
                 const formattedDate = formatDate(post.publishedDate, locale)
-
                 return (
                   <article key={post.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                     <Link href={`/${locale}/blog/${post.slug}`}>
@@ -437,7 +415,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 )
               })}
             </div>
-
             <div className="text-center">
               <Link href={`/${locale}/blog`} className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                 {t('latestBlog.viewAll')}
@@ -456,6 +433,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </div>
         </section>
+
       </div>
     </>
   )

@@ -1,0 +1,24 @@
+-- CreateEnum
+CREATE TYPE "BookingServiceStatus" AS ENUM ('PENDING', 'COMPLETED');
+
+-- AlterTable
+ALTER TABLE "Booking"
+  ADD COLUMN "guestName" TEXT,
+  ADD COLUMN "guestEmail" TEXT,
+  ADD COLUMN "guestPhone" TEXT,
+  ADD COLUMN "hotelName" TEXT,
+  ADD COLUMN "hotelCheckIn" TIMESTAMP(3),
+  ADD COLUMN "hotelCheckOut" TIMESTAMP(3),
+  ADD COLUMN "hotelRoomType" TEXT,
+  ADD COLUMN "hotelGuests" INTEGER,
+  ADD COLUMN "hotelNotes" TEXT,
+  ADD COLUMN "totalPrice" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  ADD COLUMN "amountPaid" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  ADD COLUMN "serviceStatus" "BookingServiceStatus" NOT NULL DEFAULT 'PENDING',
+  ALTER COLUMN "userId" DROP NOT NULL,
+  ALTER COLUMN "tourId" DROP NOT NULL,
+  ALTER COLUMN "desiredDate" DROP NOT NULL,
+  ALTER COLUMN "adults" DROP NOT NULL,
+  ALTER COLUMN "children" DROP NOT NULL,
+  ALTER COLUMN "children" DROP DEFAULT,
+  ALTER COLUMN "roomType" DROP NOT NULL;

@@ -1,9 +1,10 @@
-import { BookingStatus, RoomType } from '@prisma/client';
+import { BookingServiceStatus, BookingStatus, RoomType } from '@prisma/client';
 import {
   IsDateString,
+  IsEmail,
   IsEnum,
   IsInt,
-  IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -12,30 +13,85 @@ import {
 } from 'class-validator';
 
 export class AdminCreateBookingDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  userId: string;
+  userId?: string;
 
+  @IsOptional()
+  @IsString()
+  guestName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  guestEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  guestPhone?: string;
+
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  tourId: string;
+  tourId?: string;
 
+  @IsOptional()
   @IsDateString()
-  @IsNotEmpty()
-  desiredDate: string;
+  desiredDate?: string;
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(50)
-  adults: number;
+  adults?: number;
 
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(50)
-  children: number;
+  children?: number;
 
+  @IsOptional()
   @IsEnum(RoomType)
-  roomType: RoomType;
+  roomType?: RoomType;
+
+  @IsOptional()
+  @IsString()
+  hotelName?: string;
+
+  @IsOptional()
+  @IsDateString()
+  hotelCheckIn?: string;
+
+  @IsOptional()
+  @IsDateString()
+  hotelCheckOut?: string;
+
+  @IsOptional()
+  @IsString()
+  hotelRoomType?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  hotelGuests?: number;
+
+  @IsOptional()
+  @IsString()
+  hotelNotes?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  totalPrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  amountPaid?: number;
+
+  @IsOptional()
+  @IsEnum(BookingServiceStatus)
+  serviceStatus?: BookingServiceStatus;
 
   @IsOptional()
   @IsEnum(BookingStatus)

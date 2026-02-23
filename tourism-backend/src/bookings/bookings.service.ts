@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   BookingChangeRequestStatus,
+  BookingServiceStatus,
   BookingStatus,
   NotificationType,
   Prisma,
@@ -19,6 +20,38 @@ import { AdminUpdateBookingDto } from './dto/admin-update-booking.dto';
 import { AdminBookingDecisionDto } from './dto/admin-booking-decision.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminCreateBookingDto } from './dto/admin-create-booking.dto';
+import { AdminRevenueQueryDto } from './dto/admin-revenue-query.dto';
+
+const BOOKING_ADMIN_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+    },
+  },
+  tour: {
+    select: {
+      id: true,
+      slug: true,
+      title_ka: true,
+      title_en: true,
+      title_ru: true,
+    },
+  },
+  changeRequests: {
+    orderBy: { createdAt: 'desc' },
+  },
+} as const;
+
+const INVOICE_LOGO_URL =
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771052061/vibe-logo_kztwbw.png';
+
+type AdminBookingRecord = Prisma.BookingGetPayload<{
+  include: typeof BOOKING_ADMIN_INCLUDE;
+}>;
 
 function dateOnlyToUtc(dateOnly: string): Date {
   const normalized = `${dateOnly}T00:00:00.000Z`;
@@ -55,6 +88,53 @@ function toDateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
+function toMonthKey(value: Date): string {
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthToUtcStart(value: string): Date {
+  if (!/^\d{4}-\d{2}$/.test(value)) {
+    throw new BadRequestException('Invalid month format. Use YYYY-MM.');
+  }
+
+  const [year, month] = value.split('-').map(Number);
+  const monthIndex = month - 1;
+
+  if (monthIndex < 0 || monthIndex > 11) {
+    throw new BadRequestException('Invalid month format. Use YYYY-MM.');
+  }
+
+  return new Date(Date.UTC(year, monthIndex, 1));
+}
+
+function addMonthUtc(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+}
+
+function hasText(value?: string | null): boolean {
+  return Boolean(value && value.trim().length > 0);
+}
+
+function normalizeNullableString(value?: string | null): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function safeAmount(value: number | null | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function withBalance<T extends { totalPrice: number; amountPaid: number }>(record: T) {
+  return {
+    ...record,
+    balanceDue: safeAmount(record.totalPrice) - safeAmount(record.amountPaid),
+  };
+}
+
 @Injectable()
 export class BookingsService {
   constructor(
@@ -63,15 +143,69 @@ export class BookingsService {
     private readonly emailService: EmailService,
   ) {}
 
+  private async findAdminBookingOrThrow(id: string): Promise<AdminBookingRecord> {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: BOOKING_ADMIN_INCLUDE,
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
+  }
+
+  private async validateTourExists(tourId: string) {
+    const tour = await this.prisma.tour.findUnique({
+      where: { id: tourId },
+      select: { id: true },
+    });
+
+    if (!tour) {
+      throw new NotFoundException('Tour not found');
+    }
+  }
+
+  private async validateUserExists(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  }
+
+  private parseHotelDates(input: {
+    checkIn?: string | null;
+    checkOut?: string | null;
+  }): { checkIn: Date | null; checkOut: Date | null } {
+    const checkIn = input.checkIn ? parseBookingDateInput(input.checkIn) : null;
+    const checkOut = input.checkOut ? parseBookingDateInput(input.checkOut) : null;
+
+    if (checkIn && checkOut && checkOut < checkIn) {
+      throw new BadRequestException('Hotel check-out date must be after check-in date');
+    }
+
+    return { checkIn, checkOut };
+  }
+
+  private mapBooking(record: AdminBookingRecord) {
+    return withBalance(record);
+  }
+
+  private mapBookings(records: AdminBookingRecord[]) {
+    return records.map((record) => this.mapBooking(record));
+  }
+
   async create(userId: string, dto: CreateBookingDto) {
     const tour = await this.prisma.tour.findUnique({
       where: { id: dto.tourId },
       select: {
         id: true,
         status: true,
-        title_en: true,
-        title_ka: true,
-        title_ru: true,
       },
     });
 
@@ -114,14 +248,16 @@ export class BookingsService {
       metadata: { bookingId: booking.id },
     });
 
-    await this.emailService.sendBookingCreatedEmail({
-      recipientEmail: booking.user.email,
-      bookingId: booking.id,
-      tourTitle: booking.tour.title_en,
-      desiredDate: toDateOnly(booking.desiredDate),
-    });
+    if (booking.user?.email && booking.tour?.title_en && booking.desiredDate) {
+      await this.emailService.sendBookingCreatedEmail({
+        recipientEmail: booking.user.email,
+        bookingId: booking.id,
+        tourTitle: booking.tour.title_en,
+        desiredDate: toDateOnly(booking.desiredDate),
+      });
+    }
 
-    return booking;
+    return withBalance(booking);
   }
 
   findMy(userId: string) {
@@ -207,13 +343,15 @@ export class BookingsService {
       metadata: { bookingId: updated.id },
     });
 
-    await this.emailService.sendBookingDecisionEmail({
-      recipientEmail: booking.user.email,
-      bookingId: booking.id,
-      decision: 'cancelled',
-    });
+    if (booking.user?.email) {
+      await this.emailService.sendBookingDecisionEmail({
+        recipientEmail: booking.user.email,
+        bookingId: booking.id,
+        decision: 'cancelled',
+      });
+    }
 
-    return updated;
+    return withBalance(updated);
   }
 
   async requestDateChange(
@@ -269,9 +407,10 @@ export class BookingsService {
     return request;
   }
 
-  findAllAdmin(query: AdminBookingsQueryDto) {
+  async findAllAdmin(query: AdminBookingsQueryDto) {
     const where: Prisma.BookingWhereInput = {
       ...(query.status ? { status: query.status } : {}),
+      ...(query.serviceStatus ? { serviceStatus: query.serviceStatus } : {}),
       ...(query.tourId ? { tourId: query.tourId } : {}),
       ...(query.userId ? { userId: query.userId } : {}),
     };
@@ -283,169 +422,386 @@ export class BookingsService {
       };
     }
 
-    return this.prisma.booking.findMany({
+    const records = await this.prisma.booking.findMany({
       where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-        tour: {
-          select: {
-            id: true,
-            slug: true,
-            title_ka: true,
-            title_en: true,
-            title_ru: true,
-          },
-        },
-        changeRequests: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      include: BOOKING_ADMIN_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
+
+    return this.mapBookings(records);
   }
 
   async createAdmin(dto: AdminCreateBookingDto) {
-    const [user, tour] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: dto.userId },
-        select: { id: true },
-      }),
-      this.prisma.tour.findUnique({
-        where: { id: dto.tourId },
-        select: { id: true },
-      }),
-    ]);
+    const hasTour = Boolean(dto.tourId);
+    const hasHotel =
+      hasText(dto.hotelName) ||
+      Boolean(dto.hotelCheckIn) ||
+      Boolean(dto.hotelCheckOut) ||
+      hasText(dto.hotelRoomType) ||
+      dto.hotelGuests !== undefined ||
+      hasText(dto.hotelNotes);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (!hasTour && !hasHotel) {
+      throw new BadRequestException('At least one service (tour or hotel) is required');
     }
 
-    if (!tour) {
-      throw new NotFoundException('Tour not found');
+    const guestName = normalizeNullableString(dto.guestName);
+    const guestEmail = normalizeNullableString(dto.guestEmail);
+    const guestPhone = normalizeNullableString(dto.guestPhone);
+
+    if (!dto.userId && !guestName && !guestEmail && !guestPhone) {
+      throw new BadRequestException('Provide either an existing user or guest details');
+    }
+
+    if (dto.userId) {
+      await this.validateUserExists(dto.userId);
+    }
+
+    if (hasTour && dto.tourId) {
+      await this.validateTourExists(dto.tourId);
+    }
+
+    if (hasTour && !dto.desiredDate) {
+      throw new BadRequestException('Tour date is required when tour service is provided');
+    }
+
+    const hotelName = hasHotel ? normalizeNullableString(dto.hotelName) : null;
+
+    if (hasHotel && !hotelName) {
+      throw new BadRequestException('Hotel name is required when hotel service is provided');
+    }
+
+    const { checkIn: hotelCheckIn, checkOut: hotelCheckOut } = this.parseHotelDates({
+      checkIn: dto.hotelCheckIn,
+      checkOut: dto.hotelCheckOut,
+    });
+
+    const totalPrice = safeAmount(dto.totalPrice);
+    const amountPaid = safeAmount(dto.amountPaid);
+
+    if (totalPrice < 0 || amountPaid < 0) {
+      throw new BadRequestException('Price values must be greater than or equal to 0');
     }
 
     const status = dto.status ?? BookingStatus.APPROVED;
     const decisionTimestamp = new Date();
 
-    return this.prisma.booking.create({
+    const record = await this.prisma.booking.create({
       data: {
-        userId: dto.userId,
-        tourId: dto.tourId,
-        desiredDate: parseBookingDateInput(dto.desiredDate),
-        adults: dto.adults,
-        children: dto.children,
-        roomType: dto.roomType,
-        note: dto.note?.trim() || undefined,
-        adminNote: dto.adminNote?.trim() || undefined,
+        userId: dto.userId ?? null,
+        guestName,
+        guestEmail,
+        guestPhone,
+        tourId: hasTour ? dto.tourId ?? null : null,
+        desiredDate: hasTour && dto.desiredDate ? parseBookingDateInput(dto.desiredDate) : null,
+        adults: hasTour ? dto.adults ?? 1 : null,
+        children: hasTour ? dto.children ?? 0 : null,
+        roomType: hasTour ? dto.roomType ?? RoomType.double : null,
+        hotelName,
+        hotelCheckIn,
+        hotelCheckOut,
+        hotelRoomType: hasHotel ? normalizeNullableString(dto.hotelRoomType) : null,
+        hotelGuests: hasHotel ? dto.hotelGuests ?? null : null,
+        hotelNotes: hasHotel ? normalizeNullableString(dto.hotelNotes) : null,
+        totalPrice,
+        amountPaid,
+        note: normalizeNullableString(dto.note),
+        adminNote: normalizeNullableString(dto.adminNote),
+        serviceStatus: dto.serviceStatus ?? ('PENDING' as BookingServiceStatus),
         status,
         approvedAt: status === BookingStatus.APPROVED ? decisionTimestamp : null,
         rejectedAt: status === BookingStatus.REJECTED ? decisionTimestamp : null,
         cancelledAt: status === BookingStatus.CANCELLED ? decisionTimestamp : null,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-        tour: {
-          select: {
-            id: true,
-            slug: true,
-            title_ka: true,
-            title_en: true,
-            title_ru: true,
-          },
-        },
-        changeRequests: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      include: BOOKING_ADMIN_INCLUDE,
     });
+
+    return this.mapBooking(record);
   }
 
   async findOneAdmin(id: string) {
-    const booking = await this.prisma.booking.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-        tour: {
-          select: {
-            id: true,
-            slug: true,
-            title_ka: true,
-            title_en: true,
-            title_ru: true,
-          },
-        },
-        changeRequests: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
-
-    if (!booking) {
-      throw new NotFoundException('Booking not found');
-    }
-
-    return booking;
+    const booking = await this.findAdminBookingOrThrow(id);
+    return this.mapBooking(booking);
   }
 
   async updateAdmin(id: string, dto: AdminUpdateBookingDto) {
-    await this.findOneAdmin(id);
+    const existing = await this.findAdminBookingOrThrow(id);
 
-    const updateData: Prisma.BookingUpdateInput = {
-      ...(dto.desiredDate ? { desiredDate: parseBookingDateInput(dto.desiredDate) } : {}),
-      ...(dto.adults !== undefined ? { adults: dto.adults } : {}),
-      ...(dto.children !== undefined ? { children: dto.children } : {}),
-      ...(dto.roomType ? { roomType: dto.roomType as RoomType } : {}),
-      ...(dto.adminNote !== undefined ? { adminNote: dto.adminNote } : {}),
+    const nextUserId = dto.userId !== undefined ? dto.userId : existing.userId;
+    if (nextUserId) {
+      await this.validateUserExists(nextUserId);
+    }
+
+    const nextGuestName =
+      dto.guestName !== undefined ? normalizeNullableString(dto.guestName) : existing.guestName;
+    const nextGuestEmail =
+      dto.guestEmail !== undefined ? normalizeNullableString(dto.guestEmail) : existing.guestEmail;
+    const nextGuestPhone =
+      dto.guestPhone !== undefined ? normalizeNullableString(dto.guestPhone) : existing.guestPhone;
+
+    if (!nextUserId && !nextGuestName && !nextGuestEmail && !nextGuestPhone) {
+      throw new BadRequestException('Provide either an existing user or guest details');
+    }
+
+    const nextTourId = dto.tourId !== undefined ? dto.tourId : existing.tourId;
+
+    let nextDesiredDate = existing.desiredDate;
+    if (dto.desiredDate !== undefined) {
+      nextDesiredDate = dto.desiredDate ? parseBookingDateInput(dto.desiredDate) : null;
+    }
+
+    let nextAdults = dto.adults !== undefined ? dto.adults : existing.adults;
+    let nextChildren = dto.children !== undefined ? dto.children : existing.children;
+    let nextRoomType = dto.roomType !== undefined ? dto.roomType : existing.roomType;
+
+    const incomingHotelName =
+      dto.hotelName !== undefined ? normalizeNullableString(dto.hotelName) : existing.hotelName;
+
+    let nextHotelCheckIn = existing.hotelCheckIn;
+    if (dto.hotelCheckIn !== undefined) {
+      nextHotelCheckIn = dto.hotelCheckIn ? parseBookingDateInput(dto.hotelCheckIn) : null;
+    }
+
+    let nextHotelCheckOut = existing.hotelCheckOut;
+    if (dto.hotelCheckOut !== undefined) {
+      nextHotelCheckOut = dto.hotelCheckOut ? parseBookingDateInput(dto.hotelCheckOut) : null;
+    }
+
+    const nextHotelRoomType =
+      dto.hotelRoomType !== undefined
+        ? normalizeNullableString(dto.hotelRoomType)
+        : existing.hotelRoomType;
+    const nextHotelGuests = dto.hotelGuests !== undefined ? dto.hotelGuests : existing.hotelGuests;
+    const nextHotelNotes =
+      dto.hotelNotes !== undefined ? normalizeNullableString(dto.hotelNotes) : existing.hotelNotes;
+
+    const hasTour = Boolean(nextTourId);
+    const hasHotel =
+      Boolean(incomingHotelName) ||
+      Boolean(nextHotelCheckIn) ||
+      Boolean(nextHotelCheckOut) ||
+      Boolean(nextHotelRoomType) ||
+      nextHotelGuests !== null;
+
+    if (!hasTour && !hasHotel) {
+      throw new BadRequestException('At least one service (tour or hotel) is required');
+    }
+
+    if (hasTour && nextTourId) {
+      await this.validateTourExists(nextTourId);
+    }
+
+    if (hasTour && !nextDesiredDate) {
+      throw new BadRequestException('Tour date is required when tour service is provided');
+    }
+
+    if (hasTour && (nextAdults === null || nextAdults === undefined)) {
+      nextAdults = 1;
+    }
+
+    if (hasTour && (nextChildren === null || nextChildren === undefined)) {
+      nextChildren = 0;
+    }
+
+    if (hasTour && !nextRoomType) {
+      nextRoomType = RoomType.double;
+    }
+
+    if (!hasTour) {
+      nextDesiredDate = null;
+      nextAdults = null;
+      nextChildren = null;
+      nextRoomType = null;
+    }
+
+    if (hasHotel && !incomingHotelName) {
+      throw new BadRequestException('Hotel name is required when hotel service is provided');
+    }
+
+    if (nextHotelCheckIn && nextHotelCheckOut && nextHotelCheckOut < nextHotelCheckIn) {
+      throw new BadRequestException('Hotel check-out date must be after check-in date');
+    }
+
+    const hotelName = hasHotel ? incomingHotelName : null;
+
+    const totalPrice =
+      dto.totalPrice !== undefined ? safeAmount(dto.totalPrice) : safeAmount(existing.totalPrice);
+    const amountPaid =
+      dto.amountPaid !== undefined ? safeAmount(dto.amountPaid) : safeAmount(existing.amountPaid);
+
+    if (totalPrice < 0 || amountPaid < 0) {
+      throw new BadRequestException('Price values must be greater than or equal to 0');
+    }
+
+    const updateData: Prisma.BookingUncheckedUpdateInput = {
+      userId: nextUserId ?? null,
+      guestName: nextGuestName,
+      guestEmail: nextGuestEmail,
+      guestPhone: nextGuestPhone,
+      tourId: hasTour ? nextTourId ?? null : null,
+      desiredDate: hasTour ? nextDesiredDate : null,
+      adults: hasTour ? nextAdults : null,
+      children: hasTour ? nextChildren : null,
+      roomType: hasTour ? (nextRoomType as RoomType) : null,
+      hotelName,
+      hotelCheckIn: hasHotel ? nextHotelCheckIn : null,
+      hotelCheckOut: hasHotel ? nextHotelCheckOut : null,
+      hotelRoomType: hasHotel ? nextHotelRoomType : null,
+      hotelGuests: hasHotel ? nextHotelGuests : null,
+      hotelNotes: hasHotel ? nextHotelNotes : null,
+      totalPrice,
+      amountPaid,
+      status: dto.status ?? existing.status,
+      serviceStatus: dto.serviceStatus ?? existing.serviceStatus,
+      adminNote:
+        dto.adminNote !== undefined ? normalizeNullableString(dto.adminNote) : existing.adminNote,
     };
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-          },
-        },
-        tour: {
-          select: {
-            id: true,
-            slug: true,
-            title_ka: true,
-            title_en: true,
-            title_ru: true,
-          },
-        },
-      },
+      include: BOOKING_ADMIN_INCLUDE,
     });
+
+    return this.mapBooking(updated);
+  }
+
+  async deleteAdmin(id: string) {
+    await this.findAdminBookingOrThrow(id);
+
+    await this.prisma.booking.delete({ where: { id } });
+
+    return {
+      deleted: true,
+      id,
+    };
+  }
+
+  async getInvoice(id: string) {
+    const booking = await this.findAdminBookingOrThrow(id);
+    const withTotals = this.mapBooking(booking);
+
+    return {
+      logoUrl: INVOICE_LOGO_URL,
+      bookingId: booking.id,
+      issuedAt: new Date().toISOString(),
+      customer: {
+        name:
+          booking.user
+            ? `${booking.user.firstName} ${booking.user.lastName}`
+            : booking.guestName || 'Guest customer',
+        email: booking.user?.email || booking.guestEmail || null,
+        phone: booking.user?.phone || booking.guestPhone || null,
+      },
+      services: {
+        tour: booking.tour
+          ? {
+              id: booking.tour.id,
+              slug: booking.tour.slug,
+              title_ka: booking.tour.title_ka,
+              title_en: booking.tour.title_en,
+              title_ru: booking.tour.title_ru,
+              desiredDate: booking.desiredDate,
+              adults: booking.adults,
+              children: booking.children,
+              roomType: booking.roomType,
+            }
+          : null,
+        hotel: booking.hotelName
+          ? {
+              name: booking.hotelName,
+              checkIn: booking.hotelCheckIn,
+              checkOut: booking.hotelCheckOut,
+              roomType: booking.hotelRoomType,
+              guests: booking.hotelGuests,
+              notes: booking.hotelNotes,
+            }
+          : null,
+      },
+      financials: {
+        totalPrice: withTotals.totalPrice,
+        amountPaid: withTotals.amountPaid,
+        balanceDue: withTotals.balanceDue,
+      },
+      admin: {
+        note: booking.adminNote,
+        serviceStatus: booking.serviceStatus,
+        bookingStatus: booking.status,
+      },
+    };
+  }
+
+  async getRevenueSummary(query: AdminRevenueQueryDto) {
+    const fromStart = query.fromMonth ? monthToUtcStart(query.fromMonth) : null;
+    const toStart = query.toMonth ? monthToUtcStart(query.toMonth) : null;
+
+    if (fromStart && toStart && toStart < fromStart) {
+      throw new BadRequestException('toMonth must be after fromMonth');
+    }
+
+    const where: Prisma.BookingWhereInput = {
+      ...(fromStart || toStart
+        ? {
+            createdAt: {
+              ...(fromStart ? { gte: fromStart } : {}),
+              ...(toStart ? { lt: addMonthUtc(toStart) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const rows = await this.prisma.booking.findMany({
+      where,
+      select: {
+        id: true,
+        createdAt: true,
+        totalPrice: true,
+        amountPaid: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const monthMap = new Map<
+      string,
+      { month: string; bookings: number; totalRevenue: number; totalPaid: number; totalBalance: number }
+    >();
+
+    for (const row of rows) {
+      const month = toMonthKey(row.createdAt);
+      const existing = monthMap.get(month) || {
+        month,
+        bookings: 0,
+        totalRevenue: 0,
+        totalPaid: 0,
+        totalBalance: 0,
+      };
+
+      const totalRevenue = safeAmount(row.totalPrice);
+      const totalPaid = safeAmount(row.amountPaid);
+
+      existing.bookings += 1;
+      existing.totalRevenue += totalRevenue;
+      existing.totalPaid += totalPaid;
+      existing.totalBalance += totalRevenue - totalPaid;
+
+      monthMap.set(month, existing);
+    }
+
+    const items = Array.from(monthMap.values());
+
+    return {
+      range: {
+        fromMonth: query.fromMonth || null,
+        toMonth: query.toMonth || null,
+      },
+      totals: {
+        bookings: items.reduce((sum, item) => sum + item.bookings, 0),
+        totalRevenue: items.reduce((sum, item) => sum + item.totalRevenue, 0),
+        totalPaid: items.reduce((sum, item) => sum + item.totalPaid, 0),
+        totalBalance: items.reduce((sum, item) => sum + item.totalBalance, 0),
+      },
+      items,
+    };
   }
 
   async approveBooking(id: string, dto: AdminBookingDecisionDto) {
@@ -479,22 +835,26 @@ export class BookingsService {
       },
     });
 
-    await this.notificationsService.createForUser({
-      userId: booking.userId,
-      type: NotificationType.BOOKING_APPROVED,
-      title: 'Booking approved',
-      body: `Booking ${booking.id} was approved.`,
-      metadata: { bookingId: booking.id },
-    });
+    if (booking.userId) {
+      await this.notificationsService.createForUser({
+        userId: booking.userId,
+        type: NotificationType.BOOKING_APPROVED,
+        title: 'Booking approved',
+        body: `Booking ${booking.id} was approved.`,
+        metadata: { bookingId: booking.id },
+      });
+    }
 
-    await this.emailService.sendBookingDecisionEmail({
-      recipientEmail: booking.user.email,
-      bookingId: booking.id,
-      decision: 'approved',
-      adminNote: dto.adminNote,
-    });
+    if (booking.user?.email) {
+      await this.emailService.sendBookingDecisionEmail({
+        recipientEmail: booking.user.email,
+        bookingId: booking.id,
+        decision: 'approved',
+        adminNote: dto.adminNote,
+      });
+    }
 
-    return updated;
+    return withBalance(updated);
   }
 
   async rejectBooking(id: string, dto: AdminBookingDecisionDto) {
@@ -528,22 +888,26 @@ export class BookingsService {
       },
     });
 
-    await this.notificationsService.createForUser({
-      userId: booking.userId,
-      type: NotificationType.BOOKING_REJECTED,
-      title: 'Booking rejected',
-      body: `Booking ${booking.id} was rejected.`,
-      metadata: { bookingId: booking.id },
-    });
+    if (booking.userId) {
+      await this.notificationsService.createForUser({
+        userId: booking.userId,
+        type: NotificationType.BOOKING_REJECTED,
+        title: 'Booking rejected',
+        body: `Booking ${booking.id} was rejected.`,
+        metadata: { bookingId: booking.id },
+      });
+    }
 
-    await this.emailService.sendBookingDecisionEmail({
-      recipientEmail: booking.user.email,
-      bookingId: booking.id,
-      decision: 'rejected',
-      adminNote: dto.adminNote,
-    });
+    if (booking.user?.email) {
+      await this.emailService.sendBookingDecisionEmail({
+        recipientEmail: booking.user.email,
+        bookingId: booking.id,
+        decision: 'rejected',
+        adminNote: dto.adminNote,
+      });
+    }
 
-    return updated;
+    return withBalance(updated);
   }
 
   async approveChangeRequest(id: string, dto: AdminBookingDecisionDto) {
@@ -602,24 +966,28 @@ export class BookingsService {
       };
     });
 
-    await this.notificationsService.createForUser({
-      userId: changeRequest.booking.userId,
-      type: NotificationType.BOOKING_CHANGE_APPROVED,
-      title: 'Date change approved',
-      body: `Date change for booking ${changeRequest.bookingId} was approved.`,
-      metadata: {
-        bookingId: changeRequest.bookingId,
-        changeRequestId: changeRequest.id,
-      },
-    });
+    if (changeRequest.booking.userId) {
+      await this.notificationsService.createForUser({
+        userId: changeRequest.booking.userId,
+        type: NotificationType.BOOKING_CHANGE_APPROVED,
+        title: 'Date change approved',
+        body: `Date change for booking ${changeRequest.bookingId} was approved.`,
+        metadata: {
+          bookingId: changeRequest.bookingId,
+          changeRequestId: changeRequest.id,
+        },
+      });
+    }
 
-    await this.emailService.sendBookingChangeDecisionEmail({
-      recipientEmail: changeRequest.booking.user.email,
-      bookingId: changeRequest.bookingId,
-      requestedDate: toDateOnly(changeRequest.requestedDate),
-      decision: 'approved',
-      adminNote: dto.adminNote,
-    });
+    if (changeRequest.booking.user?.email) {
+      await this.emailService.sendBookingChangeDecisionEmail({
+        recipientEmail: changeRequest.booking.user.email,
+        bookingId: changeRequest.bookingId,
+        requestedDate: toDateOnly(changeRequest.requestedDate),
+        decision: 'approved',
+        adminNote: dto.adminNote,
+      });
+    }
 
     return result;
   }
@@ -658,24 +1026,28 @@ export class BookingsService {
       },
     });
 
-    await this.notificationsService.createForUser({
-      userId: changeRequest.booking.userId,
-      type: NotificationType.BOOKING_CHANGE_REJECTED,
-      title: 'Date change rejected',
-      body: `Date change for booking ${changeRequest.bookingId} was rejected.`,
-      metadata: {
-        bookingId: changeRequest.bookingId,
-        changeRequestId: changeRequest.id,
-      },
-    });
+    if (changeRequest.booking.userId) {
+      await this.notificationsService.createForUser({
+        userId: changeRequest.booking.userId,
+        type: NotificationType.BOOKING_CHANGE_REJECTED,
+        title: 'Date change rejected',
+        body: `Date change for booking ${changeRequest.bookingId} was rejected.`,
+        metadata: {
+          bookingId: changeRequest.bookingId,
+          changeRequestId: changeRequest.id,
+        },
+      });
+    }
 
-    await this.emailService.sendBookingChangeDecisionEmail({
-      recipientEmail: changeRequest.booking.user.email,
-      bookingId: changeRequest.bookingId,
-      requestedDate: toDateOnly(changeRequest.requestedDate),
-      decision: 'rejected',
-      adminNote: dto.adminNote,
-    });
+    if (changeRequest.booking.user?.email) {
+      await this.emailService.sendBookingChangeDecisionEmail({
+        recipientEmail: changeRequest.booking.user.email,
+        bookingId: changeRequest.bookingId,
+        requestedDate: toDateOnly(changeRequest.requestedDate),
+        decision: 'rejected',
+        adminNote: dto.adminNote,
+      });
+    }
 
     return updatedRequest;
   }
@@ -742,6 +1114,10 @@ export class BookingsService {
     const dayMap = new Map<string, any[]>();
 
     for (const booking of approvedBookings) {
+      if (!booking.desiredDate) {
+        continue;
+      }
+
       const key = toDateOnly(booking.desiredDate);
       const existing = dayMap.get(key) || [];
       existing.push(booking);

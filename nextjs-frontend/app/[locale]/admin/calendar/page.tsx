@@ -11,17 +11,20 @@ interface CalendarBooking {
   adults: number
   children: number
   roomType: string
+  guestName: string | null
+  guestEmail: string | null
+  guestPhone: string | null
   user: {
     firstName: string
     lastName: string
     email: string
     phone: string
-  }
+  } | null
   tour: {
     title_ka: string
     title_en: string
     title_ru: string
-  }
+  } | null
 }
 
 interface CalendarDay {
@@ -62,6 +65,7 @@ export default function AdminCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const getTourTitle = (tour: CalendarBooking['tour']) => {
+    if (!tour) return 'Hotel service'
     if (locale === 'ka') return tour.title_ka || tour.title_en
     if (locale === 'ru') return tour.title_ru || tour.title_en
     return tour.title_en || tour.title_ka
@@ -207,7 +211,9 @@ export default function AdminCalendarPage() {
                     <article key={booking.id} className="border rounded-lg p-3">
                       <p className="font-semibold text-gray-900">{getTourTitle(booking.tour)}</p>
                       <p className="text-sm text-gray-600 mt-1">
-                        {booking.user.firstName} {booking.user.lastName} | {booking.user.email} | {booking.user.phone}
+                        {booking.user
+                          ? `${booking.user.firstName} ${booking.user.lastName} | ${booking.user.email} | ${booking.user.phone}`
+                          : `${booking.guestName || 'Guest'} | ${booking.guestEmail || 'N/A'} | ${booking.guestPhone || 'N/A'}`}
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
                         {t('adults')}: {booking.adults} | {t('children')}: {booking.children} |{' '}

@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { locales } from '@/i18n/config'
+import { defaultLocale, locales } from '@/i18n/config'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com').replace(
@@ -13,6 +13,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const now = new Date()
   const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/privacy', '/terms']
+  const rootRoute: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 1,
+      alternates: {
+        languages: buildLanguageAlternates(baseUrl, ''),
+      },
+    },
+  ]
 
   const staticRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     publicPaths.map((path) => {
@@ -23,12 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: path === '' ? 'daily' : 'weekly',
         priority: path === '' ? 1 : 0.8,
         alternates: {
-          languages: Object.fromEntries(
-            locales.map((alternateLocale) => [
-              alternateLocale,
-              `${baseUrl}/${alternateLocale}${path}`,
-            ]),
-          ),
+          languages: buildLanguageAlternates(baseUrl, path),
         },
       }
     }),
@@ -53,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ])
 
-  return [...staticRoutes, ...tourRoutes, ...blogRoutes]
+  return [...rootRoute, ...staticRoutes, ...tourRoutes, ...blogRoutes]
 }
 
 type DynamicContentItem = {
@@ -76,7 +82,7 @@ async function getDynamicRoutes({
   changeFrequency: 'daily' | 'weekly' | 'monthly'
   priority: number
 }): Promise<MetadataRoute.Sitemap> {
-  const items = await fetchDynamicItems(`${apiUrl}${endpoint}`)
+  const items = dedupeBySlug(await fetchDynamicItems(`${apiUrl}${endpoint}`))
 
   return locales.flatMap((locale) =>
     items.map((item) => {
@@ -87,12 +93,7 @@ async function getDynamicRoutes({
         changeFrequency,
         priority,
         alternates: {
-          languages: Object.fromEntries(
-            locales.map((alternateLocale) => [
-              alternateLocale,
-              `${baseUrl}/${alternateLocale}${contentPathPrefix}/${item.slug}`,
-            ]),
-          ),
+          languages: buildLanguageAlternates(baseUrl, `${contentPathPrefix}/${item.slug}`),
         },
       }
     }),
@@ -139,4 +140,29 @@ function isDynamicContentItem(value: unknown): value is DynamicContentItem {
 
   const candidate = value as { slug?: unknown }
   return typeof candidate.slug === 'string' && candidate.slug.trim().length > 0
+}
+
+function buildLanguageAlternates(baseUrl: string, pathAfterLocale: string): Record<string, string> {
+  const normalizedPath = pathAfterLocale.startsWith('/') || pathAfterLocale === '' ? pathAfterLocale : `/${pathAfterLocale}`
+
+  const entries: Array<[string, string]> = locales.map((locale) => [
+    locale,
+    `${baseUrl}/${locale}${normalizedPath}`,
+  ])
+
+  entries.push(['x-default', `${baseUrl}/${defaultLocale}${normalizedPath}`])
+
+  return Object.fromEntries(entries)
+}
+
+function dedupeBySlug(items: DynamicContentItem[]): DynamicContentItem[] {
+  const unique = new Map<string, DynamicContentItem>()
+
+  for (const item of items) {
+    if (!unique.has(item.slug)) {
+      unique.set(item.slug, item)
+    }
+  }
+
+  return Array.from(unique.values())
 }

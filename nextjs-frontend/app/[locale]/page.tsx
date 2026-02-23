@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
 import ProgressiveImage from '@/components/ProgressiveImage'
 import type { Metadata } from 'next'
+import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
 
 interface TourImage {
   id: string
@@ -199,9 +200,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-// Hero სურათები - Cloudinary ავტომატურად გენერირებს დაბალ ხარისხს
-const HERO_HIGH_RES = 'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg'
-const HERO_LOW_RES = 'https://res.cloudinary.com/dj7qaif1i/image/upload/w_20,q_10,e_blur:200/v1771396197/cover_1_secna5.jpg'
+const HERO_IMAGE = buildCloudinarySources(
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg',
+)
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -263,8 +264,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {/* Hero Section */}
         <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
           <ProgressiveImage
-            src={HERO_HIGH_RES}
-            lowResSrc={HERO_LOW_RES}
+            src={HERO_IMAGE.src}
+            lowResSrc={HERO_IMAGE.lowResSrc}
             alt={t('hero.imageAlt')}
             priority
             sizes="100vw"
@@ -314,7 +315,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <article key={tour.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link href={`/${locale}/tours/${tour.slug}`}>
                         <div className="relative h-48 overflow-hidden">
-                          <Image src={coverImage} alt={title} fill
+                          <Image src={buildCloudinaryUrl(coverImage)} alt={title} fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
                         </div>
@@ -399,7 +400,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <article key={post.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                     <Link href={`/${locale}/blog/${post.slug}`}>
                       <div className="relative h-48 overflow-hidden">
-                        <Image src={post.coverImage} alt={title} fill
+                        <Image src={buildCloudinaryUrl(post.coverImage)} alt={title} fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                       </div>

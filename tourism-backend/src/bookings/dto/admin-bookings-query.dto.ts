@@ -1,10 +1,14 @@
-import { BookingStatus } from '@prisma/client';
+import { BookingServiceStatus, BookingStatus } from '@prisma/client';
 import { IsEnum, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 
 export class AdminBookingsQueryDto {
   @IsOptional()
   @IsEnum(BookingStatus)
   status?: BookingStatus;
+
+  @IsOptional()
+  @IsEnum(BookingServiceStatus)
+  serviceStatus?: BookingServiceStatus;
 
   @IsOptional()
   @IsUUID()

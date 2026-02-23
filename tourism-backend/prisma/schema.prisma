@@ -66,23 +66,35 @@ model Tour {
 }
 
 model Booking {
-  id             String                 @id @default(uuid())
-  userId         String
-  tourId         String
-  desiredDate    DateTime
-  adults         Int
-  children       Int                    @default(0)
-  roomType       RoomType
+  id             String               @id @default(uuid())
+  userId         String?
+  guestName      String?
+  guestEmail     String?
+  guestPhone     String?
+  tourId         String?
+  desiredDate    DateTime?
+  adults         Int?
+  children       Int?
+  roomType       RoomType?
+  hotelName      String?
+  hotelCheckIn   DateTime?
+  hotelCheckOut  DateTime?
+  hotelRoomType  String?
+  hotelGuests    Int?
+  hotelNotes     String?
+  totalPrice     Float                @default(0)
+  amountPaid     Float                @default(0)
   note           String?
   adminNote      String?
-  status         BookingStatus          @default(PENDING)
+  serviceStatus  BookingServiceStatus @default(PENDING)
+  status         BookingStatus        @default(PENDING)
   approvedAt     DateTime?
   rejectedAt     DateTime?
   cancelledAt    DateTime?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tour           Tour                   @relation(fields: [tourId], references: [id], onDelete: Restrict)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  user           User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tour           Tour?                @relation(fields: [tourId], references: [id], onDelete: Restrict)
   changeRequests BookingChangeRequest[]
 
   @@index([desiredDate, status])
@@ -183,6 +195,11 @@ enum BookingStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+enum BookingServiceStatus {
+  PENDING
+  COMPLETED
 }
 
 enum BookingChangeRequestStatus {

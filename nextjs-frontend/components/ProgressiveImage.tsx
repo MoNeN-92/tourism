@@ -3,10 +3,11 @@
 // components/ProgressiveImage.tsx
 import { useState } from 'react'
 import Image from 'next/image'
+import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
 
 interface ProgressiveImageProps {
   src: string
-  lowResSrc: string
+  lowResSrc?: string
   alt: string
   fill?: boolean
   priority?: boolean
@@ -24,12 +25,15 @@ export default function ProgressiveImage({
   className = 'object-cover',
 }: ProgressiveImageProps) {
   const [highResLoaded, setHighResLoaded] = useState(false)
+  const generatedSources = buildCloudinarySources(src)
+  const highResSrc = buildCloudinaryUrl(src)
+  const blurSrc = lowResSrc || generatedSources.lowResSrc
 
   return (
     <>
       {/* დაბალი ხარისხი - ყოველთვის ჩანს სანამ მაღალი არ ჩაიტვირთება */}
       <Image
-        src={lowResSrc}
+        src={blurSrc}
         alt={alt}
         fill={fill}
         sizes={sizes}
@@ -42,7 +46,7 @@ export default function ProgressiveImage({
 
       {/* მაღალი ხარისხი - ჩაიტვირთება ფონში */}
       <Image
-        src={src}
+        src={highResSrc}
         alt={alt}
         fill={fill}
         sizes={sizes}

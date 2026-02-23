@@ -1,8 +1,12 @@
 import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
-import Image from 'next/image'
 import type { Metadata } from 'next'
 import ProgressiveImage from '@/components/ProgressiveImage'
+import { buildCloudinarySources } from '@/lib/cloudinary'
+
+const HERO_IMAGE = buildCloudinarySources(
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771399055/Tbilisi_panorama_nk1rmx.jpg',
+)
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
@@ -81,13 +85,13 @@ export default function AboutPage() {
         {/* Hero Section with Tbilisi Background */}
         <section className="relative h-[400px] sm:h-[500px] lg:h-[600px]">
           <ProgressiveImage
-  src="https://res.cloudinary.com/dj7qaif1i/image/upload/v1771399055/Tbilisi_panorama_nk1rmx.jpg"
-  lowResSrc="https://res.cloudinary.com/dj7qaif1i/image/upload/w_20,q_10,e_blur:200/v1771399055/Tbilisi_panorama_nk1rmx.jpg"
-  alt="Tbilisi Panorama"
-  priority
-  sizes="100vw"
-  className="object-cover"
-/>
+            src={HERO_IMAGE.src}
+            lowResSrc={HERO_IMAGE.lowResSrc}
+            alt="Tbilisi Panorama"
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-cyan-400/30" />
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">

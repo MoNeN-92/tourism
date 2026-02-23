@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -18,6 +19,7 @@ import { AdminUpdateBookingDto } from './dto/admin-update-booking.dto';
 import { AdminBookingDecisionDto } from './dto/admin-booking-decision.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminCreateBookingDto } from './dto/admin-create-booking.dto';
+import { AdminRevenueQueryDto } from './dto/admin-revenue-query.dto';
 
 @Controller('bookings')
 @UseGuards(UserJwtAuthGuard)
@@ -85,9 +87,19 @@ export class AdminBookingsController {
     return this.bookingsService.findAllAdmin(query);
   }
 
+  @Get('revenue/summary')
+  revenueSummary(@Query() query: AdminRevenueQueryDto) {
+    return this.bookingsService.getRevenueSummary(query);
+  }
+
   @Post()
   create(@Body() dto: AdminCreateBookingDto) {
     return this.bookingsService.createAdmin(dto);
+  }
+
+  @Get(':id/invoice')
+  getInvoice(@Param('id') id: string) {
+    return this.bookingsService.getInvoice(id);
   }
 
   @Get(':id')
@@ -108,5 +120,10 @@ export class AdminBookingsController {
   @Post(':id/reject')
   reject(@Param('id') id: string, @Body() dto: AdminBookingDecisionDto) {
     return this.bookingsService.rejectBooking(id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.bookingsService.deleteAdmin(id);
   }
 }

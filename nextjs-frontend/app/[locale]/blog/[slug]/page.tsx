@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogData'
+import { absoluteUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
+import { buildCloudinaryUrl } from '@/lib/cloudinary'
 
 interface ApiBlogPost {
   id: string
@@ -69,28 +71,40 @@ function getRelatedPosts(currentSlug: string, limit: number = 3): BlogPost[] {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params
   const result = await getPostBySlug(slug)
-  if (!result) return { title: 'Post Not Found' }
+  if (!result) {
+    return {
+      title: 'Post Not Found | Vibe Georgia',
+      alternates: localizedAlternates(locale, `/blog/${slug}`),
+      robots: {
+        index: false,
+        follow: true,
+      },
+    }
+  }
 
   const { post } = result
   const title = getLocalizedField(post, 'title', locale)
   const excerpt = getLocalizedField(post, 'excerpt', locale)
+  const imageUrl = buildCloudinaryUrl(post.coverImage)
 
   return {
     title,
     description: excerpt,
+    alternates: localizedAlternates(locale, `/blog/${slug}`),
     openGraph: {
       title,
       description: excerpt,
-      url: `https://vibegeorgia.com/${locale}/blog/${slug}`,
+      url: absoluteUrl(`/${locale}/blog/${slug}`),
       siteName: 'Vibe Georgia',
+      locale: openGraphLocale(locale),
       type: 'article',
-      images: [{ url: post.coverImage, width: 1200, height: 630, alt: title }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description: excerpt,
-      images: [post.coverImage],
+      images: [imageUrl],
     },
   }
 }
@@ -143,7 +157,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] bg-gray-900">
-        <Image src={post.coverImage} alt={title} fill
+        <Image src={buildCloudinaryUrl(post.coverImage)} alt={title} fill
           className="object-cover opacity-70" priority sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         <div className="absolute top-6 left-6">
@@ -256,7 +270,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
                   return (
                     <Link key={relatedPost.id} href={`/${locale}/blog/${relatedPost.slug}`} className="group block">
                       <div className="relative h-40 rounded-lg overflow-hidden mb-3">
-                        <Image src={relatedPost.coverImage} alt={relatedTitle} fill
+                        <Image src={buildCloudinaryUrl(relatedPost.coverImage)} alt={relatedTitle} fill
                           className="object-cover group-hover:scale-110 transition-transform duration-300"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                       </div>

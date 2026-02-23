@@ -33,14 +33,6 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
 
-  alternates: {
-    canonical: '/',
-    languages: {
-      'en-US': '/en',
-      'ka-GE': '/ka',
-      'ru-RU': '/ru',
-    },
-  },
   openGraph: {
     title: 'Vibe Georgia - Discover the Caucasus',
     description: 'Unforgettable travel experiences in the heart of Georgia.',

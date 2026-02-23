@@ -17,6 +17,7 @@ import { CreateBookingChangeRequestDto } from './dto/create-booking-change-reque
 import { AdminUpdateBookingDto } from './dto/admin-update-booking.dto';
 import { AdminBookingDecisionDto } from './dto/admin-booking-decision.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
+import { AdminCreateBookingDto } from './dto/admin-create-booking.dto';
 
 @Controller('bookings')
 @UseGuards(UserJwtAuthGuard)
@@ -82,6 +83,11 @@ export class AdminBookingsController {
   @Get()
   findAll(@Query() query: AdminBookingsQueryDto) {
     return this.bookingsService.findAllAdmin(query);
+  }
+
+  @Post()
+  create(@Body() dto: AdminCreateBookingDto) {
+    return this.bookingsService.createAdmin(dto);
   }
 
   @Get(':id')

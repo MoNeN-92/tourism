@@ -18,10 +18,31 @@ import { CreateBookingChangeRequestDto } from './dto/create-booking-change-reque
 import { AdminUpdateBookingDto } from './dto/admin-update-booking.dto';
 import { AdminBookingDecisionDto } from './dto/admin-booking-decision.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
+import { AdminCreateBookingDto } from './dto/admin-create-booking.dto';
 
 function dateOnlyToUtc(dateOnly: string): Date {
   const normalized = `${dateOnly}T00:00:00.000Z`;
   const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new BadRequestException('Invalid date format');
+  }
+
+  return parsed;
+}
+
+function parseBookingDateInput(value: string): Date {
+  const input = String(value || '').trim();
+
+  if (!input) {
+    throw new BadRequestException('Invalid date format');
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    return dateOnlyToUtc(input);
+  }
+
+  const parsed = new Date(input);
 
   if (Number.isNaN(parsed.getTime())) {
     throw new BadRequestException('Invalid date format');
@@ -58,7 +79,7 @@ export class BookingsService {
       throw new NotFoundException('Tour not found');
     }
 
-    const desiredDate = dateOnlyToUtc(dto.desiredDate);
+    const desiredDate = parseBookingDateInput(dto.desiredDate);
 
     const booking = await this.prisma.booking.create({
       data: {
@@ -232,7 +253,7 @@ export class BookingsService {
     const request = await this.prisma.bookingChangeRequest.create({
       data: {
         bookingId,
-        requestedDate: dateOnlyToUtc(dto.requestedDate),
+        requestedDate: parseBookingDateInput(dto.requestedDate),
         reason: dto.reason,
       },
     });
@@ -291,6 +312,70 @@ export class BookingsService {
     });
   }
 
+  async createAdmin(dto: AdminCreateBookingDto) {
+    const [user, tour] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: dto.userId },
+        select: { id: true },
+      }),
+      this.prisma.tour.findUnique({
+        where: { id: dto.tourId },
+        select: { id: true },
+      }),
+    ]);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!tour) {
+      throw new NotFoundException('Tour not found');
+    }
+
+    const status = dto.status ?? BookingStatus.APPROVED;
+    const decisionTimestamp = new Date();
+
+    return this.prisma.booking.create({
+      data: {
+        userId: dto.userId,
+        tourId: dto.tourId,
+        desiredDate: parseBookingDateInput(dto.desiredDate),
+        adults: dto.adults,
+        children: dto.children,
+        roomType: dto.roomType,
+        note: dto.note?.trim() || undefined,
+        adminNote: dto.adminNote?.trim() || undefined,
+        status,
+        approvedAt: status === BookingStatus.APPROVED ? decisionTimestamp : null,
+        rejectedAt: status === BookingStatus.REJECTED ? decisionTimestamp : null,
+        cancelledAt: status === BookingStatus.CANCELLED ? decisionTimestamp : null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+        tour: {
+          select: {
+            id: true,
+            slug: true,
+            title_ka: true,
+            title_en: true,
+            title_ru: true,
+          },
+        },
+        changeRequests: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  }
+
   async findOneAdmin(id: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
@@ -330,7 +415,7 @@ export class BookingsService {
     await this.findOneAdmin(id);
 
     const updateData: Prisma.BookingUpdateInput = {
-      ...(dto.desiredDate ? { desiredDate: dateOnlyToUtc(dto.desiredDate) } : {}),
+      ...(dto.desiredDate ? { desiredDate: parseBookingDateInput(dto.desiredDate) } : {}),
       ...(dto.adults !== undefined ? { adults: dto.adults } : {}),
       ...(dto.children !== undefined ? { children: dto.children } : {}),
       ...(dto.roomType ? { roomType: dto.roomType as RoomType } : {}),

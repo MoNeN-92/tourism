@@ -44,6 +44,39 @@ interface ChangeRequest {
   createdAt: string
 }
 
+interface AdminUserOption {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}
+
+interface AdminUsersResponse {
+  items: AdminUserOption[]
+}
+
+interface AdminTourOption {
+  id: string
+  slug: string
+  title_ka: string
+  title_en: string
+  title_ru: string
+}
+
+type BookingStatus = Booking['status']
+
+interface CreateBookingForm {
+  userId: string
+  tourId: string
+  desiredDate: string
+  adults: number
+  children: number
+  roomType: string
+  status: BookingStatus
+  note: string
+  adminNote: string
+}
+
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   APPROVED: 'bg-green-100 text-green-800',
@@ -71,11 +104,26 @@ export default function AdminBookingsPage() {
   const locale = (params.locale as string) || 'ka'
 
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [users, setUsers] = useState<AdminUserOption[]>([])
+  const [tours, setTours] = useState<AdminTourOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [filterStatus, setFilterStatus] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateBookingForm>({
+    userId: '',
+    tourId: '',
+    desiredDate: '',
+    adults: 1,
+    children: 0,
+    roomType: 'double',
+    status: 'APPROVED',
+    note: '',
+    adminNote: '',
+  })
 
   // Modal states
   const [showModal, setShowModal] = useState(false)
@@ -89,6 +137,15 @@ export default function AdminBookingsPage() {
     if (locale === 'ru') return tour.title_ru || tour.title_en
     return tour.title_en || tour.title_ka
   }
+
+  const getTourOptionTitle = (tour: AdminTourOption) => {
+    if (locale === 'ka') return tour.title_ka || tour.title_en
+    if (locale === 'ru') return tour.title_ru || tour.title_en
+    return tour.title_en || tour.title_ka
+  }
+
+  const getUserLabel = (user: AdminUserOption) =>
+    `${user.firstName} ${user.lastName} (${user.email})`
 
   const fetchBookings = async () => {
     try {
@@ -104,14 +161,42 @@ export default function AdminBookingsPage() {
     }
   }
 
+  const fetchCreateOptions = async () => {
+    try {
+      const [usersResponse, toursResponse] = await Promise.all([
+        api.get('/admin/users?page=1&pageSize=1000'),
+        api.get('/admin/tours'),
+      ])
+
+      const userItems = (usersResponse.data?.items || []) as AdminUserOption[]
+      const tourItems = (toursResponse.data || []) as AdminTourOption[]
+
+      setUsers(userItems)
+      setTours(tourItems)
+
+      setCreateForm((prev) => ({
+        ...prev,
+        userId: prev.userId || userItems[0]?.id || '',
+        tourId: prev.tourId || tourItems[0]?.id || '',
+        desiredDate: prev.desiredDate || new Date().toISOString().slice(0, 10),
+      }))
+    } catch (requestError: any) {
+      setError(requestError?.response?.data?.message || 'სიის ჩატვირთვა ვერ მოხერხდა')
+    }
+  }
+
   useEffect(() => {
     fetchBookings()
   }, [filterStatus])
 
+  useEffect(() => {
+    fetchCreateOptions()
+  }, [])
+
   const openModal = (type: typeof modalType, booking: Booking, changeRequest?: ChangeRequest) => {
     setSelectedBooking(booking)
     setModalType(type)
-    setAdminNote('')
+    setAdminNote(booking.adminNote || '')
     setNewDate(booking.desiredDate.slice(0, 10))
     setSelectedChangeRequest(changeRequest || null)
     setShowModal(true)
@@ -125,6 +210,21 @@ export default function AdminBookingsPage() {
     setSelectedChangeRequest(null)
   }
 
+  const openCreateModal = () => {
+    setShowCreateModal(true)
+    setError('')
+    setCreateForm((prev) => ({
+      ...prev,
+      desiredDate: prev.desiredDate || new Date().toISOString().slice(0, 10),
+      userId: prev.userId || users[0]?.id || '',
+      tourId: prev.tourId || tours[0]?.id || '',
+    }))
+  }
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false)
+  }
+
   const handleApprove = async () => {
     if (!selectedBooking) return
     setActionLoading(true)
@@ -133,7 +233,7 @@ export default function AdminBookingsPage() {
       await fetchBookings()
       closeModal()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'შეცდომა')
+      setError(err?.response?.data?.message || 'ჯავშნის დამტკიცება ვერ მოხერხდა')
     } finally {
       setActionLoading(false)
     }
@@ -147,7 +247,7 @@ export default function AdminBookingsPage() {
       await fetchBookings()
       closeModal()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'შეცდომა')
+      setError(err?.response?.data?.message || 'ჯავშნის უარყოფა ვერ მოხერხდა')
     } finally {
       setActionLoading(false)
     }
@@ -158,13 +258,13 @@ export default function AdminBookingsPage() {
     setActionLoading(true)
     try {
       await api.patch(`/admin/bookings/${selectedBooking.id}`, {
-        desiredDate: new Date(newDate).toISOString(),
+        desiredDate: newDate,
         adminNote,
       })
       await fetchBookings()
       closeModal()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'შეცდომა')
+      setError(err?.response?.data?.message || 'ჯავშნის თარიღის შეცვლა ვერ მოხერხდა')
     } finally {
       setActionLoading(false)
     }
@@ -178,7 +278,7 @@ export default function AdminBookingsPage() {
       await fetchBookings()
       closeModal()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'შეცდომა')
+      setError(err?.response?.data?.message || 'შენიშვნის შენახვა ვერ მოხერხდა')
     } finally {
       setActionLoading(false)
     }
@@ -195,9 +295,40 @@ export default function AdminBookingsPage() {
       await fetchBookings()
       closeModal()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'შეცდომა')
+      setError(err?.response?.data?.message || 'მოთხოვნის განახლება ვერ მოხერხდა')
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const handleCreateBooking = async () => {
+    if (!createForm.userId || !createForm.tourId || !createForm.desiredDate) {
+      setError('შეავსეთ სავალდებულო ველები')
+      return
+    }
+
+    setCreateLoading(true)
+    try {
+      await api.post('/admin/bookings', {
+        ...createForm,
+        note: createForm.note.trim() || undefined,
+        adminNote: createForm.adminNote.trim() || undefined,
+      })
+      await fetchBookings()
+      setShowCreateModal(false)
+      setCreateForm((prev) => ({
+        ...prev,
+        adults: 1,
+        children: 0,
+        roomType: 'double',
+        status: 'APPROVED',
+        note: '',
+        adminNote: '',
+      }))
+    } catch (requestError: any) {
+      setError(requestError?.response?.data?.message || 'ჯავშნის დამატება ვერ მოხერხდა')
+    } finally {
+      setCreateLoading(false)
     }
   }
 
@@ -215,6 +346,12 @@ export default function AdminBookingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">ჯავშნების მართვა</h1>
           <div className="flex gap-2">
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+            >
+              ახალი ჯავშანი
+            </button>
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
@@ -337,6 +474,166 @@ export default function AdminBookingsPage() {
         )}
       </div>
 
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">ახალი ჯავშნის დამატება</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">მომხმარებელი</label>
+                <select
+                  value={createForm.userId}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, userId: event.target.value }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                >
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {getUserLabel(user)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">ტური</label>
+                <select
+                  value={createForm.tourId}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, tourId: event.target.value }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                >
+                  {tours.map((tour) => (
+                    <option key={tour.id} value={tour.id}>
+                      {getTourOptionTitle(tour)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">თარიღი</label>
+                <input
+                  type="date"
+                  value={createForm.desiredDate}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, desiredDate: event.target.value }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">სტატუსი</label>
+                <select
+                  value={createForm.status}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      status: event.target.value as BookingStatus,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                >
+                  <option value="APPROVED">დამტკიცებული</option>
+                  <option value="PENDING">განხილვაში</option>
+                  <option value="REJECTED">უარყოფილი</option>
+                  <option value="CANCELLED">გაუქმებული</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">მოზრდილი</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={createForm.adults}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, adults: Number(event.target.value) }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ბავშვი</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  value={createForm.children}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, children: Number(event.target.value) }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">ოთახის ტიპი</label>
+                <select
+                  value={createForm.roomType}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, roomType: event.target.value }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                >
+                  <option value="single">ერთადგილიანი</option>
+                  <option value="double">ორადგილიანი</option>
+                  <option value="twin">ტვინი</option>
+                  <option value="triple">სამადგილიანი</option>
+                  <option value="family">საოჯახო</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  მომხმარებლის შენიშვნა
+                </label>
+                <textarea
+                  value={createForm.note}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, note: event.target.value }))
+                  }
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                  placeholder="არასავალდებულო"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">ადმინის შენიშვნა</label>
+                <textarea
+                  value={createForm.adminNote}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, adminNote: event.target.value }))
+                  }
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+                  placeholder="არასავალდებულო"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={handleCreateBooking}
+                disabled={createLoading}
+                className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {createLoading ? 'იტვირთება...' : 'დამატება'}
+              </button>
+              <button
+                onClick={closeCreateModal}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                გაუქმება
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
       {showModal && selectedBooking && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -448,7 +745,6 @@ export default function AdminBookingsPage() {
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-4"
                   placeholder={selectedBooking.adminNote || 'შეიყვანეთ შენიშვნა...'}
-                  defaultValue={selectedBooking.adminNote || ''}
                 />
                 <div className="flex gap-3">
                   <button onClick={handleSaveNote} disabled={actionLoading}

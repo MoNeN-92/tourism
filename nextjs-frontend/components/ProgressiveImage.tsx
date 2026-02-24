@@ -31,13 +31,15 @@ export default function ProgressiveImage({
 
   return (
     <>
-      {/* დაბალი ხარისხი - priority ყოველთვის false, რომ LCP არ დაბლოკოს */}
+      {/* დაბალი ხარისხი - unoptimized=true რომ Next.js-მა არ გაიაროს /_next/image
+          Cloudinary უკვე optimize-ს (w_20,q_10) ამიტომ Next.js optimization არ სჭირდება */}
       <Image
         src={blurSrc}
         alt={alt}
         fill={fill}
         sizes={sizes}
         priority={false}
+        unoptimized
         className={`${className} transition-opacity duration-500 ${
           highResLoaded ? 'opacity-0' : 'opacity-100'
         }`}

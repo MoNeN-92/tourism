@@ -80,6 +80,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
+          <link
+    rel="preload"
+    as="image"
+    href="https://res.cloudinary.com/dj7qaif1i/image/upload/w_1200,q_75,f_auto/v1771396197/cover_1_secna5.jpg"
+    fetchPriority="high"
+  />
   <link rel="alternate" hrefLang="ka" href={`https://vibegeorgia.com/ka`} />
   <link rel="alternate" hrefLang="en" href={`https://vibegeorgia.com/en`} />
   <link rel="alternate" hrefLang="ru" href={`https://vibegeorgia.com/ru`} />

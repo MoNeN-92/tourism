@@ -27,9 +27,7 @@ interface Booking {
   desiredDate: string | null
   adults: number | null
   children: number | null
-  // ✅ ტურის სერვისისთვის: roomType შეიცვალა carType-ით
-  carType: string | null 
-  // ✅ სასტუმროს სერვისისთვის: ოთახის ტიპები რჩება უცვლელი
+  roomType: string | null
   hotelName: string | null
   hotelCheckIn: string | null
   hotelCheckOut: string | null
@@ -91,14 +89,12 @@ interface BookingForm {
   desiredDate: string
   adults: number
   children: number
-  // ✅ ტურის ნაწილში: roomType -> carType
-  carType: string 
+  roomType: string
   includeHotel: boolean
   hotelName: string
   hotelCheckIn: string
   hotelCheckOut: string
-  // ✅ სასტუმროს ნაწილში: hotelRoomType რჩება ისევ ოთახისთვის
-  hotelRoomType: string 
+  hotelRoomType: string
   hotelGuests: number
   hotelNotes: string
   totalPrice: number
@@ -128,19 +124,7 @@ const SERVICE_STATUS_COLORS: Record<BookingServiceStatus, string> = {
   COMPLETED: 'bg-emerald-100 text-emerald-800',
 }
 
-// ✅ მანქანების ტიპები ტურისთვის
-const CAR_TYPE_LABELS: Record<string, string> = {
-  sedan: 'Sedan (1-3 seats)',
-  hatchback: 'Hatchback (1-3 seats)',
-  suv: 'SUV / 4x4 (Off-road)',
-  minivan: 'Minivan (6-7 seats)',
-  minibus: 'Minibus (Up to 18 seats)',
-  bus: 'Large Bus (30+ seats)',
-  luxury: 'Luxury / Business Class',
-}
-
-// ✅ სასტუმროს ოთახის ტიპები (დარჩა უცვლელი)
-const HOTEL_ROOM_TYPE_LABELS: Record<string, string> = {
+const ROOM_TYPE_LABELS: Record<string, string> = {
   single: 'Single',
   double: 'Double',
   twin: 'Twin',
@@ -161,14 +145,12 @@ function emptyForm(): BookingForm {
     desiredDate: today,
     adults: 1,
     children: 0,
-    // ✅ ტურისთვის ვნიშნავთ მანქანას
-    carType: 'sedan', 
+    roomType: 'double',
     includeHotel: false,
     hotelName: '',
     hotelCheckIn: '',
     hotelCheckOut: '',
-    // ✅ სასტუმროსთვის ვტოვებთ ოთახს
-    hotelRoomType: 'double', 
+    hotelRoomType: '',
     hotelGuests: 1,
     hotelNotes: '',
     totalPrice: 0,
@@ -334,7 +316,7 @@ export default function AdminBookingsPage() {
       desiredDate: toDateInput(booking.desiredDate),
       adults: toNumber(booking.adults, 1),
       children: toNumber(booking.children, 0),
-      carType: booking.carType || 'double',
+      roomType: booking.roomType || 'double',
       includeHotel: Boolean(
         booking.hotelName || booking.hotelCheckIn || booking.hotelCheckOut || booking.hotelRoomType,
       ),
@@ -413,7 +395,7 @@ export default function AdminBookingsPage() {
       payload.desiredDate = form.desiredDate
       payload.adults = form.adults
       payload.children = form.children
-      payload.carType = form.carType
+      payload.roomType = form.roomType
     } else if (forUpdate) {
       payload.tourId = null
       payload.desiredDate = null
@@ -633,7 +615,7 @@ export default function AdminBookingsPage() {
                         </div>
                         <div>
                           <span className="font-medium">Room:</span>{' '}
-                          {booking.carType ? CAR_TYPE_LABELS[booking.carType] || booking.carType : '—'}
+                          {booking.roomType ? ROOM_TYPE_LABELS[booking.roomType] || booking.roomType : '—'}
                         </div>
 
                         <div>
@@ -858,25 +840,22 @@ export default function AdminBookingsPage() {
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                         />
                       </div>
-                     <div>
-  <label className="block text-xs text-gray-600 mb-1">Vehicle Type</label>
-  <select
-    value={form.carType} // დარწმუნდი, რომ 'form' ობიექტში roomType-ს ნაცვლად carType გიწერია
-    onChange={(event) =>
-      setForm((prev) => ({ ...prev, carType: event.target.value }))
-    }
-    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-  >
-    <option value="">Select vehicle</option>
-    <option value="sedan">Sedan (1-3 seats)</option>
-    <option value="hatchback">Hatchback (1-3 seats)</option>
-    <option value="suv">SUV / 4x4 (Off-road)</option>
-    <option value="minivan">Minivan (6-7 seats)</option>
-    <option value="minibus">Minibus (Up to 18 seats)</option>
-    <option value="bus">Large Bus (30+ seats)</option>
-    <option value="luxury">Luxury / Business Class</option>
-  </select>
-</div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Room type</label>
+                        <select
+                          value={form.roomType}
+                          onChange={(event) =>
+                            setForm((prev) => ({ ...prev, roomType: event.target.value }))
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        >
+                          <option value="single">Single</option>
+                          <option value="double">Double</option>
+                          <option value="twin">Twin</option>
+                          <option value="triple">Triple</option>
+                          <option value="family">Family</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -25,7 +25,7 @@ export default function Footer() {
 
           {/* 2. კონტაქტი */}
           <div>
-            <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-xs">
+            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider text-xs">
               {t('contact')}
             </h4>
             <ul className="space-y-4">
@@ -58,7 +58,7 @@ export default function Footer() {
 
           {/* 3. სოციალური ქსელები */}
           <div>
-            <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-xs">
+            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider text-xs">
               {t('followUs')}
             </h4>
             <div className="flex gap-4">

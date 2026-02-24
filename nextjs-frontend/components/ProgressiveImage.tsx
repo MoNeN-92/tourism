@@ -1,9 +1,8 @@
 'use client'
 
-// components/ProgressiveImage.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
+import { buildCloudinaryUrl } from '@/lib/cloudinary'
 
 interface ProgressiveImageProps {
   src: string
@@ -24,40 +23,36 @@ export default function ProgressiveImage({
   sizes = '100vw',
   className = 'object-cover',
 }: ProgressiveImageProps) {
-  const [highResLoaded, setHighResLoaded] = useState(false)
-  const generatedSources = buildCloudinarySources(src)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // Cloudinary-ს ოპტიმიზირებული ლინკები
   const highResSrc = buildCloudinaryUrl(src)
-  const blurSrc = lowResSrc || generatedSources.lowResSrc
+  const blurSrc = lowResSrc || highResSrc.replace('/upload/', '/upload/w_40,q_10,f_auto/')
 
   return (
-    <>
-      {/* დაბალი ხარისხი - unoptimized=true რომ Next.js-მა არ გაიაროს /_next/image
-          Cloudinary უკვე optimize-ს (w_20,q_10) ამიტომ Next.js optimization არ სჭირდება */}
+    <div className={`relative w-full h-full overflow-hidden ${className}`}>
+      {/* დაბალი ხარისხის Blur ფონი */}
       <Image
         src={blurSrc}
         alt={alt}
         fill={fill}
-        sizes={sizes}
-        priority={false}
+        sizes="20vw" // Blur-ისთვის დიდი ზომა არ გვჭირდება
         unoptimized
-        className={`${className} transition-opacity duration-500 ${
-          highResLoaded ? 'opacity-0' : 'opacity-100'
-        }`}
-        style={{ filter: 'blur(8px)', transform: 'scale(1.05)' }}
+        className={`transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-100'}`}
+        style={{ filter: 'blur(10px)', scale: '1.1' }}
       />
 
-      {/* მაღალი ხარისხი - priority მხოლოდ აქ, hero-ზე true გადაეცემა */}
+      {/* ძირითადი სურათი */}
       <Image
         src={highResSrc}
         alt={alt}
         fill={fill}
         sizes={sizes}
         priority={priority}
-        className={`${className} transition-opacity duration-700 ${
-          highResLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        onLoad={() => setHighResLoaded(true)}
+        fetchPriority={priority ? "high" : "low"}
+        className={`transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setIsLoaded(true)}
       />
-    </>
+    </div>
   )
 }

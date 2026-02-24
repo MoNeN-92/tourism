@@ -1,10 +1,9 @@
-// app/[locale]/layout.tsx
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { locales } from '@/i18n/config'
-import Script from 'next/script' // ✅ ვიყენებთ Next Script-ს TBT-ის შესამცირებლად
+import Script from 'next/script'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -20,7 +19,6 @@ export const metadata: Metadata = {
   authors: [{ name: 'Vibe Georgia' }],
   metadataBase: new URL('https://vibegeorgia.com'),
   
-  // ✅ SEO: Canonical და Hreflang ლოგიკა გადატანილია აქ
   alternates: {
     canonical: '/',
     languages: {
@@ -47,24 +45,12 @@ export const metadata: Metadata = {
     description: 'Unforgettable travel experiences in the heart of Georgia.',
     url: 'https://vibegeorgia.com',
     siteName: 'Vibe Georgia',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Vibe Georgia Tours',
-      },
-    ],
+    images: [{ url: '/images/og-image.jpg', width: 1200, height: 630, alt: 'Vibe Georgia Tours' }],
     locale: 'en_US',
     type: 'website',
   },
-  verification: {
-    google: 'sc-domain:vibegeorgia.com',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  }
+  verification: { google: 'sc-domain:vibegeorgia.com' },
+  robots: { index: true, follow: true }
 }
 
 export function generateStaticParams() {
@@ -79,38 +65,30 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  
-  if (!locales.includes(locale as any)) {
-    notFound()
-  }
-
+  if (!locales.includes(locale as any)) notFound()
   const messages = await getMessages()
 
   return (
     <html lang={locale}>
       <body className="antialiased">
-        {/* ✅ Google Analytics-ის ოპტიმიზირებული ჩატვირთვა TBT-ის შესამცირებლად */}
+        {/* ✅ TBT-ის ოპტიმიზაცია: GA არ აფერხებს საიტის გახსნას */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`}
-          strategy="afterInteractive" 
+          strategy="lazyOnload" 
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-ZNGHZ2EQ9P', {
-              page_path: window.location.pathname,
-            });
+            gtag('config', 'G-ZNGHZ2EQ9P');
           `}
         </Script>
 
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
             <Header />
-            <main className="flex-1">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
             <Footer />
             <CookieBanner />
           </div>

@@ -4,7 +4,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { locales } from '@/i18n/config'
-import { GoogleAnalytics } from '@next/third-parties/google'
+import Script from 'next/script' // ✅ ვიყენებთ Next Script-ს TBT-ის შესამცირებლად
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Vibe Georgia' }],
   metadataBase: new URL('https://vibegeorgia.com'),
   
-  // ✅ SEO: Canonical და ენების დინამიური ბმულები
+  // ✅ SEO: Canonical და Hreflang ლოგიკა გადატანილია აქ
   alternates: {
     canonical: '/',
     languages: {
@@ -89,6 +89,22 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className="antialiased">
+        {/* ✅ Google Analytics-ის ოპტიმიზირებული ჩატვირთვა TBT-ის შესამცირებლად */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`}
+          strategy="afterInteractive" 
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-ZNGHZ2EQ9P', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
+
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
             <Header />
@@ -99,9 +115,6 @@ export default async function LocaleLayout({
             <CookieBanner />
           </div>
         </NextIntlClientProvider>
-        
-        {/* GA იტვირთება ოპტიმიზირებულად */}
-        <GoogleAnalytics gaId="G-ZNGHZ2EQ9P" />
       </body>
     </html>
   )

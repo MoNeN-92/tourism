@@ -20,10 +20,19 @@ export const metadata: Metadata = {
   authors: [{ name: 'Vibe Georgia' }],
   metadataBase: new URL('https://vibegeorgia.com'),
   
-  // ✅ აიქონების დამატებული სექცია
+  // ✅ SEO: Canonical და ენების დინამიური ბმულები
+  alternates: {
+    canonical: '/',
+    languages: {
+      'ka-GE': '/ka',
+      'en-US': '/en',
+      'ru-RU': '/ru',
+    },
+  },
+
   icons: {
     icon: [
-      { url: '/images/favicon.ico' }, // თუ favicon პირდაპირ public-შია, დატოვე '/favicon.ico'
+      { url: '/images/favicon.ico' },
       { url: '/images/icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/images/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
@@ -40,7 +49,7 @@ export const metadata: Metadata = {
     siteName: 'Vibe Georgia',
     images: [
       {
-        url: '/images/og-image.jpg', // მივუთითე images საქაღალდე
+        url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Vibe Georgia Tours',
@@ -79,18 +88,6 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <head>
-          <link
-    rel="preload"
-    as="image"
-    href="https://res.cloudinary.com/dj7qaif1i/image/upload/w_1200,q_75,f_auto/v1771396197/cover_1_secna5.jpg"
-    fetchPriority="high"
-  />
-  <link rel="alternate" hrefLang="ka" href={`https://vibegeorgia.com/ka`} />
-  <link rel="alternate" hrefLang="en" href={`https://vibegeorgia.com/en`} />
-  <link rel="alternate" hrefLang="ru" href={`https://vibegeorgia.com/ru`} />
-  <link rel="alternate" hrefLang="x-default" href="https://vibegeorgia.com/en" />
-</head>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
@@ -103,6 +100,7 @@ export default async function LocaleLayout({
           </div>
         </NextIntlClientProvider>
         
+        {/* GA იტვირთება ოპტიმიზირებულად */}
         <GoogleAnalytics gaId="G-ZNGHZ2EQ9P" />
       </body>
     </html>

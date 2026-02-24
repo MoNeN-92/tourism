@@ -72,22 +72,15 @@ function getLocalizedField<T extends Tour | BlogPost>(
     en: `${field}_en` as keyof T,
     ru: `${field}_ru` as keyof T,
   }
-
   const localizedFieldKey = fieldMap[locale] || fieldMap['ka']
   const localizedValue = item[localizedFieldKey]
   const fallbackValue = item[`${field}_ka` as keyof T]
-
   return (localizedValue as string) || (fallbackValue as string) || ''
 }
 
 function formatDate(dateString: string, locale: string): string {
   const date = new Date(dateString)
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }
-
+  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' }
   return date.toLocaleDateString(
     locale === 'ka' ? 'ka-GE' : locale === 'ru' ? 'ru-RU' : 'en-US',
     options
@@ -99,11 +92,7 @@ function formatDuration(duration: string, locale: string): string {
   if (!value) return ''
   if (/^\d+$/.test(value)) {
     const days = Number(value)
-    const labels = {
-      ka: 'დღე',
-      en: days === 1 ? 'day' : 'days',
-      ru: 'дн.',
-    }
+    const labels = { ka: 'დღე', en: days === 1 ? 'day' : 'days', ru: 'дн.' }
     return `${days} ${labels[locale as keyof typeof labels] || labels.en}`
   }
   return value
@@ -112,10 +101,7 @@ function formatDuration(duration: string, locale: string): string {
 async function getFeaturedTours(): Promise<Tour[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/tours`, {
-      cache: 'no-store',
-      next: { revalidate: 0 }
-    })
+    const res = await fetch(`${apiUrl}/tours`, { cache: 'no-store', next: { revalidate: 0 } })
     if (!res.ok) return []
     const allTours: Tour[] = await res.json()
     const activeTours = allTours.filter(tour => tour.status === true)
@@ -133,14 +119,9 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
     if (!res.ok) return mockBlogPosts.slice(0, 3)
     const apiPosts: ApiBlogPost[] = await res.json()
     const normalized: BlogPost[] = apiPosts.map(p => ({
-      id: p.id,
-      slug: p.slug,
-      title_ka: p.title_ka,
-      title_en: p.title_en,
-      title_ru: p.title_ru,
-      excerpt_ka: p.excerpt_ka,
-      excerpt_en: p.excerpt_en,
-      excerpt_ru: p.excerpt_ru,
+      id: p.id, slug: p.slug,
+      title_ka: p.title_ka, title_en: p.title_en, title_ru: p.title_ru,
+      excerpt_ka: p.excerpt_ka, excerpt_en: p.excerpt_en, excerpt_ru: p.excerpt_ru,
       coverImage: p.coverImage,
       publishedDate: p.publishedAt || new Date().toISOString(),
     }))
@@ -184,6 +165,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         'ka': 'https://vibegeorgia.com/ka',
         'en': 'https://vibegeorgia.com/en',
         'ru': 'https://vibegeorgia.com/ru',
+        'x-default': 'https://vibegeorgia.com/en',
       },
     },
     robots: {
@@ -201,7 +183,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 const HERO_IMAGE = buildCloudinarySources(
-  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg',
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg'
 )
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
@@ -230,15 +212,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     image: 'https://vibegeorgia.com/og-home.jpg',
     telephone: '+995596550099',
     email: 'info@vibegeorgia.com',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Tbilisi',
-      addressCountry: 'GE',
-    },
-    sameAs: [
-      'https://facebook.com/vibegeorgia',
-      'https://instagram.com/vibegeorgia',
-    ],
+    address: { '@type': 'PostalAddress', addressLocality: 'Tbilisi', addressCountry: 'GE' },
+    sameAs: ['https://facebook.com/vibegeorgia', 'https://instagram.com/vibegeorgia'],
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Tours in Georgia',
@@ -315,9 +290,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <article key={tour.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                       <Link href={`/${locale}/tours/${tour.slug}`}>
                         <div className="relative h-48 overflow-hidden">
-                          <Image src={buildCloudinaryUrl(coverImage)} alt={title} fill
+                          <Image
+                            src={buildCloudinaryUrl(coverImage)}
+                            alt={title}
+                            fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" />
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          />
                         </div>
                         <div className="p-5">
                           <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">{title}</h3>
@@ -371,9 +350,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {destinations.map((destination, index) => (
                 <article key={index} className="group relative h-48 sm:h-56 lg:h-64 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer">
-                  <Image src={destination.image} alt={destination.name} fill
+                  <Image
+                    src={destination.image}
+                    alt={destination.name}
+                    fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 33vw" />
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 33vw"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
                     <h3 className="text-xl sm:text-2xl font-bold text-white">{destination.name}</h3>
@@ -400,9 +383,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <article key={post.id} className="group block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                     <Link href={`/${locale}/blog/${post.slug}`}>
                       <div className="relative h-48 overflow-hidden">
-                        <Image src={buildCloudinaryUrl(post.coverImage)} alt={title} fill
+                        <Image
+                          src={buildCloudinaryUrl(post.coverImage)}
+                          alt={title}
+                          fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
                       </div>
                       <div className="p-5">
                         <time className="text-sm text-gray-500 mb-2 block" dateTime={post.publishedDate}>

@@ -31,20 +31,20 @@ export default function ProgressiveImage({
 
   return (
     <>
-      {/* დაბალი ხარისხი - ყოველთვის ჩანს სანამ მაღალი არ ჩაიტვირთება */}
+      {/* დაბალი ხარისხი - priority ყოველთვის false, რომ LCP არ დაბლოკოს */}
       <Image
         src={blurSrc}
         alt={alt}
         fill={fill}
         sizes={sizes}
-        priority={priority}
+        priority={false}
         className={`${className} transition-opacity duration-500 ${
           highResLoaded ? 'opacity-0' : 'opacity-100'
         }`}
         style={{ filter: 'blur(8px)', transform: 'scale(1.05)' }}
       />
 
-      {/* მაღალი ხარისხი - ჩაიტვირთება ფონში */}
+      {/* მაღალი ხარისხი - priority მხოლოდ აქ, hero-ზე true გადაეცემა */}
       <Image
         src={highResSrc}
         alt={alt}

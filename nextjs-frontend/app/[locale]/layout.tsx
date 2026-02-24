@@ -79,6 +79,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
+      <head>
+  <link rel="alternate" hrefLang="ka" href={`https://vibegeorgia.com/ka`} />
+  <link rel="alternate" hrefLang="en" href={`https://vibegeorgia.com/en`} />
+  <link rel="alternate" hrefLang="ru" href={`https://vibegeorgia.com/ru`} />
+  <link rel="alternate" hrefLang="x-default" href="https://vibegeorgia.com/en" />
+</head>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">

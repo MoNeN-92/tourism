@@ -249,25 +249,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Blog Section */}
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('latestBlog.title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {latestPosts.map((post) => (
-              <article key={post.id} className="border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <Link href={`/${locale}/blog/${post.slug}`}>
-                  <div className="relative h-48">
-                    <Image src={buildCloudinaryUrl(post.coverImage)} alt={getLocalizedField(post, 'title', locale)} fill className="object-cover" />
-                  </div>
-                  <div className="p-5">
-                    <time className="text-xs text-gray-400">{formatDate(post.publishedDate, locale)}</time>
-                    <h3 className="font-bold mt-2">{getLocalizedField(post, 'title', locale)}</h3>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+  <div className="container mx-auto px-4">
+    <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('latestBlog.title')}</h2>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {latestPosts.map((post) => (
+        /* 👇 აქ წავშალე 'border' კლასი */
+        <article key={post.id} className="rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
+          <Link href={`/${locale}/blog/${post.slug}`}>
+            <div className="relative h-48">
+              <Image 
+                src={buildCloudinaryUrl(post.coverImage)} 
+                alt={getLocalizedField(post, 'title', locale)} 
+                fill 
+                className="object-cover" 
+              />
+            </div>
+            <div className="p-5">
+              <time className="text-xs text-gray-400">{formatDate(post.publishedDate, locale)}</time>
+              <h3 className="font-bold mt-2">{getLocalizedField(post, 'title', locale)}</h3>
+            </div>
+          </Link>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
     </div>
   )
 }

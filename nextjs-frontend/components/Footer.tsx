@@ -72,7 +72,7 @@ export default function Footer() {
   <Facebook size={20} />
 </a>
               <a 
-                href="https://instagram.com/vibegeorgia" 
+                // href="https://instagram.com/vibegeorgia" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="bg-gray-800 p-3 rounded-xl hover:bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-500 hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg"

@@ -1,3 +1,4 @@
+// app/[locale]/page.tsx
 import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -176,7 +177,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - OPTIMIZED FOR LCP */}
+      {/* 1. Hero Section */}
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
         <Image
           src="https://res.cloudinary.com/dj7qaif1i/image/upload/f_auto,q_auto,w_1920/v1771396197/cover_1_secna5.jpg"
@@ -201,7 +202,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Featured Tours Section */}
+      {/* 2. Featured Tours Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('featuredTours.title')}</h2>
@@ -229,8 +230,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Destinations Grid */}
+      {/* 3. Why Choose Us (Added here) */}
       <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-5xl font-bold mb-4">{t('whyChooseUs.title')}</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">{t('whyChooseUs.subtitle')}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { icon: '🎯', title: t('whyChooseUs.expertise.title'), desc: t('whyChooseUs.expertise.description') },
+              { icon: '🛡️', title: t('whyChooseUs.safety.title'), desc: t('whyChooseUs.safety.description') },
+              { icon: '⭐', title: t('whyChooseUs.quality.title'), desc: t('whyChooseUs.quality.description') },
+              { icon: '💬', title: t('whyChooseUs.support.title'), desc: t('whyChooseUs.support.description') },
+            ].map((item, i) => (
+              <div key={i} className="bg-white p-8 rounded-xl text-center shadow-sm hover:shadow-md transition-all">
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900">{item.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Destinations Grid */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-5xl font-bold mb-12">{t('destinations.title')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -247,33 +272,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Blog Section */}
-      <section className="py-16 bg-white">
-  <div className="container mx-auto px-4">
-    <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('latestBlog.title')}</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {latestPosts.map((post) => (
-        /* 👇 აქ წავშალე 'border' კლასი */
-        <article key={post.id} className="rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
-          <Link href={`/${locale}/blog/${post.slug}`}>
-            <div className="relative h-48">
-              <Image 
-                src={buildCloudinaryUrl(post.coverImage)} 
-                alt={getLocalizedField(post, 'title', locale)} 
-                fill 
-                className="object-cover" 
-              />
-            </div>
-            <div className="p-5">
-              <time className="text-xs text-gray-400">{formatDate(post.publishedDate, locale)}</time>
-              <h3 className="font-bold mt-2">{getLocalizedField(post, 'title', locale)}</h3>
-            </div>
-          </Link>
-        </article>
-      ))}
-    </div>
-  </div>
-</section>
+      {/* 5. Blog Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('latestBlog.title')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {latestPosts.map((post) => (
+              <article key={post.id} className="rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
+                <Link href={`/${locale}/blog/${post.slug}`}>
+                  <div className="relative h-48">
+                    <Image 
+                      src={buildCloudinaryUrl(post.coverImage)} 
+                      alt={getLocalizedField(post, 'title', locale)} 
+                      fill 
+                      className="object-cover" 
+                    />
+                  </div>
+                  <div className="p-5">
+                    <time className="text-xs text-gray-400">{formatDate(post.publishedDate, locale)}</time>
+                    <h3 className="font-bold mt-2">{getLocalizedField(post, 'title', locale)}</h3>
+                  </div>
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

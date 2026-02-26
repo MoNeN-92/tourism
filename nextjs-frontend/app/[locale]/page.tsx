@@ -273,31 +273,37 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* 5. Blog Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('latestBlog.title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {latestPosts.map((post) => (
-              <article key={post.id} className="rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
-                <Link href={`/${locale}/blog/${post.slug}`}>
-                  <div className="relative h-48">
-                    <Image 
-                      src={buildCloudinaryUrl(post.coverImage)} 
-                      alt={getLocalizedField(post, 'title', locale)} 
-                      fill 
-                      className="object-cover" 
-                    />
-                  </div>
-                  <div className="p-5">
-                    <time className="text-xs text-gray-400">{formatDate(post.publishedDate, locale)}</time>
-                    <h3 className="font-bold mt-2">{getLocalizedField(post, 'title', locale)}</h3>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section className="py-16 bg-white">
+  <div className="container mx-auto px-4">
+    <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('featuredTours.title')}</h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {featuredTours.map((tour) => (
+        <article 
+          key={tour.id} 
+          className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+        >
+          <Link href={`/${locale}/tours/${tour.slug}`}>
+            <div className="relative h-48 overflow-hidden">
+              <Image
+                src={buildCloudinaryUrl(tour.images[0]?.url || '')}
+                alt={getLocalizedField(tour, 'title', locale)}
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+            </div>
+            <div className="p-5">
+              <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                {getLocalizedField(tour, 'title', locale)}
+              </h3>
+              <p className="text-sm text-gray-500">⏱️ {formatDuration(tour.duration, locale)}</p>
+            </div>
+          </Link>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
     </div>
   )
 }

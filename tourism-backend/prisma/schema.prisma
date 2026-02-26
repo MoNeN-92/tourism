@@ -19,17 +19,17 @@ model Admin {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  phone         String
-  isActive      Boolean        @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  bookings      Booking[]
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String
+  isActive     Boolean        @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  bookings     Booking[]
   notifications Notification[]
 }
 
@@ -47,7 +47,7 @@ model Tour {
   location_en    String?
   location_ru    String?
 
-  // Legacy fields (kept for backward compatibility)
+  // Legacy fields
   title       String @default("")
   slug        String @unique
   description String @default("")

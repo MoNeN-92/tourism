@@ -50,7 +50,7 @@ export class AdminUpdateBookingDto {
   children?: number | null;
 
   @IsOptional()
-  @IsEnum(RoomType)
+  @IsEnum(Object.values(RoomType))
   roomType?: RoomType | null;
 
   @IsOptional()
@@ -90,11 +90,11 @@ export class AdminUpdateBookingDto {
   amountPaid?: number;
 
   @IsOptional()
-  @IsEnum(BookingStatus)
+  @IsEnum(Object.values(BookingStatus))
   status?: BookingStatus;
 
   @IsOptional()
-  @IsEnum(BookingServiceStatus)
+  @IsEnum(Object.values(BookingServiceStatus))
   serviceStatus?: BookingServiceStatus;
 
   @IsOptional()

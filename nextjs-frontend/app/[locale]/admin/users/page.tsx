@@ -33,6 +33,16 @@ interface UserEditForm {
   role: UserRole
 }
 
+interface CreateUserForm {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  phone: string
+  role: UserRole
+  isActive: boolean
+}
+
 function formatDate(value?: string | null) {
   if (!value) return ''
   return new Date(value).toLocaleString()
@@ -46,6 +56,16 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [actionId, setActionId] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateUserForm>({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    role: 'USER',
+    isActive: true,
+  })
   const [editForm, setEditForm] = useState<UserEditForm>({
     firstName: '',
     lastName: '',
@@ -119,25 +139,81 @@ export default function AdminUsersPage() {
     setEditingUser(item)
   }
 
+  const resetCreateForm = () => {
+    setCreateForm({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      role: 'USER',
+      isActive: true,
+    })
+  }
+
+  const handleCreateUser = async () => {
+    if (
+      !createForm.email.trim() ||
+      !createForm.password.trim() ||
+      !createForm.firstName.trim() ||
+      !createForm.lastName.trim() ||
+      !createForm.phone.trim()
+    ) {
+      setError(t('createValidationRequired'))
+      return
+    }
+
+    try {
+      setActionId('create-user')
+      await api.post('/admin/users', {
+        email: createForm.email.trim(),
+        password: createForm.password,
+        firstName: createForm.firstName.trim(),
+        lastName: createForm.lastName.trim(),
+        phone: createForm.phone.trim(),
+        role: createForm.role,
+        isActive: createForm.isActive,
+      })
+      await fetchUsers()
+      setCreatingUser(false)
+      resetCreateForm()
+    } catch (requestError: any) {
+      setError(requestError?.response?.data?.message || t('failedCreate'))
+    } finally {
+      setActionId(null)
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="px-3 py-2 rounded-lg border border-gray-300 min-w-[240px]"
-            />
+          <div className="flex gap-2 flex-wrap">
             <button
-              onClick={() => fetchUsers()}
-              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+              onClick={() => {
+                resetCreateForm()
+                setCreatingUser(true)
+              }}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
             >
-              {t('search')}
+              {t('create')}
             </button>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t('searchPlaceholder')}
+                className="px-3 py-2 rounded-lg border border-gray-300 min-w-[240px]"
+              />
+              <button
+                onClick={() => fetchUsers()}
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+              >
+                {t('search')}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -270,6 +346,99 @@ export default function AdminUsersPage() {
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {actionId === editingUser.id ? t('saving') : t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {creatingUser && (
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900">{t('createTitle')}</h2>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptEmail')}</label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, email: event.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptPassword')}</label>
+                <input
+                  type="password"
+                  minLength={6}
+                  value={createForm.password}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, password: event.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptFirstName')}</label>
+                <input
+                  type="text"
+                  value={createForm.firstName}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptLastName')}</label>
+                <input
+                  type="text"
+                  value={createForm.lastName}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptPhone')}</label>
+                <input
+                  type="text"
+                  value={createForm.phone}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptRole')}</label>
+                <select
+                  value={createForm.role}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, role: event.target.value as UserRole }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="USER">{t('roleValue.user')}</option>
+                  <option value="MODERATOR">{t('roleValue.moderator')}</option>
+                  <option value="ADMIN">{t('roleValue.admin')}</option>
+                </select>
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={createForm.isActive}
+                  onChange={(event) => setCreateForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                />
+                {t('promptActive')}
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setCreatingUser(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {t('close')}
+              </button>
+              <button
+                onClick={handleCreateUser}
+                disabled={actionId === 'create-user'}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {actionId === 'create-user' ? t('saving') : t('create')}
               </button>
             </div>
           </div>

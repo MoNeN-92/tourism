@@ -146,6 +146,14 @@ export default function AdminLayout({
             </li>
             <li>
               <Link
+                href={`/${locale}/admin/hotels`}
+                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                {t('hotels')}
+              </Link>
+            </li>
+            <li>
+              <Link
                 href={`/${locale}/admin/calendar`}
                 className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >

@@ -9,7 +9,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common'
-import { AdminRole } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 import { BlogService } from './blog.service'
 import { CreateBlogPostDto } from './dto/create-blog-post.dto'
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto'
@@ -36,7 +36,7 @@ export class BlogController {
 // Admin endpoints (protected)
 @Controller('admin/blog')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(AdminRole.ADMIN)
+@Roles(UserRole.ADMIN)
 export class AdminBlogController {
   constructor(private blogService: BlogService) {}
 

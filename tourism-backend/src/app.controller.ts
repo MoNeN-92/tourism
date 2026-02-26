@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AdminRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CurrentAdmin } from './auth/decorators/current-admin.decorator';
@@ -24,7 +24,7 @@ export class AppController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.ADMIN, AdminRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @Get('admin/profile')
   getAdminProfile(@CurrentAdmin() admin: any) {
     return {

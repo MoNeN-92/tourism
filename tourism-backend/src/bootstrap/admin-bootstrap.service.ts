@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AdminRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -37,28 +37,36 @@ export class AdminBootstrapService implements OnModuleInit {
       this.configService.get<string>('SEED_ADMIN_LAST_NAME') ||
       this.configService.get<string>('ADMIN_LAST_NAME') ||
       'User';
+    const phone =
+      this.configService.get<string>('SEED_ADMIN_PHONE') ||
+      this.configService.get<string>('ADMIN_PHONE') ||
+      '+995000000000';
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await this.prisma.admin.upsert({
+      await this.prisma.user.upsert({
         where: { email },
         update: {
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           firstName,
           lastName,
-          role: AdminRole.ADMIN,
+          phone,
+          role: UserRole.ADMIN,
+          isActive: true,
         },
         create: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           firstName,
           lastName,
-          role: AdminRole.ADMIN,
+          phone,
+          role: UserRole.ADMIN,
+          isActive: true,
         },
       });
 
-      this.logger.log(`Admin account synced for ${email}`);
+      this.logger.log(`Admin user synced for ${email}`);
     } catch (error: any) {
       this.logger.error(`Admin bootstrap failed: ${error?.message || error}`);
     }

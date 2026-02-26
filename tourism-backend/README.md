@@ -65,14 +65,14 @@ npm run start:prod
 - GET `/tours/:slug` - Get tour by slug
 
 ### Admin (requires JWT)
-- POST `/auth/login` - Admin login
+- POST `/auth/login` - Admin/staff login (legacy endpoint)
 - POST `/auth/logout` - Admin logout
 - GET `/admin/tours` - Get all tours (active + inactive)
 - POST `/admin/tours` - Create tour
 - PUT `/admin/tours/:id` - Update tour
 - DELETE `/admin/tours/:id` - Delete tour
 - GET `/admin/users` - List users
-- PATCH `/admin/users/:id` - Update user status/profile
+- PATCH `/admin/users/:id` - Update user status/profile/role
 - GET `/admin/bookings` - List bookings
 - POST `/admin/bookings/:id/approve` - Approve booking
 - POST `/admin/bookings/:id/reject` - Reject booking
@@ -80,7 +80,7 @@ npm run start:prod
 
 ### Users (requires user JWT for protected endpoints)
 - POST `/users/auth/register` - Register user
-- POST `/users/auth/login` - Login user
+- POST `/users/auth/login` - Unified login (USER/MODERATOR/ADMIN)
 - POST `/users/auth/logout` - Logout user
 - GET `/users/auth/me` - Current user profile
 - POST `/bookings` - Create booking request

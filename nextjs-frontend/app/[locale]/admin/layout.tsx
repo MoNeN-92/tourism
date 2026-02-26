@@ -9,6 +9,7 @@ import api from '@/lib/api'
 import { clearAdminAccessToken } from '@/lib/auth-token'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
 
 export default function AdminLayout({
   children,
@@ -36,16 +37,29 @@ export default function AdminLayout({
 
     const checkAuth = async () => {
       try {
-        const response = await api.get('/admin/profile')
+        const response = await api.get('/users/auth/me')
+        const role = (response.data?.role as UserRole | undefined) || 'USER'
+
+        if (role !== 'ADMIN' && role !== 'MODERATOR') {
+          if (!cancelled) {
+            setIsAuthenticated(false)
+            setAdminRole(null)
+            router.replace(`/${locale}/account/notifications`)
+          }
+          return
+        }
+
         if (!cancelled) {
           setIsAuthenticated(true)
-          setAdminRole((response.data?.admin?.role as AdminRole) || null)
+          setAdminRole(role)
         }
       } catch {
         if (!cancelled) {
           setIsAuthenticated(false)
           setAdminRole(null)
-          router.replace(`/${locale}/admin/login`)
+          router.replace(
+            `/${locale}/account/login?next=${encodeURIComponent(pathname || `/${locale}/admin`)}`,
+          )
         }
       } finally {
         if (!cancelled) {
@@ -59,9 +73,15 @@ export default function AdminLayout({
     return () => {
       cancelled = true
     }
-  }, [router, locale, isLoginPage])
+  }, [router, locale, isLoginPage, pathname])
 
   const handleLogout = async () => {
+    try {
+      await api.post('/users/auth/logout')
+    } catch {
+      // Best-effort logout to avoid blocking UI if API is temporarily unavailable.
+    }
+
     try {
       await api.post('/auth/logout')
     } catch {
@@ -69,7 +89,7 @@ export default function AdminLayout({
     }
 
     clearAdminAccessToken()
-    router.replace(`/${locale}/admin/login`)
+    router.replace(`/${locale}/account/login`)
     router.refresh()
   }
 

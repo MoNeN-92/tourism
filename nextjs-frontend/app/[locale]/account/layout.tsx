@@ -5,6 +5,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import api from '@/lib/api'
+import { clearAdminAccessToken } from '@/lib/auth-token'
 
 interface UserProfile {
   id: string
@@ -73,6 +74,7 @@ export default function AccountLayout({
       // Best effort logout.
     }
 
+    clearAdminAccessToken()
     router.replace(`/${locale}/account/login`)
     router.refresh()
   }

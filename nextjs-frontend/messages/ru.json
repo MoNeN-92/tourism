@@ -497,6 +497,7 @@
       "noUsers": "Пользователи не найдены.",
       "user": "Пользователь",
       "phone": "Телефон",
+      "role": "Роль",
       "status": "Статус",
       "lastLogin": "Последний вход",
       "actions": "Действия",
@@ -511,7 +512,13 @@
       "validationRequired": "Имя, фамилия и телефон обязательны",
       "promptFirstName": "Имя",
       "promptLastName": "Фамилия",
-      "promptPhone": "Телефон"
+      "promptPhone": "Телефон",
+      "promptRole": "Роль",
+      "roleValue": {
+        "user": "Клиент",
+        "moderator": "Модератор",
+        "admin": "Администратор"
+      }
     }
   }
 }

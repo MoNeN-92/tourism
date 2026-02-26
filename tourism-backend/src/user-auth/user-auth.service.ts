@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -21,8 +22,9 @@ export class UserAuthService {
     firstName: string;
     lastName: string;
     phone: string;
+    role: UserRole;
   }) {
-    const payload = { sub: user.id, email: user.email, role: 'user' };
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
       access_token: this.jwtService.sign(payload),
@@ -32,13 +34,16 @@ export class UserAuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        role: user.role,
       },
     };
   }
 
   async register(dto: RegisterUserDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -49,11 +54,12 @@ export class UserAuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email: normalizedEmail,
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
         phone: dto.phone,
+        role: UserRole.USER,
       },
       select: {
         id: true,
@@ -61,6 +67,7 @@ export class UserAuthService {
         firstName: true,
         lastName: true,
         phone: true,
+        role: true,
       },
     });
 
@@ -68,8 +75,10 @@ export class UserAuthService {
   }
 
   async login(email: string, password: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
@@ -104,6 +113,7 @@ export class UserAuthService {
         phone: true,
         isActive: true,
         lastLoginAt: true,
+        role: true,
         createdAt: true,
       },
     });

@@ -10,10 +10,13 @@ interface UserItem {
   firstName: string
   lastName: string
   phone: string
+  role: UserRole
   isActive: boolean
   lastLoginAt?: string | null
   createdAt: string
 }
+
+type UserRole = 'USER' | 'MODERATOR' | 'ADMIN'
 
 interface UsersResponse {
   items: UserItem[]
@@ -27,6 +30,7 @@ interface UserEditForm {
   firstName: string
   lastName: string
   phone: string
+  role: UserRole
 }
 
 function formatDate(value?: string | null) {
@@ -46,6 +50,7 @@ export default function AdminUsersPage() {
     firstName: '',
     lastName: '',
     phone: '',
+    role: 'USER',
   })
 
   const fetchUsers = async (searchValue = search) => {
@@ -93,6 +98,7 @@ export default function AdminUsersPage() {
         firstName: editForm.firstName.trim(),
         lastName: editForm.lastName.trim(),
         phone: editForm.phone.trim(),
+        role: editForm.role,
       })
       await fetchUsers()
       setEditingUser(null)
@@ -108,6 +114,7 @@ export default function AdminUsersPage() {
       firstName: item.firstName,
       lastName: item.lastName,
       phone: item.phone,
+      role: item.role,
     })
     setEditingUser(item)
   }
@@ -145,6 +152,7 @@ export default function AdminUsersPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('user')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('phone')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('role')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('status')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('lastLogin')}</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{t('actions')}</th>
@@ -160,6 +168,7 @@ export default function AdminUsersPage() {
                       <p className="text-sm text-gray-600">{item.email}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{item.phone}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{t(`roleValue.${item.role.toLowerCase()}`)}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -233,6 +242,18 @@ export default function AdminUsersPage() {
                   onChange={(event) => setEditForm((prev) => ({ ...prev, phone: event.target.value }))}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptRole')}</label>
+                <select
+                  value={editForm.role}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, role: event.target.value as UserRole }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="USER">{t('roleValue.user')}</option>
+                  <option value="MODERATOR">{t('roleValue.moderator')}</option>
+                  <option value="ADMIN">{t('roleValue.admin')}</option>
+                </select>
               </div>
             </div>
 

@@ -497,6 +497,7 @@
       "noUsers": "No users found.",
       "user": "User",
       "phone": "Phone",
+      "role": "Role",
       "status": "Status",
       "lastLogin": "Last Login",
       "actions": "Actions",
@@ -511,7 +512,13 @@
       "validationRequired": "First name, last name, and phone are required",
       "promptFirstName": "First name",
       "promptLastName": "Last name",
-      "promptPhone": "Phone"
+      "promptPhone": "Phone",
+      "promptRole": "Role",
+      "roleValue": {
+        "user": "Customer",
+        "moderator": "Moderator",
+        "admin": "Admin"
+      }
     }
   }
 }

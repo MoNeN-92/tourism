@@ -26,7 +26,7 @@ Open:
 - Public site: `http://localhost:3000/en`
 - User login: `http://localhost:3000/en/account/login`
 - User bookings: `http://localhost:3000/en/account/bookings`
-- Admin login: `http://localhost:3000/en/admin/login`
+- Unified login (all roles): `http://localhost:3000/en/account/login`
 - Admin bookings: `http://localhost:3000/en/admin/bookings`
 - Admin calendar: `http://localhost:3000/en/admin/calendar`
 

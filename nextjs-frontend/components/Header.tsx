@@ -9,9 +9,11 @@ import api from '@/lib/api'
 import { clearAdminAccessToken } from '@/lib/auth-token'
 
 interface AuthUser {
+  id?: string
   firstName?: string
   lastName?: string
   email?: string
+  role?: 'USER' | 'ADMIN' | 'MODERATOR'
 }
 
 type AuthMode = 'guest' | 'user' | 'admin'
@@ -46,22 +48,15 @@ export default function Header() {
       setIsAuthLoading(true)
 
       try {
-        await api.get('/admin/profile')
-        if (!cancelled) {
-          setAuthMode('admin')
-          setAuthUser(null)
-          setIsAuthLoading(false)
-        }
-        return
-      } catch {
-        // Ignore and continue to user check.
-      }
-
-      try {
         const userResponse = await api.get('/users/auth/me')
         if (!cancelled) {
-          setAuthMode('user')
-          setAuthUser(userResponse.data ?? null)
+          const user = userResponse.data ?? null
+          setAuthUser(user)
+          setAuthMode(
+            user?.role === 'ADMIN' || user?.role === 'MODERATOR'
+              ? 'admin'
+              : 'user',
+          )
         }
       } catch {
         if (!cancelled) {
@@ -116,11 +111,13 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      if (authMode === 'user') {
-        await api.post('/users/auth/logout')
-      } else if (authMode === 'admin') {
-        await api.post('/auth/logout')
-      }
+      await api.post('/users/auth/logout')
+    } catch {
+      // Best effort logout.
+    }
+
+    try {
+      await api.post('/auth/logout')
     } catch {
       // Best effort logout.
     } finally {

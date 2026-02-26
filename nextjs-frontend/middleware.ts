@@ -44,6 +44,12 @@ function isAdminOnlyRoute(pathname: string): boolean {
   )
 }
 
+function buildAccountLoginUrl(locale: string, pathname: string, requestUrl: string) {
+  const loginUrl = new URL(`/${locale}/account/login`, requestUrl)
+  loginUrl.searchParams.set('next', pathname)
+  return loginUrl
+}
+
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -62,7 +68,7 @@ export default function middleware(request: NextRequest) {
     const token = request.cookies.get('token')?.value
 
     if (!token) {
-      const loginUrl = new URL(`/${locale}/admin/login`, request.url)
+      const loginUrl = buildAccountLoginUrl(locale, pathname, request.url)
       return NextResponse.redirect(loginUrl)
     }
 
@@ -70,8 +76,8 @@ export default function middleware(request: NextRequest) {
     const role = payload?.role as AdminRole | undefined
 
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      const loginUrl = new URL(`/${locale}/admin/login`, request.url)
-      return NextResponse.redirect(loginUrl)
+      const accountUrl = new URL(`/${locale}/account/notifications`, request.url)
+      return NextResponse.redirect(accountUrl)
     }
 
     if (isAdminOnlyRoute(pathname) && role !== 'ADMIN') {

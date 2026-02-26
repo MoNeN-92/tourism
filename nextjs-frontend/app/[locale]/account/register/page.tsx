@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { persistAdminAccessToken } from '@/lib/auth-token'
 
 export default function AccountRegisterPage() {
   const params = useParams()
@@ -44,6 +45,10 @@ export default function AccountRegisterPage() {
       if (!response.ok) {
         setError(data?.message || t('registerFailed'))
         return
+      }
+
+      if (data?.access_token) {
+        persistAdminAccessToken(data.access_token)
       }
 
       router.replace(next)

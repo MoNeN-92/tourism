@@ -1,4 +1,4 @@
-import { AdminRole, PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -11,6 +11,7 @@ async function main() {
     process.env.SEED_ADMIN_FIRST_NAME || process.env.ADMIN_FIRST_NAME || 'Admin';
   const lastName =
     process.env.SEED_ADMIN_LAST_NAME || process.env.ADMIN_LAST_NAME || 'User';
+  const phone = process.env.SEED_ADMIN_PHONE || process.env.ADMIN_PHONE || '+995000000000';
 
   if (!emailRaw || !password) {
     throw new Error(
@@ -22,21 +23,25 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const admin = await prisma.admin.upsert({
+  const admin = await prisma.user.upsert({
     where: { email },
     // Re-seeding same email should reset credentials to provided values.
     update: {
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       firstName,
       lastName,
-      role: AdminRole.ADMIN,
+      phone,
+      role: UserRole.ADMIN,
+      isActive: true,
     },
     create: {
       email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       firstName,
       lastName,
-      role: AdminRole.ADMIN,
+      phone,
+      role: UserRole.ADMIN,
+      isActive: true,
     },
   });
 

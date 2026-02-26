@@ -497,6 +497,7 @@
       "noUsers": "მომხმარებლები ვერ მოიძებნა.",
       "user": "მომხმარებელი",
       "phone": "ტელეფონი",
+      "role": "როლი",
       "status": "სტატუსი",
       "lastLogin": "ბოლო ავტორიზაცია",
       "actions": "ქმედებები",
@@ -511,7 +512,13 @@
       "validationRequired": "სახელი, გვარი და ტელეფონი აუცილებელია",
       "promptFirstName": "სახელი",
       "promptLastName": "გვარი",
-      "promptPhone": "ტელეფონი"
+      "promptPhone": "ტელეფონი",
+      "promptRole": "როლი",
+      "roleValue": {
+        "user": "მომხმარებელი",
+        "moderator": "მოდერატორი",
+        "admin": "ადმინი"
+      }
     }
   }
 }

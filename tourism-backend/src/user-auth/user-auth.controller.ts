@@ -48,6 +48,7 @@ export class UserAuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const authResult = await this.userAuthService.register(dto);
+    response.cookie('token', authResult.access_token, this.getAuthCookieOptions());
     response.cookie('user_token', authResult.access_token, this.getAuthCookieOptions());
     return authResult;
   }
@@ -58,6 +59,7 @@ export class UserAuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const authResult = await this.userAuthService.login(dto.email, dto.password);
+    response.cookie('token', authResult.access_token, this.getAuthCookieOptions());
     response.cookie('user_token', authResult.access_token, this.getAuthCookieOptions());
     return authResult;
   }
@@ -65,6 +67,7 @@ export class UserAuthController {
   @Post('logout')
   @HttpCode(200)
   logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('token', this.getAuthCookieBaseOptions());
     response.clearCookie('user_token', this.getAuthCookieBaseOptions());
     return { message: 'Logged out successfully' };
   }

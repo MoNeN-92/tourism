@@ -1,105 +1,128 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AdminRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  private buildAuthResponse(admin: {
+  private buildAuthResponse(user: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
-    role: AdminRole;
+    role: UserRole;
   }) {
-    const payload = { sub: admin.id, email: admin.email, role: admin.role };
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
       access_token: this.jwtService.sign(payload),
       admin: {
-        id: admin.id,
-        email: admin.email,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        role: admin.role,
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
       },
     };
   }
 
   private async validateCredentials(email: string, password: string) {
-    const admin = await this.prisma.admin.findUnique({
-      where: { email },
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
 
-    if (!admin) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
 
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return admin;
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    return user;
   }
 
   async register(registerDto: RegisterDto) {
-    // შევამოწმოთ არსებობს თუ არა უკვე ეს email
-    const existingAdmin = await this.prisma.admin.findUnique({
-      where: { email: registerDto.email },
+    const normalizedEmail = registerDto.email.trim().toLowerCase();
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
 
-    if (existingAdmin) {
+    if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
-    // დავაჰეშოთ პაროლი
-    const hashedPassword = await this.hashPassword(registerDto.password);
+    const passwordHash = await this.hashPassword(registerDto.password);
 
-    // შევქმნათ ახალი admin
-    const admin = await this.prisma.admin.create({
+    const user = await this.prisma.user.create({
       data: {
-        email: registerDto.email,
-        password: hashedPassword,
+        email: normalizedEmail,
+        passwordHash,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
-        role: AdminRole.ADMIN,
+        phone: '+995000000000',
+        role: UserRole.ADMIN,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
       },
     });
 
-    return this.buildAuthResponse(admin);
+    return this.buildAuthResponse(user);
   }
 
   async loginAdmin(email: string, password: string) {
-    const admin = await this.validateCredentials(email, password);
+    const user = await this.validateCredentials(email, password);
 
-    if (admin.role !== AdminRole.ADMIN) {
+    if (user.role !== UserRole.ADMIN) {
       throw new UnauthorizedException('Admin credentials are required');
     }
 
-    return this.buildAuthResponse(admin);
+    return this.buildAuthResponse(user);
   }
 
   async loginStaff(email: string, password: string) {
-    const admin = await this.validateCredentials(email, password);
+    const user = await this.validateCredentials(email, password);
 
-    if (admin.role !== AdminRole.MODERATOR) {
+    if (user.role !== UserRole.MODERATOR) {
       throw new UnauthorizedException('Staff credentials are required');
     }
 
-    return this.buildAuthResponse(admin);
+    return this.buildAuthResponse(user);
   }
 
   async login(email: string, password: string) {
-    return this.loginAdmin(email, password);
+    const user = await this.validateCredentials(email, password);
+
+    if (user.role !== UserRole.ADMIN && user.role !== UserRole.MODERATOR) {
+      throw new UnauthorizedException('Admin or staff credentials are required');
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   async hashPassword(password: string): Promise<string> {

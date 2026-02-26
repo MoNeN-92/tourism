@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { AdminRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -9,7 +9,7 @@ import { UpdateHotelDto } from './dto/update-hotel.dto';
 
 @Controller('admin/hotels')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(AdminRole.ADMIN, AdminRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR)
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
@@ -29,7 +29,7 @@ export class HotelsController {
   }
 
   @Delete(':id')
-  @Roles(AdminRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.hotelsService.remove(id);
   }

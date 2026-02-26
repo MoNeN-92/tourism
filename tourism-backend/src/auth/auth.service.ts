@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AdminRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
@@ -10,6 +11,45 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  private buildAuthResponse(admin: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: AdminRole;
+  }) {
+    const payload = { sub: admin.id, email: admin.email, role: admin.role };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        role: admin.role,
+      },
+    };
+  }
+
+  private async validateCredentials(email: string, password: string) {
+    const admin = await this.prisma.admin.findUnique({
+      where: { email },
+    });
+
+    if (!admin) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return admin;
+  }
 
   async register(registerDto: RegisterDto) {
     // შევამოწმოთ არსებობს თუ არა უკვე ეს email
@@ -31,52 +71,35 @@ export class AuthService {
         password: hashedPassword,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
-        role: 'admin',
+        role: AdminRole.ADMIN,
       },
     });
 
-    // დავაბრუნოთ JWT token
-    const payload = { sub: admin.id, email: admin.email, role: admin.role };
-    
-    return {
-      access_token: this.jwtService.sign(payload),
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        role: admin.role,
-      },
-    };
+    return this.buildAuthResponse(admin);
+  }
+
+  async loginAdmin(email: string, password: string) {
+    const admin = await this.validateCredentials(email, password);
+
+    if (admin.role !== AdminRole.ADMIN) {
+      throw new UnauthorizedException('Admin credentials are required');
+    }
+
+    return this.buildAuthResponse(admin);
+  }
+
+  async loginStaff(email: string, password: string) {
+    const admin = await this.validateCredentials(email, password);
+
+    if (admin.role !== AdminRole.MODERATOR) {
+      throw new UnauthorizedException('Staff credentials are required');
+    }
+
+    return this.buildAuthResponse(admin);
   }
 
   async login(email: string, password: string) {
-    const admin = await this.prisma.admin.findUnique({
-      where: { email },
-    });
-
-    if (!admin) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const payload = { sub: admin.id, email: admin.email, role: admin.role };
-    
-    return {
-      access_token: this.jwtService.sign(payload),
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        role: admin.role,
-      },
-    };
+    return this.loginAdmin(email, password);
   }
 
   async hashPassword(password: string): Promise<string> {

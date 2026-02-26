@@ -57,7 +57,37 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const authResult = await this.authService.login(
+    const authResult = await this.authService.loginAdmin(
+      loginDto.email,
+      loginDto.password,
+    );
+
+    response.cookie('token', authResult.access_token, this.getAuthCookieOptions());
+
+    return authResult;
+  }
+
+  @Post('admin/login')
+  async loginAdmin(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const authResult = await this.authService.loginAdmin(
+      loginDto.email,
+      loginDto.password,
+    );
+
+    response.cookie('token', authResult.access_token, this.getAuthCookieOptions());
+
+    return authResult;
+  }
+
+  @Post('staff/login')
+  async loginStaff(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const authResult = await this.authService.loginStaff(
       loginDto.email,
       loginDto.password,
     );

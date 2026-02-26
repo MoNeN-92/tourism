@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
+import { AdminRole } from '@prisma/client';
 import { TourImagesService } from './tour-images.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -17,7 +18,7 @@ export class AdminTourImagesController {
   constructor(private tourImagesService: TourImagesService) {}
 
   @Post(':id/images')
-  @Roles('admin')
+  @Roles(AdminRole.ADMIN)
   async attachImage(
     @Param('id') tourId: string,
     @Body() body: { url: string; publicId: string },

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
+import SwipeGallery from '@/components/SwipeGallery'
 
 interface TourImage {
   id: string
@@ -74,20 +75,6 @@ export default function TourDetailClient({ tour, locale }: TourDetailClientProps
 
   const closeLightbox = () => {
     setSelectedImageIndex(null)
-  }
-
-  const goToNext = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    if (selectedImageIndex !== null && tour.images.length > 0) {
-      setSelectedImageIndex((selectedImageIndex + 1) % tour.images.length)
-    }
-  }
-
-  const goToPrevious = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    if (selectedImageIndex !== null && tour.images.length > 0) {
-      setSelectedImageIndex(selectedImageIndex === 0 ? tour.images.length - 1 : selectedImageIndex - 1)
-    }
   }
 
   const title = getLocalizedField(tour, 'title', locale)
@@ -174,59 +161,18 @@ export default function TourDetailClient({ tour, locale }: TourDetailClientProps
 
       {selectedImageIndex !== null && tour.images[selectedImageIndex] && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center" onClick={closeLightbox}>
-          <button
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white text-3xl sm:text-4xl lg:text-5xl font-light hover:text-gray-300 z-20 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-black/50 rounded-full"
-            onClick={closeLightbox}
-            aria-label="Close"
+          <div
+            className="relative w-full h-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] p-2 sm:p-4"
+            onClick={(event) => event.stopPropagation()}
           >
-            ×
-          </button>
-
-          <div className="absolute top-2 left-2 sm:top-4 sm:left-4 text-white text-sm sm:text-base bg-black/50 px-3 py-1.5 rounded-full z-20">
-            {selectedImageIndex + 1} / {tour.images.length}
-          </div>
-
-          {tour.images.length > 1 && (
-            <>
-              <div
-                className="absolute left-0 top-0 bottom-0 w-1/2 cursor-w-resize flex items-center justify-start pl-2 sm:pl-4 group"
-                onClick={goToPrevious}
-              >
-                <button
-                  className="bg-black/50 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  aria-label="Previous"
-                >
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              </div>
-
-              <div
-                className="absolute right-0 top-0 bottom-0 w-1/2 cursor-e-resize flex items-center justify-end pr-2 sm:pr-4 group"
-                onClick={goToNext}
-              >
-                <button
-                  className="bg-black/50 text-white p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  aria-label="Next"
-                >
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </>
-          )}
-
-          <div className="relative w-full h-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] p-2 sm:p-4">
-            <Image
-              src={buildCloudinaryUrl(tour.images[selectedImageIndex].url)}
-              alt={`${title} - Image ${selectedImageIndex + 1}`}
-              fill
-              className="object-contain"
-              onClick={(event) => event.stopPropagation()}
-              sizes="100vw"
-              quality={100}
+            <SwipeGallery
+              images={tour.images.map((image, index) => ({
+                id: image.id,
+                src: buildCloudinaryUrl(image.url),
+                alt: `${title} - Image ${index + 1}`,
+              }))}
+              initialIndex={selectedImageIndex}
+              onClose={closeLightbox}
             />
           </div>
         </div>

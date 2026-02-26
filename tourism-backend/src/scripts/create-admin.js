@@ -30,7 +30,7 @@ async function main() {
       password: hashedPassword,
       firstName,
       lastName,
-      role: 'admin',
+      role: 'ADMIN',
     },
   });
 

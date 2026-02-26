@@ -3,7 +3,6 @@
 
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { persistAdminAccessToken } from '@/lib/auth-token'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -23,7 +22,7 @@ export default function AdminLoginPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-      const res = await fetch(`${apiUrl}/auth/login`, {
+      const res = await fetch(`${apiUrl}/auth/admin/login`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -39,14 +38,6 @@ export default function AdminLoginPage() {
         setLoading(false)
         return
       }
-
-      if (!data?.access_token) {
-        setError('Login failed: token missing')
-        setLoading(false)
-        return
-      }
-
-      persistAdminAccessToken(data.access_token)
 
       router.push(`/${locale}/admin`)
       router.refresh()

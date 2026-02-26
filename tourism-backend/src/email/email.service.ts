@@ -141,4 +141,33 @@ export class EmailService {
       payload: params,
     });
   }
+
+  sendBookingApprovedGuestConfirmation(params: {
+    recipientEmail: string;
+    bookingId: string;
+    guestName: string;
+  }) {
+    return this.sendTemplate({
+      recipientEmail: params.recipientEmail,
+      template: 'booking-approved-confirmation',
+      subject: 'Your booking is confirmed',
+      text: `Hello ${params.guestName}, your booking ${params.bookingId} has been approved. Thank you for choosing VibeGeorgia.`,
+      payload: params,
+    });
+  }
+
+  sendHotelInquiryEmail(params: {
+    recipientEmail: string;
+    bookingId: string;
+    hotelName: string;
+    guestName: string;
+  }) {
+    return this.sendTemplate({
+      recipientEmail: params.recipientEmail,
+      template: 'hotel-inquiry-request',
+      subject: `Booking inquiry request for ${params.hotelName}`,
+      text: `A booking inquiry (${params.bookingId}) was created for guest ${params.guestName}. Please confirm availability.`,
+      payload: params,
+    });
+  }
 }

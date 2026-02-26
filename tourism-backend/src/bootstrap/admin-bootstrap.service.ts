@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AdminRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -46,14 +47,14 @@ export class AdminBootstrapService implements OnModuleInit {
           password: hashedPassword,
           firstName,
           lastName,
-          role: 'admin',
+          role: AdminRole.ADMIN,
         },
         create: {
           email,
           password: hashedPassword,
           firstName,
           lastName,
-          role: 'admin',
+          role: AdminRole.ADMIN,
         },
       });
 

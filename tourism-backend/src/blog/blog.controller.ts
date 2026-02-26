@@ -9,10 +9,13 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common'
+import { AdminRole } from '@prisma/client'
 import { BlogService } from './blog.service'
 import { CreateBlogPostDto } from './dto/create-blog-post.dto'
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { RolesGuard } from '../auth/guards/roles.guard'
+import { Roles } from '../auth/decorators/roles.decorator'
 
 // Public endpoints
 @Controller('blog')
@@ -32,7 +35,8 @@ export class BlogController {
 
 // Admin endpoints (protected)
 @Controller('admin/blog')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.ADMIN)
 export class AdminBlogController {
   constructor(private blogService: BlogService) {}
 

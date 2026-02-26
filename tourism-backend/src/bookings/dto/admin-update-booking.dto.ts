@@ -1,5 +1,13 @@
-import { BookingServiceStatus, BookingStatus, RoomType } from '@prisma/client';
 import {
+  BookingServiceStatus,
+  BookingStatus,
+  Currency,
+  PaymentAmountMode,
+  RoomType,
+} from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
   IsDateString,
   IsEmail,
   IsEnum,
@@ -10,7 +18,12 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import {
+  AdminBookingHotelServiceDto,
+  AdminBookingTourDto,
+} from './admin-create-booking.dto';
 
 export class AdminUpdateBookingDto {
   @IsOptional()
@@ -29,6 +42,18 @@ export class AdminUpdateBookingDto {
   @IsString()
   guestPhone?: string;
 
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdminBookingTourDto)
+  tours?: AdminBookingTourDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminBookingHotelServiceDto)
+  hotelService?: AdminBookingHotelServiceDto | null;
+
+  // Legacy compatibility fields
   @IsOptional()
   @IsString()
   tourId?: string | null;
@@ -90,6 +115,20 @@ export class AdminUpdateBookingDto {
   amountPaid?: number;
 
   @IsOptional()
+  @IsEnum(Currency)
+  currency?: Currency;
+
+  @IsOptional()
+  @IsEnum(PaymentAmountMode)
+  amountPaidMode?: PaymentAmountMode;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  amountPaidPercent?: number | null;
+
+  @IsOptional()
   @IsEnum(Object.values(BookingStatus))
   status?: BookingStatus;
 
@@ -100,4 +139,8 @@ export class AdminUpdateBookingDto {
   @IsOptional()
   @IsString()
   adminNote?: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }

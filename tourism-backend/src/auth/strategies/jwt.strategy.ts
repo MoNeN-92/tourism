@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
+import { AdminRole } from '@prisma/client';
 
 function extractTokenFromCookieHeader(request: Request): string | null {
   const cookieHeader = request?.headers?.cookie;
@@ -43,8 +44,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    if (payload?.role !== 'admin') {
-      throw new UnauthorizedException('Admin token required');
+    const isAllowedRole =
+      payload?.role === AdminRole.ADMIN || payload?.role === AdminRole.MODERATOR;
+
+    if (!isAllowedRole) {
+      throw new UnauthorizedException('Admin or moderator token required');
     }
 
     return {

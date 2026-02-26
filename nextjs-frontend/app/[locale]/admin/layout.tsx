@@ -8,6 +8,8 @@ import { useTranslations } from 'next-intl'
 import api from '@/lib/api'
 import { clearAdminAccessToken } from '@/lib/auth-token'
 
+type AdminRole = 'ADMIN' | 'MODERATOR'
+
 export default function AdminLayout({
   children,
 }: {
@@ -19,6 +21,7 @@ export default function AdminLayout({
   const locale = params.locale as string
   const t = useTranslations('admin.nav')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [adminRole, setAdminRole] = useState<AdminRole | null>(null)
   const [loading, setLoading] = useState(true)
 
   const isLoginPage = pathname.endsWith('/admin/login')
@@ -33,13 +36,15 @@ export default function AdminLayout({
 
     const checkAuth = async () => {
       try {
-        await api.get('/admin/profile')
+        const response = await api.get('/admin/profile')
         if (!cancelled) {
           setIsAuthenticated(true)
+          setAdminRole((response.data?.admin?.role as AdminRole) || null)
         }
       } catch {
         if (!cancelled) {
           setIsAuthenticated(false)
+          setAdminRole(null)
           router.replace(`/${locale}/admin/login`)
         }
       } finally {
@@ -101,14 +106,16 @@ export default function AdminLayout({
                 {t('dashboard')}
               </Link>
             </li>
-            <li>
-              <Link
-                href={`/${locale}/admin/tours`}
-                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                {t('tours')}
-              </Link>
-            </li>
+            {adminRole === 'ADMIN' && (
+              <li>
+                <Link
+                  href={`/${locale}/admin/tours`}
+                  className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  {t('tours')}
+                </Link>
+              </li>
+            )}
             <li>
               <Link
                 href={`/${locale}/admin/bookings`}
@@ -125,22 +132,26 @@ export default function AdminLayout({
                 {t('calendar')}
               </Link>
             </li>
-            <li>
-              <Link
-                href={`/${locale}/admin/users`}
-                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                {t('users')}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${locale}/admin/blog`}
-                className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-              >
-                {t('blog')}
-              </Link>
-            </li>
+            {adminRole === 'ADMIN' && (
+              <>
+                <li>
+                  <Link
+                    href={`/${locale}/admin/users`}
+                    className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    {t('users')}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href={`/${locale}/admin/blog`}
+                    className="block px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    {t('blog')}
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
 

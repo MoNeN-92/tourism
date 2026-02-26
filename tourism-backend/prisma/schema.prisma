@@ -13,7 +13,7 @@ model Admin {
   password  String
   firstName String
   lastName  String
-  role      String   @default("admin")
+  role      AdminRole @default(ADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -25,6 +25,7 @@ model User {
   firstName    String
   lastName     String
   phone        String
+  role         UserRole       @default(USER)
   isActive     Boolean        @default(true)
   lastLoginAt  DateTime?
   createdAt    DateTime       @default(now())
@@ -61,45 +62,111 @@ model Tour {
   updatedAt DateTime @updatedAt
 
   // Relations
-  images   TourImage[]
-  bookings Booking[]
+  images       TourImage[]
+  bookings     Booking[]
+  bookingTours BookingTour[]
 }
 
 model Booking {
-  id             String               @id @default(uuid())
-  userId         String?
-  guestName      String?
-  guestEmail     String?
-  guestPhone     String?
-  tourId         String?
-  desiredDate    DateTime?
-  adults         Int?
-  children       Int?
-  roomType       RoomType?
-  hotelName      String?
-  hotelCheckIn   DateTime?
-  hotelCheckOut  DateTime?
-  hotelRoomType  String?
-  hotelGuests    Int?
-  hotelNotes     String?
-  totalPrice     Float                @default(0)
-  amountPaid     Float                @default(0)
-  note           String?
-  adminNote      String?
-  serviceStatus  BookingServiceStatus @default(PENDING)
-  status         BookingStatus        @default(PENDING)
-  approvedAt     DateTime?
-  rejectedAt     DateTime?
-  cancelledAt    DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  user           User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tour           Tour?                @relation(fields: [tourId], references: [id], onDelete: Restrict)
+  id                String               @id @default(uuid())
+  userId            String?
+  guestName         String?
+  guestEmail        String?
+  guestPhone        String?
+  tourId            String?
+  desiredDate       DateTime?
+  adults            Int?
+  children          Int?
+  roomType          RoomType?
+  hotelName         String?
+  hotelCheckIn      DateTime?
+  hotelCheckOut     DateTime?
+  hotelRoomType     String?
+  hotelGuests       Int?
+  hotelNotes        String?
+  totalPrice        Float                @default(0)
+  amountPaid        Float                @default(0)
+  currency          Currency             @default(GEL)
+  amountPaidMode    PaymentAmountMode    @default(FLAT)
+  amountPaidPercent Float?
+  note              String?
+  adminNote         String?
+  serviceStatus     BookingServiceStatus @default(PENDING)
+  status            BookingStatus        @default(PENDING)
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  cancelledAt       DateTime?
+  isDeleted         Boolean              @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  user              User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tour              Tour?                @relation(fields: [tourId], references: [id], onDelete: Restrict)
   changeRequests BookingChangeRequest[]
+  tours             BookingTour[]
+  hotelService      BookingHotelService?
 
   @@index([desiredDate, status])
   @@index([userId, createdAt])
   @@index([tourId, desiredDate])
+  @@index([isDeleted, deletedAt])
+}
+
+model Hotel {
+  id            String               @id @default(uuid())
+  name          String
+  email         String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  hotelServices BookingHotelService[]
+
+  @@unique([name, email])
+}
+
+model BookingTour {
+  id          String   @id @default(uuid())
+  bookingId   String
+  tourId      String
+  desiredDate DateTime
+  adults      Int      @default(1)
+  children    Int      @default(0)
+  carType     CarType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tour        Tour     @relation(fields: [tourId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([tourId, desiredDate])
+}
+
+model BookingHotelService {
+  id                  String            @id @default(uuid())
+  bookingId           String            @unique
+  hotelId             String
+  checkIn             DateTime?
+  checkOut            DateTime?
+  notes               String?
+  sendRequestToHotel  Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  booking             Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel               Hotel             @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  rooms               BookingHotelRoom[]
+
+  @@index([hotelId])
+}
+
+model BookingHotelRoom {
+  id             String             @id @default(uuid())
+  hotelServiceId String
+  roomType       String
+  guestCount     Int                @default(1)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  hotelService   BookingHotelService @relation(fields: [hotelServiceId], references: [id], onDelete: Cascade)
+
+  @@index([hotelServiceId])
 }
 
 model BookingChangeRequest {
@@ -223,4 +290,35 @@ enum EmailLogStatus {
   SENT
   FAILED
   FALLBACK_LOGGED
+}
+
+enum AdminRole {
+  ADMIN
+  MODERATOR
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Currency {
+  GEL
+  USD
+  EUR
+}
+
+enum PaymentAmountMode {
+  FLAT
+  PERCENT
+}
+
+enum CarType {
+  SEDAN
+  SUV
+  MINIVAN
+  MINIBUS
+  BUS
+  LUXURY
 }

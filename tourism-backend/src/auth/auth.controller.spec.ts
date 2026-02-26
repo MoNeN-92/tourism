@@ -9,7 +9,8 @@ describe('AuthController', () => {
 
   const authServiceMock = {
     register: jest.fn(),
-    login: jest.fn(),
+    loginAdmin: jest.fn(),
+    loginStaff: jest.fn(),
   };
 
   const configServiceMock = {
@@ -52,9 +53,9 @@ describe('AuthController', () => {
       return undefined;
     });
 
-    authServiceMock.login.mockResolvedValue({
+    authServiceMock.loginAdmin.mockResolvedValue({
       access_token: 'token-value',
-      admin: { id: '1', email: 'admin@example.com', role: 'admin' },
+      admin: { id: '1', email: 'admin@example.com', role: 'ADMIN' },
     });
 
     const response = {

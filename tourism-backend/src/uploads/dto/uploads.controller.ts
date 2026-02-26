@@ -9,6 +9,7 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
+import { AdminRole } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -23,7 +24,7 @@ export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Post()
-  @Roles('admin')
+  @Roles(AdminRole.ADMIN)
   @UseInterceptors(FileInterceptor('image'))
   async uploadImage(
     @UploadedFile(

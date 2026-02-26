@@ -5,9 +5,12 @@ import {
 } from '@nestjs/common';
 import {
   BookingChangeRequestStatus,
+  CarType,
   BookingServiceStatus,
   BookingStatus,
+  Currency,
   NotificationType,
+  PaymentAmountMode,
   Prisma,
   RoomType,
 } from '@prisma/client';
@@ -21,6 +24,10 @@ import { AdminBookingDecisionDto } from './dto/admin-booking-decision.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminCreateBookingDto } from './dto/admin-create-booking.dto';
 import { AdminRevenueQueryDto } from './dto/admin-revenue-query.dto';
+import {
+  AdminBookingHotelServiceDto,
+  AdminBookingTourDto,
+} from './dto/admin-create-booking.dto';
 
 const BOOKING_ADMIN_INCLUDE = {
   user: {
@@ -43,6 +50,34 @@ const BOOKING_ADMIN_INCLUDE = {
   },
   changeRequests: {
     orderBy: { createdAt: 'desc' },
+  },
+  tours: {
+    include: {
+      tour: {
+        select: {
+          id: true,
+          slug: true,
+          title_ka: true,
+          title_en: true,
+          title_ru: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  },
+  hotelService: {
+    include: {
+      hotel: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      rooms: {
+        orderBy: { createdAt: 'asc' },
+      },
+    },
   },
 } as const;
 
@@ -128,6 +163,40 @@ function safeAmount(value: number | null | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function normalizePercent(value: number | null | undefined): number | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    throw new BadRequestException('Percent value must be between 0 and 100');
+  }
+
+  return value;
+}
+
+type NormalizedTourService = {
+  tourId: string;
+  desiredDate: Date;
+  adults: number;
+  children: number;
+  carType: CarType;
+};
+
+type NormalizedHotelRoom = {
+  roomType: string;
+  guestCount: number;
+};
+
+type NormalizedHotelService = {
+  hotelId: string;
+  checkIn: Date | null;
+  checkOut: Date | null;
+  notes: string | null;
+  sendRequestToHotel: boolean;
+  rooms: NormalizedHotelRoom[];
+};
+
 function withBalance<T extends { totalPrice: number; amountPaid: number }>(record: T) {
   return {
     ...record,
@@ -192,6 +261,211 @@ export class BookingsService {
     return { checkIn, checkOut };
   }
 
+  private async findHotelOrThrow(hotelId: string) {
+    const hotel = await this.prisma.hotel.findUnique({
+      where: { id: hotelId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!hotel) {
+      throw new NotFoundException('Hotel not found');
+    }
+
+    return hotel;
+  }
+
+  private toNormalizedTours(
+    tours?: AdminBookingTourDto[] | null,
+    fallback?: {
+      tourId?: string | null;
+      desiredDate?: string | null;
+      adults?: number | null;
+      children?: number | null;
+    },
+  ): NormalizedTourService[] {
+    if (Array.isArray(tours) && tours.length > 0) {
+      return tours.map((item) => ({
+        tourId: item.tourId,
+        desiredDate: parseBookingDateInput(item.desiredDate),
+        adults: item.adults,
+        children: item.children,
+        carType: item.carType,
+      }));
+    }
+
+    if (fallback?.tourId && fallback?.desiredDate) {
+      return [
+        {
+          tourId: fallback.tourId,
+          desiredDate: parseBookingDateInput(fallback.desiredDate),
+          adults: fallback.adults ?? 1,
+          children: fallback.children ?? 0,
+          carType: CarType.SEDAN,
+        },
+      ];
+    }
+
+    return [];
+  }
+
+  private toNormalizedHotelService(
+    hotelService?: AdminBookingHotelServiceDto | null,
+    fallback?: {
+      hotelName?: string | null;
+      hotelCheckIn?: string | null;
+      hotelCheckOut?: string | null;
+      hotelRoomType?: string | null;
+      hotelGuests?: number | null;
+      hotelNotes?: string | null;
+    },
+  ): {
+    hotelService: NormalizedHotelService | null;
+    fallbackHotelName: string | null;
+  } {
+    if (hotelService) {
+      const { checkIn, checkOut } = this.parseHotelDates({
+        checkIn: hotelService.checkIn,
+        checkOut: hotelService.checkOut,
+      });
+
+      const rooms = (hotelService.rooms || [])
+        .map((room) => ({
+          roomType: room.roomType.trim(),
+          guestCount: room.guestCount,
+        }))
+        .filter((room) => room.roomType.length > 0);
+
+      return {
+        hotelService: {
+          hotelId: hotelService.hotelId,
+          checkIn,
+          checkOut,
+          notes: normalizeNullableString(hotelService.notes),
+          sendRequestToHotel: Boolean(hotelService.sendRequestToHotel),
+          rooms: rooms.length > 0 ? rooms : [{ roomType: 'Standard', guestCount: 1 }],
+        },
+        fallbackHotelName: null,
+      };
+    }
+
+    const hasLegacyHotel =
+      hasText(fallback?.hotelName) ||
+      Boolean(fallback?.hotelCheckIn) ||
+      Boolean(fallback?.hotelCheckOut) ||
+      hasText(fallback?.hotelRoomType) ||
+      fallback?.hotelGuests !== undefined;
+
+    if (!hasLegacyHotel) {
+      return {
+        hotelService: null,
+        fallbackHotelName: null,
+      };
+    }
+
+    if (!hasText(fallback?.hotelName)) {
+      throw new BadRequestException('Hotel name is required when hotel service is provided');
+    }
+
+    const { checkIn, checkOut } = this.parseHotelDates({
+      checkIn: fallback?.hotelCheckIn ?? null,
+      checkOut: fallback?.hotelCheckOut ?? null,
+    });
+
+    return {
+      hotelService: null,
+      fallbackHotelName: normalizeNullableString(fallback?.hotelName),
+    };
+  }
+
+  private resolvePaidAmounts(params: {
+    totalPrice: number;
+    amountPaid?: number;
+    amountPaidMode?: PaymentAmountMode;
+    amountPaidPercent?: number | null;
+    fallback?: {
+      amountPaid: number;
+      amountPaidMode: PaymentAmountMode;
+      amountPaidPercent: number | null;
+    };
+  }) {
+    const totalPrice = safeAmount(params.totalPrice);
+    const mode =
+      params.amountPaidMode ??
+      params.fallback?.amountPaidMode ??
+      PaymentAmountMode.FLAT;
+
+    if (mode === PaymentAmountMode.PERCENT) {
+      const percent = normalizePercent(
+        params.amountPaidPercent ?? params.fallback?.amountPaidPercent ?? 0,
+      );
+      const amountPaid = (totalPrice * (percent ?? 0)) / 100;
+
+      return {
+        totalPrice,
+        amountPaid,
+        amountPaidMode: mode,
+        amountPaidPercent: percent,
+      };
+    }
+
+    const amountPaid = safeAmount(
+      params.amountPaid ?? params.fallback?.amountPaid ?? 0,
+    );
+
+    return {
+      totalPrice,
+      amountPaid,
+      amountPaidMode: mode,
+      amountPaidPercent: params.amountPaidPercent ?? params.fallback?.amountPaidPercent ?? null,
+    };
+  }
+
+  private getLegacySummaryFromTours(tours: NormalizedTourService[]) {
+    if (tours.length === 0) {
+      return {
+        tourId: null,
+        desiredDate: null,
+        adults: null,
+        children: null,
+      };
+    }
+
+    const firstTour = tours[0];
+
+    return {
+      tourId: firstTour.tourId,
+      desiredDate: firstTour.desiredDate,
+      adults: firstTour.adults,
+      children: firstTour.children,
+    };
+  }
+
+  private getLegacySummaryFromHotel(params: {
+    hotelName?: string | null;
+    hotelCheckIn?: Date | null;
+    hotelCheckOut?: Date | null;
+    hotelNotes?: string | null;
+    hotelRoomType?: string | null;
+    hotelGuests?: number | null;
+    normalizedHotel?: NormalizedHotelService | null;
+    resolvedHotelName?: string | null;
+  }) {
+    const firstRoom = params.normalizedHotel?.rooms?.[0];
+
+    return {
+      hotelName: params.resolvedHotelName ?? params.hotelName ?? null,
+      hotelCheckIn: params.normalizedHotel?.checkIn ?? params.hotelCheckIn ?? null,
+      hotelCheckOut: params.normalizedHotel?.checkOut ?? params.hotelCheckOut ?? null,
+      hotelRoomType: firstRoom?.roomType ?? params.hotelRoomType ?? null,
+      hotelGuests: firstRoom?.guestCount ?? params.hotelGuests ?? null,
+      hotelNotes: params.normalizedHotel?.notes ?? params.hotelNotes ?? null,
+    };
+  }
+
   private mapBooking(record: AdminBookingRecord) {
     return withBalance(record);
   }
@@ -224,6 +498,15 @@ export class BookingsService {
         children: dto.children,
         roomType: dto.roomType,
         note: dto.note,
+        tours: {
+          create: {
+            tourId: dto.tourId,
+            desiredDate,
+            adults: dto.adults,
+            children: dto.children,
+            carType: CarType.SEDAN,
+          },
+        },
       },
       include: {
         user: {
@@ -262,7 +545,7 @@ export class BookingsService {
 
   findMy(userId: string) {
     return this.prisma.booking.findMany({
-      where: { userId },
+      where: { userId, isDeleted: false },
       include: {
         tour: {
           select: {
@@ -300,7 +583,7 @@ export class BookingsService {
       },
     });
 
-    if (!booking || booking.userId !== userId) {
+    if (!booking || booking.userId !== userId || booking.isDeleted) {
       throw new NotFoundException('Booking not found');
     }
 
@@ -319,7 +602,7 @@ export class BookingsService {
       },
     });
 
-    if (!booking || booking.userId !== userId) {
+    if (!booking || booking.userId !== userId || booking.isDeleted) {
       throw new NotFoundException('Booking not found');
     }
 
@@ -365,10 +648,11 @@ export class BookingsService {
         id: true,
         userId: true,
         status: true,
+        isDeleted: true,
       },
     });
 
-    if (!booking || booking.userId !== userId) {
+    if (!booking || booking.userId !== userId || booking.isDeleted) {
       throw new NotFoundException('Booking not found');
     }
 
@@ -409,6 +693,7 @@ export class BookingsService {
 
   async findAllAdmin(query: AdminBookingsQueryDto) {
     const where: Prisma.BookingWhereInput = {
+      isDeleted: false,
       ...(query.status ? { status: query.status } : {}),
       ...(query.serviceStatus ? { serviceStatus: query.serviceStatus } : {}),
       ...(query.tourId ? { tourId: query.tourId } : {}),
@@ -431,20 +716,32 @@ export class BookingsService {
     return this.mapBookings(records);
   }
 
-  async createAdmin(dto: AdminCreateBookingDto) {
-    const hasTour = Boolean(dto.tourId);
-    const hasHotel =
-      hasText(dto.hotelName) ||
-      Boolean(dto.hotelCheckIn) ||
-      Boolean(dto.hotelCheckOut) ||
-      hasText(dto.hotelRoomType) ||
-      dto.hotelGuests !== undefined ||
-      hasText(dto.hotelNotes);
+  async findTrashAdmin(query: AdminBookingsQueryDto) {
+    const where: Prisma.BookingWhereInput = {
+      isDeleted: true,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.serviceStatus ? { serviceStatus: query.serviceStatus } : {}),
+      ...(query.tourId ? { tourId: query.tourId } : {}),
+      ...(query.userId ? { userId: query.userId } : {}),
+    };
 
-    if (!hasTour && !hasHotel) {
-      throw new BadRequestException('At least one service (tour or hotel) is required');
+    if (query.dateFrom || query.dateTo) {
+      where.deletedAt = {
+        ...(query.dateFrom ? { gte: dateOnlyToUtc(query.dateFrom) } : {}),
+        ...(query.dateTo ? { lte: dateOnlyToUtc(query.dateTo) } : {}),
+      };
     }
 
+    const records = await this.prisma.booking.findMany({
+      where,
+      include: BOOKING_ADMIN_INCLUDE,
+      orderBy: { deletedAt: 'desc' },
+    });
+
+    return this.mapBookings(records);
+  }
+
+  async createAdmin(dto: AdminCreateBookingDto) {
     const guestName = normalizeNullableString(dto.guestName);
     const guestEmail = normalizeNullableString(dto.guestEmail);
     const guestPhone = normalizeNullableString(dto.guestPhone);
@@ -457,29 +754,62 @@ export class BookingsService {
       await this.validateUserExists(dto.userId);
     }
 
-    if (hasTour && dto.tourId) {
-      await this.validateTourExists(dto.tourId);
-    }
-
-    if (hasTour && !dto.desiredDate) {
-      throw new BadRequestException('Tour date is required when tour service is provided');
-    }
-
-    const hotelName = hasHotel ? normalizeNullableString(dto.hotelName) : null;
-
-    if (hasHotel && !hotelName) {
-      throw new BadRequestException('Hotel name is required when hotel service is provided');
-    }
-
-    const { checkIn: hotelCheckIn, checkOut: hotelCheckOut } = this.parseHotelDates({
-      checkIn: dto.hotelCheckIn,
-      checkOut: dto.hotelCheckOut,
+    const normalizedTours = this.toNormalizedTours(dto.tours, {
+      tourId: dto.tourId,
+      desiredDate: dto.desiredDate,
+      adults: dto.adults,
+      children: dto.children,
     });
 
-    const totalPrice = safeAmount(dto.totalPrice);
-    const amountPaid = safeAmount(dto.amountPaid);
+    for (const tourItem of normalizedTours) {
+      await this.validateTourExists(tourItem.tourId);
+    }
 
-    if (totalPrice < 0 || amountPaid < 0) {
+    const normalizedHotelResult = this.toNormalizedHotelService(dto.hotelService, {
+      hotelName: dto.hotelName,
+      hotelCheckIn: dto.hotelCheckIn,
+      hotelCheckOut: dto.hotelCheckOut,
+      hotelRoomType: dto.hotelRoomType,
+      hotelGuests: dto.hotelGuests,
+      hotelNotes: dto.hotelNotes,
+    });
+
+    let normalizedHotel = normalizedHotelResult.hotelService;
+    let resolvedHotel = null as Awaited<ReturnType<BookingsService['findHotelOrThrow']>> | null;
+    let resolvedHotelName = normalizedHotelResult.fallbackHotelName;
+
+    if (normalizedHotel) {
+      resolvedHotel = await this.findHotelOrThrow(normalizedHotel.hotelId);
+      resolvedHotelName = resolvedHotel.name;
+    }
+
+    const hasTour = normalizedTours.length > 0;
+    const hasHotel = Boolean(normalizedHotel || resolvedHotelName);
+
+    if (!hasTour && !hasHotel) {
+      throw new BadRequestException('At least one service (tour or hotel) is required');
+    }
+
+    const legacyTour = this.getLegacySummaryFromTours(normalizedTours);
+    const legacyHotel = this.getLegacySummaryFromHotel({
+      hotelName: normalizeNullableString(dto.hotelName),
+      hotelCheckIn: dto.hotelCheckIn ? parseBookingDateInput(dto.hotelCheckIn) : null,
+      hotelCheckOut: dto.hotelCheckOut ? parseBookingDateInput(dto.hotelCheckOut) : null,
+      hotelNotes: normalizeNullableString(dto.hotelNotes),
+      hotelRoomType: normalizeNullableString(dto.hotelRoomType),
+      hotelGuests: dto.hotelGuests ?? null,
+      normalizedHotel,
+      resolvedHotelName,
+    });
+
+    const payment = this.resolvePaidAmounts({
+      totalPrice: safeAmount(dto.totalPrice),
+      amountPaid: dto.amountPaid,
+      amountPaidMode: dto.amountPaidMode,
+      amountPaidPercent: dto.amountPaidPercent,
+    });
+
+    if (payment.totalPrice < 0 || payment.amountPaid < 0) {
       throw new BadRequestException('Price values must be greater than or equal to 0');
     }
 
@@ -492,19 +822,22 @@ export class BookingsService {
         guestName,
         guestEmail,
         guestPhone,
-        tourId: hasTour ? dto.tourId ?? null : null,
-        desiredDate: hasTour && dto.desiredDate ? parseBookingDateInput(dto.desiredDate) : null,
-        adults: hasTour ? dto.adults ?? 1 : null,
-        children: hasTour ? dto.children ?? 0 : null,
+        tourId: hasTour ? legacyTour.tourId : null,
+        desiredDate: hasTour ? legacyTour.desiredDate : null,
+        adults: hasTour ? legacyTour.adults : null,
+        children: hasTour ? legacyTour.children : null,
         roomType: hasTour ? dto.roomType ?? RoomType.double : null,
-        hotelName,
-        hotelCheckIn,
-        hotelCheckOut,
-        hotelRoomType: hasHotel ? normalizeNullableString(dto.hotelRoomType) : null,
-        hotelGuests: hasHotel ? dto.hotelGuests ?? null : null,
-        hotelNotes: hasHotel ? normalizeNullableString(dto.hotelNotes) : null,
-        totalPrice,
-        amountPaid,
+        hotelName: hasHotel ? legacyHotel.hotelName : null,
+        hotelCheckIn: hasHotel ? legacyHotel.hotelCheckIn : null,
+        hotelCheckOut: hasHotel ? legacyHotel.hotelCheckOut : null,
+        hotelRoomType: hasHotel ? legacyHotel.hotelRoomType : null,
+        hotelGuests: hasHotel ? legacyHotel.hotelGuests : null,
+        hotelNotes: hasHotel ? legacyHotel.hotelNotes : null,
+        totalPrice: payment.totalPrice,
+        amountPaid: payment.amountPaid,
+        currency: dto.currency ?? Currency.GEL,
+        amountPaidMode: payment.amountPaidMode,
+        amountPaidPercent: payment.amountPaidPercent,
         note: normalizeNullableString(dto.note),
         adminNote: normalizeNullableString(dto.adminNote),
         serviceStatus: dto.serviceStatus ?? ('PENDING' as BookingServiceStatus),
@@ -512,9 +845,54 @@ export class BookingsService {
         approvedAt: status === BookingStatus.APPROVED ? decisionTimestamp : null,
         rejectedAt: status === BookingStatus.REJECTED ? decisionTimestamp : null,
         cancelledAt: status === BookingStatus.CANCELLED ? decisionTimestamp : null,
+        ...(normalizedTours.length > 0
+          ? {
+              tours: {
+                create: normalizedTours.map((tourItem) => ({
+                  tourId: tourItem.tourId,
+                  desiredDate: tourItem.desiredDate,
+                  adults: tourItem.adults,
+                  children: tourItem.children,
+                  carType: tourItem.carType,
+                })),
+              },
+            }
+          : {}),
+        ...(normalizedHotel
+          ? {
+              hotelService: {
+                create: {
+                  hotelId: normalizedHotel.hotelId,
+                  checkIn: normalizedHotel.checkIn,
+                  checkOut: normalizedHotel.checkOut,
+                  notes: normalizedHotel.notes,
+                  sendRequestToHotel: normalizedHotel.sendRequestToHotel,
+                  rooms: {
+                    create: normalizedHotel.rooms.map((room) => ({
+                      roomType: room.roomType,
+                      guestCount: room.guestCount,
+                    })),
+                  },
+                },
+              },
+            }
+          : {}),
       },
       include: BOOKING_ADMIN_INCLUDE,
     });
+
+    if (normalizedHotel?.sendRequestToHotel && resolvedHotel?.email) {
+      await this.emailService.sendHotelInquiryEmail({
+        recipientEmail: resolvedHotel.email,
+        bookingId: record.id,
+        hotelName: resolvedHotel.name,
+        guestName:
+          guestName ||
+          (record.user
+            ? `${record.user.firstName} ${record.user.lastName}`.trim()
+            : 'Guest customer'),
+      });
+    }
 
     return this.mapBooking(record);
   }
@@ -526,6 +904,10 @@ export class BookingsService {
 
   async updateAdmin(id: string, dto: AdminUpdateBookingDto) {
     const existing = await this.findAdminBookingOrThrow(id);
+
+    if (existing.isDeleted) {
+      throw new BadRequestException('Cannot update a deleted booking');
+    }
 
     const nextUserId = dto.userId !== undefined ? dto.userId : existing.userId;
     if (nextUserId) {
@@ -543,136 +925,342 @@ export class BookingsService {
       throw new BadRequestException('Provide either an existing user or guest details');
     }
 
-    const nextTourId = dto.tourId !== undefined ? dto.tourId : existing.tourId;
+    const shouldReplaceTours =
+      dto.tours !== undefined ||
+      dto.tourId !== undefined ||
+      dto.desiredDate !== undefined ||
+      dto.adults !== undefined ||
+      dto.children !== undefined;
 
-    let nextDesiredDate = existing.desiredDate;
-    if (dto.desiredDate !== undefined) {
-      nextDesiredDate = dto.desiredDate ? parseBookingDateInput(dto.desiredDate) : null;
+    const shouldReplaceHotel =
+      dto.hotelService !== undefined ||
+      dto.hotelName !== undefined ||
+      dto.hotelCheckIn !== undefined ||
+      dto.hotelCheckOut !== undefined ||
+      dto.hotelRoomType !== undefined ||
+      dto.hotelGuests !== undefined ||
+      dto.hotelNotes !== undefined;
+
+    let normalizedTours = (existing.tours || []).map((tourItem) => ({
+      tourId: tourItem.tourId,
+      desiredDate: tourItem.desiredDate,
+      adults: tourItem.adults,
+      children: tourItem.children,
+      carType: tourItem.carType,
+    }));
+
+    if (dto.tours !== undefined) {
+      normalizedTours = this.toNormalizedTours(dto.tours);
+    } else if (shouldReplaceTours) {
+      normalizedTours = this.toNormalizedTours(undefined, {
+        tourId:
+          dto.tourId === undefined
+            ? existing.tourId
+            : dto.tourId,
+        desiredDate:
+          dto.desiredDate === undefined
+            ? existing.desiredDate
+              ? toDateOnly(existing.desiredDate)
+              : null
+            : dto.desiredDate,
+        adults: dto.adults === undefined ? existing.adults : dto.adults,
+        children: dto.children === undefined ? existing.children : dto.children,
+      });
+    } else if (normalizedTours.length === 0 && existing.tourId && existing.desiredDate) {
+      normalizedTours = this.toNormalizedTours(undefined, {
+        tourId: existing.tourId,
+        desiredDate: toDateOnly(existing.desiredDate),
+        adults: existing.adults,
+        children: existing.children,
+      });
     }
 
-    let nextAdults = dto.adults !== undefined ? dto.adults : existing.adults;
-    let nextChildren = dto.children !== undefined ? dto.children : existing.children;
-    let nextRoomType = dto.roomType !== undefined ? dto.roomType : existing.roomType;
-
-    const incomingHotelName =
-      dto.hotelName !== undefined ? normalizeNullableString(dto.hotelName) : existing.hotelName;
-
-    let nextHotelCheckIn = existing.hotelCheckIn;
-    if (dto.hotelCheckIn !== undefined) {
-      nextHotelCheckIn = dto.hotelCheckIn ? parseBookingDateInput(dto.hotelCheckIn) : null;
+    if (dto.tourId === null) {
+      normalizedTours = [];
     }
 
-    let nextHotelCheckOut = existing.hotelCheckOut;
-    if (dto.hotelCheckOut !== undefined) {
-      nextHotelCheckOut = dto.hotelCheckOut ? parseBookingDateInput(dto.hotelCheckOut) : null;
+    for (const tourItem of normalizedTours) {
+      await this.validateTourExists(tourItem.tourId);
     }
 
-    const nextHotelRoomType =
-      dto.hotelRoomType !== undefined
-        ? normalizeNullableString(dto.hotelRoomType)
-        : existing.hotelRoomType;
-    const nextHotelGuests = dto.hotelGuests !== undefined ? dto.hotelGuests : existing.hotelGuests;
-    const nextHotelNotes =
-      dto.hotelNotes !== undefined ? normalizeNullableString(dto.hotelNotes) : existing.hotelNotes;
+    let normalizedHotel: NormalizedHotelService | null = existing.hotelService
+      ? {
+          hotelId: existing.hotelService.hotelId,
+          checkIn: existing.hotelService.checkIn,
+          checkOut: existing.hotelService.checkOut,
+          notes: existing.hotelService.notes,
+          sendRequestToHotel: existing.hotelService.sendRequestToHotel,
+          rooms:
+            existing.hotelService.rooms.length > 0
+              ? existing.hotelService.rooms.map((room) => ({
+                  roomType: room.roomType,
+                  guestCount: room.guestCount,
+                }))
+              : [{ roomType: 'Standard', guestCount: 1 }],
+        }
+      : null;
+    let resolvedHotelName = existing.hotelName;
+    let resolvedHotel =
+      existing.hotelService?.hotel || null;
 
-    const hasTour = Boolean(nextTourId);
-    const hasHotel =
-      Boolean(incomingHotelName) ||
-      Boolean(nextHotelCheckIn) ||
-      Boolean(nextHotelCheckOut) ||
-      Boolean(nextHotelRoomType) ||
-      nextHotelGuests !== null;
+    if (dto.hotelService !== undefined) {
+      if (dto.hotelService === null) {
+        normalizedHotel = null;
+        resolvedHotelName = null;
+        resolvedHotel = null;
+      } else {
+        const normalizedHotelResult = this.toNormalizedHotelService(dto.hotelService);
+        normalizedHotel = normalizedHotelResult.hotelService;
+        if (normalizedHotel) {
+          resolvedHotel = await this.findHotelOrThrow(normalizedHotel.hotelId);
+          resolvedHotelName = resolvedHotel.name;
+        }
+      }
+    } else if (shouldReplaceHotel) {
+      const normalizedHotelResult = this.toNormalizedHotelService(undefined, {
+        hotelName:
+          dto.hotelName === undefined ? existing.hotelName : dto.hotelName,
+        hotelCheckIn:
+          dto.hotelCheckIn === undefined
+            ? existing.hotelCheckIn
+              ? toDateOnly(existing.hotelCheckIn)
+              : null
+            : dto.hotelCheckIn,
+        hotelCheckOut:
+          dto.hotelCheckOut === undefined
+            ? existing.hotelCheckOut
+              ? toDateOnly(existing.hotelCheckOut)
+              : null
+            : dto.hotelCheckOut,
+        hotelRoomType:
+          dto.hotelRoomType === undefined ? existing.hotelRoomType : dto.hotelRoomType,
+        hotelGuests: dto.hotelGuests === undefined ? existing.hotelGuests : dto.hotelGuests,
+        hotelNotes: dto.hotelNotes === undefined ? existing.hotelNotes : dto.hotelNotes,
+      });
+      normalizedHotel = normalizedHotelResult.hotelService;
+      resolvedHotelName = normalizedHotelResult.fallbackHotelName;
+      resolvedHotel = null;
+    }
+
+    const hasTour = normalizedTours.length > 0;
+    const hasHotel = Boolean(normalizedHotel || resolvedHotelName);
 
     if (!hasTour && !hasHotel) {
       throw new BadRequestException('At least one service (tour or hotel) is required');
     }
 
-    if (hasTour && nextTourId) {
-      await this.validateTourExists(nextTourId);
-    }
+    const legacyTour = this.getLegacySummaryFromTours(normalizedTours);
+    const legacyHotel = this.getLegacySummaryFromHotel({
+      hotelName: existing.hotelName,
+      hotelCheckIn: existing.hotelCheckIn,
+      hotelCheckOut: existing.hotelCheckOut,
+      hotelNotes: existing.hotelNotes,
+      hotelRoomType: existing.hotelRoomType,
+      hotelGuests: existing.hotelGuests,
+      normalizedHotel,
+      resolvedHotelName,
+    });
 
-    if (hasTour && !nextDesiredDate) {
-      throw new BadRequestException('Tour date is required when tour service is provided');
-    }
+    const payment = this.resolvePaidAmounts({
+      totalPrice:
+        dto.totalPrice !== undefined ? safeAmount(dto.totalPrice) : safeAmount(existing.totalPrice),
+      amountPaid: dto.amountPaid,
+      amountPaidMode: dto.amountPaidMode,
+      amountPaidPercent: dto.amountPaidPercent,
+      fallback: {
+        amountPaid: existing.amountPaid,
+        amountPaidMode: existing.amountPaidMode,
+        amountPaidPercent: existing.amountPaidPercent,
+      },
+    });
 
-    if (hasTour && (nextAdults === null || nextAdults === undefined)) {
-      nextAdults = 1;
-    }
-
-    if (hasTour && (nextChildren === null || nextChildren === undefined)) {
-      nextChildren = 0;
-    }
-
-    if (hasTour && !nextRoomType) {
-      nextRoomType = RoomType.double;
-    }
-
-    if (!hasTour) {
-      nextDesiredDate = null;
-      nextAdults = null;
-      nextChildren = null;
-      nextRoomType = null;
-    }
-
-    if (hasHotel && !incomingHotelName) {
-      throw new BadRequestException('Hotel name is required when hotel service is provided');
-    }
-
-    if (nextHotelCheckIn && nextHotelCheckOut && nextHotelCheckOut < nextHotelCheckIn) {
-      throw new BadRequestException('Hotel check-out date must be after check-in date');
-    }
-
-    const hotelName = hasHotel ? incomingHotelName : null;
-
-    const totalPrice =
-      dto.totalPrice !== undefined ? safeAmount(dto.totalPrice) : safeAmount(existing.totalPrice);
-    const amountPaid =
-      dto.amountPaid !== undefined ? safeAmount(dto.amountPaid) : safeAmount(existing.amountPaid);
-
-    if (totalPrice < 0 || amountPaid < 0) {
+    if (payment.totalPrice < 0 || payment.amountPaid < 0) {
       throw new BadRequestException('Price values must be greater than or equal to 0');
     }
 
-    const updateData: Prisma.BookingUncheckedUpdateInput = {
+    const baseUpdateData: Prisma.BookingUncheckedUpdateInput = {
       userId: nextUserId ?? null,
       guestName: nextGuestName,
       guestEmail: nextGuestEmail,
       guestPhone: nextGuestPhone,
-      tourId: hasTour ? nextTourId ?? null : null,
-      desiredDate: hasTour ? nextDesiredDate : null,
-      adults: hasTour ? nextAdults : null,
-      children: hasTour ? nextChildren : null,
-      roomType: hasTour ? (nextRoomType as RoomType) : null,
-      hotelName,
-      hotelCheckIn: hasHotel ? nextHotelCheckIn : null,
-      hotelCheckOut: hasHotel ? nextHotelCheckOut : null,
-      hotelRoomType: hasHotel ? nextHotelRoomType : null,
-      hotelGuests: hasHotel ? nextHotelGuests : null,
-      hotelNotes: hasHotel ? nextHotelNotes : null,
-      totalPrice,
-      amountPaid,
+      tourId: hasTour ? legacyTour.tourId : null,
+      desiredDate: hasTour ? legacyTour.desiredDate : null,
+      adults: hasTour ? legacyTour.adults : null,
+      children: hasTour ? legacyTour.children : null,
+      roomType: hasTour ? (dto.roomType ?? existing.roomType ?? RoomType.double) : null,
+      hotelName: hasHotel ? legacyHotel.hotelName : null,
+      hotelCheckIn: hasHotel ? legacyHotel.hotelCheckIn : null,
+      hotelCheckOut: hasHotel ? legacyHotel.hotelCheckOut : null,
+      hotelRoomType: hasHotel ? legacyHotel.hotelRoomType : null,
+      hotelGuests: hasHotel ? legacyHotel.hotelGuests : null,
+      hotelNotes: hasHotel ? legacyHotel.hotelNotes : null,
+      totalPrice: payment.totalPrice,
+      amountPaid: payment.amountPaid,
+      currency: dto.currency ?? existing.currency,
+      amountPaidMode: payment.amountPaidMode,
+      amountPaidPercent: payment.amountPaidPercent,
       status: dto.status ?? existing.status,
       serviceStatus: dto.serviceStatus ?? existing.serviceStatus,
       adminNote:
         dto.adminNote !== undefined ? normalizeNullableString(dto.adminNote) : existing.adminNote,
+      note: dto.note !== undefined ? normalizeNullableString(dto.note) : existing.note,
     };
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data: updateData,
-      include: BOOKING_ADMIN_INCLUDE,
+    await this.prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id },
+        data: baseUpdateData,
+      });
+
+      if (shouldReplaceTours) {
+        await tx.bookingTour.deleteMany({ where: { bookingId: id } });
+
+        if (normalizedTours.length > 0) {
+          await tx.bookingTour.createMany({
+            data: normalizedTours.map((tourItem) => ({
+              bookingId: id,
+              tourId: tourItem.tourId,
+              desiredDate: tourItem.desiredDate,
+              adults: tourItem.adults,
+              children: tourItem.children,
+              carType: tourItem.carType,
+            })),
+          });
+        }
+      }
+
+      if (shouldReplaceHotel) {
+        const existingHotelService = await tx.bookingHotelService.findUnique({
+          where: { bookingId: id },
+          select: { id: true },
+        });
+
+        if (normalizedHotel) {
+          if (existingHotelService) {
+            await tx.bookingHotelRoom.deleteMany({
+              where: { hotelServiceId: existingHotelService.id },
+            });
+
+            await tx.bookingHotelService.update({
+              where: { bookingId: id },
+              data: {
+                hotelId: normalizedHotel.hotelId,
+                checkIn: normalizedHotel.checkIn,
+                checkOut: normalizedHotel.checkOut,
+                notes: normalizedHotel.notes,
+                sendRequestToHotel: normalizedHotel.sendRequestToHotel,
+              },
+            });
+
+            await tx.bookingHotelRoom.createMany({
+              data: normalizedHotel.rooms.map((room) => ({
+                hotelServiceId: existingHotelService.id,
+                roomType: room.roomType,
+                guestCount: room.guestCount,
+              })),
+            });
+          } else {
+            await tx.bookingHotelService.create({
+              data: {
+                bookingId: id,
+                hotelId: normalizedHotel.hotelId,
+                checkIn: normalizedHotel.checkIn,
+                checkOut: normalizedHotel.checkOut,
+                notes: normalizedHotel.notes,
+                sendRequestToHotel: normalizedHotel.sendRequestToHotel,
+                rooms: {
+                  create: normalizedHotel.rooms.map((room) => ({
+                    roomType: room.roomType,
+                    guestCount: room.guestCount,
+                  })),
+                },
+              },
+            });
+          }
+        } else if (existingHotelService) {
+          await tx.bookingHotelRoom.deleteMany({
+            where: { hotelServiceId: existingHotelService.id },
+          });
+          await tx.bookingHotelService.delete({
+            where: { bookingId: id },
+          });
+        }
+      }
     });
+
+    const updated = await this.findAdminBookingOrThrow(id);
+
+    if (normalizedHotel?.sendRequestToHotel && resolvedHotel?.email) {
+      await this.emailService.sendHotelInquiryEmail({
+        recipientEmail: resolvedHotel.email,
+        bookingId: updated.id,
+        hotelName: resolvedHotel.name,
+        guestName:
+          updated.guestName ||
+          (updated.user
+            ? `${updated.user.firstName} ${updated.user.lastName}`.trim()
+            : 'Guest customer'),
+      });
+    }
 
     return this.mapBooking(updated);
   }
 
   async deleteAdmin(id: string) {
+    const existing = await this.findAdminBookingOrThrow(id);
+
+    if (existing.isDeleted) {
+      return {
+        deleted: true,
+        id,
+      };
+    }
+
+    await this.prisma.booking.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    return {
+      deleted: true,
+      id,
+    };
+  }
+
+  async restoreAdmin(id: string) {
+    const existing = await this.findAdminBookingOrThrow(id);
+
+    if (!existing.isDeleted) {
+      return {
+        restored: true,
+        id,
+      };
+    }
+
+    await this.prisma.booking.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+
+    return {
+      restored: true,
+      id,
+    };
+  }
+
+  async permanentDeleteAdmin(id: string) {
     await this.findAdminBookingOrThrow(id);
 
     await this.prisma.booking.delete({ where: { id } });
 
     return {
-      deleted: true,
+      permanentlyDeleted: true,
       id,
     };
   }
@@ -694,34 +1282,70 @@ export class BookingsService {
         phone: booking.user?.phone || booking.guestPhone || null,
       },
       services: {
-        tour: booking.tour
+        tours: booking.tours.map((tourItem) => ({
+          id: tourItem.id,
+          tourId: tourItem.tourId,
+          desiredDate: tourItem.desiredDate,
+          adults: tourItem.adults,
+          children: tourItem.children,
+          carType: tourItem.carType,
+          tour: tourItem.tour,
+        })),
+        tour:
+          booking.tour && booking.desiredDate
+            ? {
+                id: booking.tour.id,
+                slug: booking.tour.slug,
+                title_ka: booking.tour.title_ka,
+                title_en: booking.tour.title_en,
+                title_ru: booking.tour.title_ru,
+                desiredDate: booking.desiredDate,
+                adults: booking.adults,
+                children: booking.children,
+                roomType: booking.roomType,
+              }
+            : null,
+        hotel: booking.hotelService
           ? {
-              id: booking.tour.id,
-              slug: booking.tour.slug,
-              title_ka: booking.tour.title_ka,
-              title_en: booking.tour.title_en,
-              title_ru: booking.tour.title_ru,
-              desiredDate: booking.desiredDate,
-              adults: booking.adults,
-              children: booking.children,
-              roomType: booking.roomType,
+              id: booking.hotelService.id,
+              hotelId: booking.hotelService.hotelId,
+              name: booking.hotelService.hotel.name,
+              email: booking.hotelService.hotel.email,
+              checkIn: booking.hotelService.checkIn,
+              checkOut: booking.hotelService.checkOut,
+              notes: booking.hotelService.notes,
+              sendRequestToHotel: booking.hotelService.sendRequestToHotel,
+              rooms: booking.hotelService.rooms,
             }
-          : null,
-        hotel: booking.hotelName
-          ? {
-              name: booking.hotelName,
-              checkIn: booking.hotelCheckIn,
-              checkOut: booking.hotelCheckOut,
-              roomType: booking.hotelRoomType,
-              guests: booking.hotelGuests,
-              notes: booking.hotelNotes,
-            }
-          : null,
+          : booking.hotelName
+            ? {
+                id: null,
+                hotelId: null,
+                name: booking.hotelName,
+                email: null,
+                checkIn: booking.hotelCheckIn,
+                checkOut: booking.hotelCheckOut,
+                notes: booking.hotelNotes,
+                sendRequestToHotel: false,
+                rooms: booking.hotelRoomType
+                  ? [
+                      {
+                        id: 'legacy',
+                        roomType: booking.hotelRoomType,
+                        guestCount: booking.hotelGuests ?? 1,
+                      },
+                    ]
+                  : [],
+              }
+            : null,
       },
       financials: {
         totalPrice: withTotals.totalPrice,
         amountPaid: withTotals.amountPaid,
         balanceDue: withTotals.balanceDue,
+        currency: booking.currency,
+        amountPaidMode: booking.amountPaidMode,
+        amountPaidPercent: booking.amountPaidPercent,
       },
       admin: {
         note: booking.adminNote,
@@ -740,6 +1364,7 @@ export class BookingsService {
     }
 
     const where: Prisma.BookingWhereInput = {
+      isDeleted: false,
       ...(fromStart || toStart
         ? {
             createdAt: {
@@ -821,6 +1446,10 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
+    if (booking.isDeleted) {
+      throw new BadRequestException('Cannot approve a deleted booking');
+    }
+
     if (booking.status !== BookingStatus.PENDING) {
       throw new BadRequestException('Only pending bookings can be approved');
     }
@@ -845,12 +1474,13 @@ export class BookingsService {
       });
     }
 
-    if (booking.user?.email) {
-      await this.emailService.sendBookingDecisionEmail({
-        recipientEmail: booking.user.email,
+    const recipientEmail = booking.user?.email || booking.guestEmail || null;
+
+    if (recipientEmail) {
+      await this.emailService.sendBookingApprovedGuestConfirmation({
+        recipientEmail,
         bookingId: booking.id,
-        decision: 'approved',
-        adminNote: dto.adminNote,
+        guestName: booking.guestName || booking.user?.email || 'Guest',
       });
     }
 
@@ -872,6 +1502,10 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.isDeleted) {
+      throw new BadRequestException('Cannot reject a deleted booking');
     }
 
     if (booking.status !== BookingStatus.PENDING) {
@@ -898,9 +1532,11 @@ export class BookingsService {
       });
     }
 
-    if (booking.user?.email) {
+    const recipientEmail = booking.user?.email || booking.guestEmail || null;
+
+    if (recipientEmail) {
       await this.emailService.sendBookingDecisionEmail({
-        recipientEmail: booking.user.email,
+        recipientEmail,
         bookingId: booking.id,
         decision: 'rejected',
         adminNote: dto.adminNote,
@@ -936,6 +1572,7 @@ export class BookingsService {
     }
 
     if (
+      changeRequest.booking.isDeleted ||
       changeRequest.booking.status === BookingStatus.CANCELLED ||
       changeRequest.booking.status === BookingStatus.REJECTED
     ) {
@@ -1017,6 +1654,10 @@ export class BookingsService {
       throw new BadRequestException('Change request is already resolved');
     }
 
+    if (changeRequest.booking.isDeleted) {
+      throw new BadRequestException('Cannot update a deleted booking');
+    }
+
     const updatedRequest = await this.prisma.bookingChangeRequest.update({
       where: { id },
       data: {
@@ -1070,6 +1711,7 @@ export class BookingsService {
     const [approvedBookings, allBookings] = await Promise.all([
       this.prisma.booking.findMany({
         where: {
+          isDeleted: false,
           status: BookingStatus.APPROVED,
           desiredDate: {
             gte: start,
@@ -1100,6 +1742,7 @@ export class BookingsService {
       }),
       this.prisma.booking.findMany({
         where: {
+          isDeleted: false,
           desiredDate: {
             gte: start,
             lt: end,

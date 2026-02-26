@@ -1,5 +1,15 @@
-import { BookingServiceStatus, BookingStatus, RoomType } from '@prisma/client';
 import {
+  BookingServiceStatus,
+  BookingStatus,
+  CarType,
+  Currency,
+  PaymentAmountMode,
+  RoomType,
+} from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
@@ -10,7 +20,66 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+export class AdminBookingTourDto {
+  @IsUUID()
+  tourId: string;
+
+  @IsDateString()
+  desiredDate: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  adults: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(50)
+  children: number;
+
+  @IsEnum(CarType)
+  carType: CarType;
+}
+
+export class AdminBookingHotelRoomDto {
+  @IsString()
+  roomType: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  guestCount: number;
+}
+
+export class AdminBookingHotelServiceDto {
+  @IsUUID()
+  hotelId: string;
+
+  @IsOptional()
+  @IsDateString()
+  checkIn?: string;
+
+  @IsOptional()
+  @IsDateString()
+  checkOut?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  sendRequestToHotel?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdminBookingHotelRoomDto)
+  rooms?: AdminBookingHotelRoomDto[];
+}
 
 export class AdminCreateBookingDto {
   @IsOptional()
@@ -29,6 +98,18 @@ export class AdminCreateBookingDto {
   @IsString()
   guestPhone?: string;
 
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdminBookingTourDto)
+  tours?: AdminBookingTourDto[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminBookingHotelServiceDto)
+  hotelService?: AdminBookingHotelServiceDto;
+
+  // Legacy compatibility fields
   @IsOptional()
   @IsUUID()
   tourId?: string;
@@ -88,6 +169,20 @@ export class AdminCreateBookingDto {
   @IsNumber()
   @Min(0)
   amountPaid?: number;
+
+  @IsOptional()
+  @IsEnum(Currency)
+  currency?: Currency;
+
+  @IsOptional()
+  @IsEnum(PaymentAmountMode)
+  amountPaidMode?: PaymentAmountMode;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  amountPaidPercent?: number;
 
   @IsOptional()
   @IsEnum(BookingServiceStatus)

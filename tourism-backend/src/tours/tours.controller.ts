@@ -8,10 +8,13 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
+import { AdminRole } from '@prisma/client';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('tours')
 export class ToursController {
@@ -29,7 +32,8 @@ export class ToursController {
 }
 
 @Controller('admin/tours')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.ADMIN)
 export class AdminToursController {
   constructor(private toursService: ToursService) {}
 
@@ -59,7 +63,7 @@ export class AdminToursController {
   }
 
   @Delete('images/:imageId')
-deleteImage(@Param('imageId') imageId: string) {
-  return this.toursService.deleteImage(imageId);
-}
+  deleteImage(@Param('imageId') imageId: string) {
+    return this.toursService.deleteImage(imageId);
+  }
 }

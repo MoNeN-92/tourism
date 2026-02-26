@@ -14,6 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
+import { HotelsModule } from './hotels/hotels.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
     NotificationsModule,
     EmailModule,
     BookingsModule,
+    HotelsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AdminBootstrapService],

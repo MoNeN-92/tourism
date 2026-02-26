@@ -1,5 +1,5 @@
 import { BookingServiceStatus, BookingStatus } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
+import { IsBooleanString, IsEnum, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 
 export class AdminBookingsQueryDto {
   @IsOptional()
@@ -27,4 +27,8 @@ export class AdminBookingsQueryDto {
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   dateTo?: string;
+
+  @IsOptional()
+  @IsBooleanString()
+  includeDeleted?: string;
 }

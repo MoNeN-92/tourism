@@ -10,6 +10,21 @@ export interface InvoicePayload {
     phone: string | null
   }
   services: {
+    tours?: Array<{
+      id: string
+      tourId: string
+      desiredDate: string | null
+      adults: number | null
+      children: number | null
+      carType: string
+      tour: {
+        id: string
+        slug: string
+        title_ka: string
+        title_en: string
+        title_ru: string
+      }
+    }>
     tour: {
       id: string
       slug: string
@@ -23,10 +38,17 @@ export interface InvoicePayload {
     } | null
     hotel: {
       name: string
+      email?: string | null
       checkIn: string | null
       checkOut: string | null
-      roomType: string | null
-      guests: number | null
+      sendRequestToHotel?: boolean
+      roomType?: string | null
+      guests?: number | null
+      rooms?: Array<{
+        id: string
+        roomType: string
+        guestCount: number
+      }>
       notes: string | null
     } | null
   }
@@ -34,6 +56,9 @@ export interface InvoicePayload {
     totalPrice: number
     amountPaid: number
     balanceDue: number
+    currency?: 'GEL' | 'USD' | 'EUR'
+    amountPaidMode?: 'FLAT' | 'PERCENT'
+    amountPaidPercent?: number | null
   }
   admin: {
     note: string | null
@@ -57,7 +82,7 @@ function formatDate(value: string | null | undefined): string {
 }
 
 function getTourTitle(locale: string, invoice: InvoicePayload): string {
-  const tour = invoice.services.tour
+  const tour = invoice.services.tour || invoice.services.tours?.[0]?.tour
 
   if (!tour) {
     return 'N/A'
@@ -70,6 +95,7 @@ function getTourTitle(locale: string, invoice: InvoicePayload): string {
 
 export default function InvoicePrint({ locale, invoice }: InvoicePrintProps) {
   const logo = buildCloudinaryUrl(invoice.logoUrl)
+  const currency = invoice.financials.currency || 'GEL'
 
   return (
     <div className="max-w-4xl mx-auto bg-white p-8 text-gray-900">
@@ -118,14 +144,61 @@ export default function InvoicePrint({ locale, invoice }: InvoicePrintProps) {
           </div>
         )}
 
+        {invoice.services.tours && invoice.services.tours.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600">Tours</h3>
+            <div className="space-y-2 mt-2">
+              {invoice.services.tours.map((tourItem, index) => {
+                const title =
+                  locale === 'ka'
+                    ? tourItem.tour.title_ka || tourItem.tour.title_en
+                    : locale === 'ru'
+                      ? tourItem.tour.title_ru || tourItem.tour.title_en
+                      : tourItem.tour.title_en || tourItem.tour.title_ka
+
+                return (
+                  <div key={tourItem.id} className="text-sm border border-gray-200 rounded-lg p-2">
+                    <p className="font-medium">
+                      Tour {index + 1}: {title}
+                    </p>
+                    <p>Date: {formatDate(tourItem.desiredDate)}</p>
+                    <p>
+                      Guests: Adults {tourItem.adults ?? 0}, Children {tourItem.children ?? 0}
+                    </p>
+                    <p>Car type: {tourItem.carType}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {invoice.services.hotel && (
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600">Hotel</h3>
             <p className="text-sm">Name: {invoice.services.hotel.name}</p>
+            {invoice.services.hotel.email && (
+              <p className="text-sm">Email: {invoice.services.hotel.email}</p>
+            )}
             <p className="text-sm">Check-in: {formatDate(invoice.services.hotel.checkIn)}</p>
             <p className="text-sm">Check-out: {formatDate(invoice.services.hotel.checkOut)}</p>
-            <p className="text-sm">Room type: {invoice.services.hotel.roomType || 'N/A'}</p>
-            <p className="text-sm">Guests: {invoice.services.hotel.guests || 0}</p>
+            {invoice.services.hotel.rooms && invoice.services.hotel.rooms.length > 0 ? (
+              <div className="mt-1 space-y-1">
+                {invoice.services.hotel.rooms.map((room) => (
+                  <p key={room.id} className="text-sm">
+                    Room: {room.roomType}, Guests: {room.guestCount}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm">Room type: {invoice.services.hotel.roomType || 'N/A'}</p>
+                <p className="text-sm">Guests: {invoice.services.hotel.guests || 0}</p>
+              </>
+            )}
+            {typeof invoice.services.hotel.sendRequestToHotel === 'boolean' && (
+              <p className="text-sm">Hotel request sent: {invoice.services.hotel.sendRequestToHotel ? 'Yes' : 'No'}</p>
+            )}
             {invoice.services.hotel.notes && <p className="text-sm">Notes: {invoice.services.hotel.notes}</p>}
           </div>
         )}
@@ -140,15 +213,15 @@ export default function InvoicePrint({ locale, invoice }: InvoicePrintProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="bg-gray-50 rounded-lg px-3 py-2">
             <p className="text-gray-500">Total Cost</p>
-            <p className="font-semibold">{invoice.financials.totalPrice.toFixed(2)}</p>
+            <p className="font-semibold">{invoice.financials.totalPrice.toFixed(2)} {currency}</p>
           </div>
           <div className="bg-emerald-50 rounded-lg px-3 py-2">
             <p className="text-emerald-700">Amount Paid</p>
-            <p className="font-semibold text-emerald-700">{invoice.financials.amountPaid.toFixed(2)}</p>
+            <p className="font-semibold text-emerald-700">{invoice.financials.amountPaid.toFixed(2)} {currency}</p>
           </div>
           <div className="bg-amber-50 rounded-lg px-3 py-2">
             <p className="text-amber-700">Remaining Balance</p>
-            <p className="font-semibold text-amber-700">{invoice.financials.balanceDue.toFixed(2)}</p>
+            <p className="font-semibold text-amber-700">{invoice.financials.balanceDue.toFixed(2)} {currency}</p>
           </div>
         </div>
       </section>

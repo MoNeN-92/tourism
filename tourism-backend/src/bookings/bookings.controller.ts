@@ -9,7 +9,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { AdminRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../user-auth/decorators/current-user.decorator';
 import { UserJwtAuthGuard } from '../user-auth/guards/user-jwt-auth.guard';
 import { BookingsService } from './bookings.service';
@@ -57,7 +60,8 @@ export class UserBookingsController {
 }
 
 @Controller('admin/bookings')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(AdminRole.ADMIN, AdminRole.MODERATOR)
 export class AdminBookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
@@ -87,7 +91,13 @@ export class AdminBookingsController {
     return this.bookingsService.findAllAdmin(query);
   }
 
+  @Get('trash')
+  findTrash(@Query() query: AdminBookingsQueryDto) {
+    return this.bookingsService.findTrashAdmin(query);
+  }
+
   @Get('revenue/summary')
+  @Roles(AdminRole.ADMIN)
   revenueSummary(@Query() query: AdminRevenueQueryDto) {
     return this.bookingsService.getRevenueSummary(query);
   }
@@ -123,7 +133,19 @@ export class AdminBookingsController {
   }
 
   @Delete(':id')
+  @Roles(AdminRole.ADMIN)
   delete(@Param('id') id: string) {
     return this.bookingsService.deleteAdmin(id);
+  }
+
+  @Post(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.bookingsService.restoreAdmin(id);
+  }
+
+  @Delete(':id/permanent')
+  @Roles(AdminRole.ADMIN)
+  permanentDelete(@Param('id') id: string) {
+    return this.bookingsService.permanentDeleteAdmin(id);
   }
 }

@@ -163,7 +163,7 @@ describe('BookingsService', () => {
     const email = { sendBookingCreatedEmail: jest.fn() };
     const service = new BookingsService(prisma as any, notifications as any, email as any);
 
-    prisma.booking.findUnique.mockResolvedValue({
+    const existingRecord = {
       id: 'booking-1',
       userId: null,
       guestName: 'Guest Person',
@@ -193,8 +193,15 @@ describe('BookingsService', () => {
       updatedAt: new Date('2026-03-01T00:00:00.000Z'),
       user: null,
       tour: null,
+      tours: [],
+      hotelService: null,
+      currency: 'GEL',
+      amountPaidMode: 'FLAT',
+      amountPaidPercent: null,
+      isDeleted: false,
+      deletedAt: null,
       changeRequests: [],
-    });
+    };
 
     prisma.booking.update.mockResolvedValue({
       id: 'booking-1',
@@ -226,8 +233,24 @@ describe('BookingsService', () => {
       updatedAt: new Date('2026-03-02T00:00:00.000Z'),
       user: null,
       tour: null,
+      tours: [],
+      hotelService: null,
+      currency: 'GEL',
+      amountPaidMode: 'FLAT',
+      amountPaidPercent: null,
+      isDeleted: false,
+      deletedAt: null,
       changeRequests: [],
     });
+
+    prisma.booking.findUnique
+      .mockResolvedValueOnce(existingRecord)
+      .mockResolvedValueOnce({
+        ...existingRecord,
+        amountPaid: 120,
+        serviceStatus: 'COMPLETED',
+        updatedAt: new Date('2026-03-02T00:00:00.000Z'),
+      });
 
     const result = await service.updateAdmin('booking-1', {
       serviceStatus: 'COMPLETED',

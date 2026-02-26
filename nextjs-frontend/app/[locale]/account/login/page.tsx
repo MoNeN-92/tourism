@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { persistAdminAccessToken } from '@/lib/auth-token'
 
 type LoginMode = 'customer' | 'staff'
 
@@ -48,6 +49,10 @@ export default function AccountLoginPage() {
       }
 
       if (mode === 'staff') {
+        if (data?.access_token) {
+          persistAdminAccessToken(data.access_token)
+        }
+
         router.replace(`/${locale}/admin/bookings`)
       } else {
         router.replace(customerNext)

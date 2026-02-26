@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { persistAdminAccessToken } from '@/lib/auth-token'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -37,6 +38,10 @@ export default function AdminLoginPage() {
         setError(data.message || 'Login failed')
         setLoading(false)
         return
+      }
+
+      if (data?.access_token) {
+        persistAdminAccessToken(data.access_token)
       }
 
       router.push(`/${locale}/admin`)

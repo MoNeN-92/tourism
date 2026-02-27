@@ -82,7 +82,7 @@ const BOOKING_ADMIN_INCLUDE = {
 } as const;
 
 const INVOICE_LOGO_URL =
-  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771052061/vibe-logo_kztwbw.png';
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771052741/Logo_Geo_VIbe_idjg6d.png';
 
 type AdminBookingRecord = Prisma.BookingGetPayload<{
   include: typeof BOOKING_ADMIN_INCLUDE;

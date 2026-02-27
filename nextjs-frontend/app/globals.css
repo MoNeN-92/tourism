@@ -5,7 +5,7 @@
   --foreground: #171717;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -26,15 +26,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* ტექსტის გამუქება მობაილზე */
-p, span, div, li, a, h1, h2, h3, h4, h5, h6 {
-  color: inherit;
-}
-
-.text-gray-600 { color: #374151 !important; }
-.text-gray-500 { color: #4b5563 !important; }
-.text-gray-400 { color: #6b7280 !important; }
 
 /* Mobile input fix */
 input, textarea, select {

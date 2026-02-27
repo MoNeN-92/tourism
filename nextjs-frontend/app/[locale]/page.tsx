@@ -179,28 +179,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <div className="min-h-screen">
       {/* 1. Hero Section */}
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
-        <Image
-          src="https://res.cloudinary.com/dj7qaif1i/image/upload/f_auto,q_auto,w_1920/v1771396197/cover_1_secna5.jpg"
-          alt={t('hero.imageAlt')}
-          priority={true}
-          fill
-          sizes="100vw"
-          fetchPriority="high"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="container mx-auto px-4 text-center text-white">
-            <h1 className="text-4xl sm:text-7xl font-bold mb-6">{t('hero.title')}</h1>
-            <p className="text-lg sm:text-2xl mb-10 max-w-3xl mx-auto">{t('hero.subtitle')}</p>
-            <div className="flex gap-4 justify-center">
-              <Link href={`/${locale}/tours`} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-blue-700 transition-colors">
-                {t('hero.ctaViewTours')}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+  <Image
+    src="https://res.cloudinary.com/dj7qaif1i/image/upload/f_auto,q_auto,w_1920/v1771396197/cover_1_secna5.jpg"
+    alt={t('hero.imageAlt')}
+    priority={true}
+    fill
+    sizes="100vw"
+    fetchPriority="high"
+    className="object-cover"
+  />
+  <div className="absolute inset-0 bg-black/20" />
+  <div className="absolute inset-0 flex items-center justify-center">
+    <div className="container mx-auto px-4 text-center">
+      <h1 className="text-4xl sm:text-7xl font-bold mb-6 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+        {t('hero.title')}
+      </h1>
+      <p className="text-lg sm:text-2xl mb-10 max-w-3xl mx-auto text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]">
+        {t('hero.subtitle')}
+      </p>
+      <div className="flex gap-4 justify-center">
+        <Link href={`/${locale}/tours`} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-blue-700 transition-colors">
+          {t('hero.ctaViewTours')}
+        </Link>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* 2. Featured Tours Section */}
       <section className="py-16 bg-white">

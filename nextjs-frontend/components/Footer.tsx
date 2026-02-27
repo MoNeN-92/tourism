@@ -63,15 +63,15 @@ export default function Footer() {
             </h4>
             <div className="flex gap-4">
               <a 
-  href="https://www.facebook.com/profile.php?id=61587986151420" 
+  href="fb://facewebmodal/f?href=https://www.facebook.com/vibege" 
   target="_blank" 
   rel="noopener noreferrer"
-  className="bg-gray-800 p-3 rounded-xl hover:bg-blue-600 hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg"
+  className="bg-gray-100 p-3 rounded-full text-gray-600 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md inline-flex items-center justify-center"
   aria-label="Facebook"
 >
   <Facebook size={20} />
 </a>
-              <a 
+              {/* <a 
                 // href="https://instagram.com/vibegeorgia" 
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -88,7 +88,7 @@ export default function Footer() {
                 aria-label="Telegram"
               >
                 <Send size={20} />
-              </a>
+              </a> */}
             </div>
           </div>
         </div>

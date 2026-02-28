@@ -63,7 +63,7 @@ export default function Footer() {
             </h4>
             <div className="flex gap-4">
               <a 
-  href="fb://facewebmodal/f?href=https://www.facebook.com/vibege" 
+  href="https://www.facebook.com/vibege" // ჩაწერეთ ჩვეულებრივი ლინკი
   target="_blank" 
   rel="noopener noreferrer"
   className="bg-gray-100 p-3 rounded-full text-gray-600 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md inline-flex items-center justify-center"

@@ -258,53 +258,99 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* 4. Destinations Grid */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold mb-12">{t('destinations.title')}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {destinations.map((dest, i) => (
-              <div key={i} className="group relative h-64 rounded-xl overflow-hidden shadow-lg">
-                <Image src={dest.image} alt={dest.name} fill sizes="33vw" className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-black/30" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <h3 className="text-white text-2xl font-bold">{dest.name}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Blog Section */}
-      <section className="py-16 bg-white">
-  <div className="container mx-auto px-4">
-    <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12">{t('featuredTours.title')}</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-      {featuredTours.map((tour) => (
-        <article 
-          key={tour.id} 
-          className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+{/* 4. Destinations Grid */}
+<section className="py-16 bg-white">
+  <div className="container mx-auto px-4 text-center">
+    <h2 className="text-3xl sm:text-5xl font-bold mb-12">
+      {t('destinations.title')}
+    </h2>
+    
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      {destinations.map((dest, i) => (
+        <Link 
+          key={i} 
+          href={`/${locale}/tours`} // ნებისმიერი კლიკი გადაიყვანს ტურების გვერდზე
+          className="group relative h-64 rounded-xl overflow-hidden shadow-lg block cursor-pointer transition-all duration-300 hover:shadow-2xl"
         >
-          <Link href={`/${locale}/tours/${tour.slug}`}>
-            <div className="relative h-48 overflow-hidden">
-              <Image
-                src={buildCloudinaryUrl(tour.images[0]?.url || '')}
-                alt={getLocalizedField(tour, 'title', locale)}
-                fill
-                sizes="(max-width: 768px) 100vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-            </div>
-            <div className="p-5">
-              <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 transition-colors">
-                {getLocalizedField(tour, 'title', locale)}
-              </h3>
-              <p className="text-sm text-gray-500">⏱️ {formatDuration(tour.duration, locale)}</p>
-            </div>
-          </Link>
-        </article>
+          {/* სურათი */}
+          <Image 
+            src={dest.image} 
+            alt={dest.name} 
+            fill 
+            sizes="(max-width: 768px) 50vw, 33vw" 
+            className="object-cover group-hover:scale-110 transition-transform duration-700" 
+          />
+          
+          {/* შავი გადასაკვრელი (Overlay) - ჰოვერზე უფრო მუქდება */}
+          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
+          
+          {/* ტექსტი ცენტრში */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+            <h3 className="text-white text-2xl font-bold drop-shadow-lg transform transition-transform duration-300 group-hover:scale-105">
+              {dest.name}
+            </h3>
+            
+            {/* პატარა მანიშნებელი, რომ კლიკებადია (სურვილისამებრ) */}
+            <span className="mt-2 text-white/0 group-hover:text-white/100 text-xs uppercase tracking-widest transition-all duration-300 border-t border-white/40 pt-2">
+              {t('hero.ctaViewTours')} 
+            </span>
+          </div>
+        </Link>
       ))}
+    </div>
+  </div>
+</section>
+      {/* 5. Blog Section */}
+<section className="py-16 bg-white">
+  <div className="container mx-auto px-4">
+    <div className="text-center mb-12">
+      <h2 className="text-3xl sm:text-5xl font-bold mb-4">
+        {t('blog.title')}
+      </h2>
+      <p className="text-gray-600 max-w-2xl mx-auto">
+        {t('blog.subtitle')} {/* დავამატეთ ქვესათაური */}
+      </p>
+    </div>
+    
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {latestPosts.length > 0 ? (
+        latestPosts.map((post) => (
+          <article 
+            key={post.id} 
+            className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+          >
+            <Link href={`/${locale}/blog/${post.slug}`}>
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={post.coverImage || '/fallback-image.jpg'}
+                  alt={getLocalizedField(post, 'title', locale)}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+              </div>
+              <div className="p-5">
+                <p className="text-xs text-blue-600 font-semibold mb-2 uppercase">
+                  {formatDate(post.publishedDate, locale)}
+                </p>
+                <h3 className="font-bold text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                  {getLocalizedField(post, 'title', locale)}
+                </h3>
+                <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                  {getLocalizedField(post, 'excerpt', locale)}
+                </p>
+                <span className="text-blue-600 text-sm font-bold group-hover:underline">
+                  {t('blog.readMore')} →
+                </span>
+              </div>
+            </Link>
+          </article>
+        ))
+      ) : (
+        <div className="col-span-full text-center py-12">
+          <p className="text-gray-500">{t('blog.noPosts')}</p>
+        </div>
+      )}
     </div>
   </div>
 </section>

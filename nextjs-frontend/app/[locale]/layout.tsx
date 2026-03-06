@@ -33,12 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     
     // ✅ სწორი hreflang კონფიგურაცია
     alternates: {
-      canonical: `${baseUrl}/${locale}`,
-      languages: {
-        'ka-GE': `${baseUrl}/ka`,
-        'en-US': `${baseUrl}/en`,
-        'ru-RU': `${baseUrl}/ru`,
-        'x-default': `${baseUrl}/en`, // ნაგულისხმევი ენა
+      canonical: locale === 'en' ? `${baseUrl}/` : `${baseUrl}/${locale}`, 
+  languages: {
+    'ka-GE': `${baseUrl}/ka`,
+    'en-US': `${baseUrl}/en`,
+    'ru-RU': `${baseUrl}/ru`,
+    'x-default': `${baseUrl}/`, // ნაგულისხმევი ენა
       },
     },
 

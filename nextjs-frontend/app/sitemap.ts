@@ -13,18 +13,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const now = new Date()
   const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/privacy', '/terms']
-  const rootRoute: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 1,
-      alternates: {
-        languages: buildLanguageAlternates(baseUrl, ''),
-      },
-    },
-  ]
 
+  // 1. სტატიკური გვერდები ყველა ენისთვის (მაგ: /en, /ka, /ru, /en/tours და ა.შ.)
   const staticRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     publicPaths.map((path) => {
       const localizedPath = `/${locale}${path}`
@@ -40,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   )
 
+  // 2. დინამიური გვერდები (ტური და ბლოგი)
   const [tourRoutes, blogRoutes] = await Promise.all([
     getDynamicRoutes({
       apiUrl,
@@ -59,7 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ])
 
-  return [...rootRoute, ...staticRoutes, ...tourRoutes, ...blogRoutes]
+  // ვაერთიანებთ ყველაფერს. rootRoute ([]) აქ აღარ გვჭირდება დუბლიკატების თავიდან ასაცილებლად.
+  return [...staticRoutes, ...tourRoutes, ...blogRoutes]
 }
 
 type DynamicContentItem = {
@@ -150,6 +142,7 @@ function buildLanguageAlternates(baseUrl: string, pathAfterLocale: string): Reco
     `${baseUrl}/${locale}${normalizedPath}`,
   ])
 
+  // x-default მიუთითებს მთავარ ენაზე (მაგ: /en), რაც ეხმარება Google-ს ენების გარკვევაში
   entries.push(['x-default', `${baseUrl}/${defaultLocale}${normalizedPath}`])
 
   return Object.fromEntries(entries)

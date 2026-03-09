@@ -2,19 +2,17 @@ import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import { locales } from '@/i18n/config'
+import { locales, defaultLocale } from '@/i18n/config' // დავამატე defaultLocale იმპორტი
 import Script from 'next/script'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
 
-// 1. ვქმნით generateMetadata ფუნქციას დინამიური ენებისთვის
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com'
   
-  // ვაკონტროლებთ ენების ფორმატს (ka-GE, en-US, ru-RU)
   const langMap: { [key: string]: string } = {
     ka: 'ka-GE',
     en: 'en-US',
@@ -31,41 +29,44 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     authors: [{ name: 'Vibe Georgia' }],
     metadataBase: new URL(baseUrl),
     
-    // ✅ სწორი hreflang კონფიგურაცია
     alternates: {
-      canonical: locale === 'en' ? `${baseUrl}/` : `${baseUrl}/${locale}`, 
-  languages: {
-    'ka-GE': `${baseUrl}/ka`,
-    'en-US': `${baseUrl}/en`,
-    'ru-RU': `${baseUrl}/ru`,
-    'x-default': `${baseUrl}/`, // ნაგულისხმევი ენა
+      // ✅ Canonical ლოგიკა: თუ ინგლისურია (default), მისამართი სუფთაა, სხვა შემთხვევაში ენით
+      canonical: locale === defaultLocale ? `${baseUrl}/` : `${baseUrl}/${locale}`, 
+      languages: {
+        'ka-GE': `${baseUrl}/ka`,
+        'en-US': `${baseUrl}/en`,
+        'ru-RU': `${baseUrl}/ru`,
+        'x-default': `${baseUrl}/`, 
       },
     },
 
+    // ✅ Favicon-ის გასწორება Yandex-ისთვის და სხვა ბოტებისთვის
     icons: {
       icon: [
-        { url: '/images/favicon.ico' },
-        { url: '/images/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { url: '/images/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { url: `${baseUrl}/favicon.ico`, type: 'image/x-icon' }, // აბსოლუტური გზა
+        { url: `${baseUrl}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { url: `${baseUrl}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
       ],
+      shortcut: [`${baseUrl}/favicon.ico`],
       apple: [
-        { url: '/images/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        { url: `${baseUrl}/images/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' },
       ],
     },
-    manifest: '/manifest.json',
+    
+    // ✅ მანიფესტიც აბსოლუტური მისამართით
+    manifest: `${baseUrl}/manifest.json`,
 
     openGraph: {
       title: 'Vibe Georgia - Discover the Caucasus',
       description: 'Unforgettable travel experiences in the heart of Georgia.',
       url: `${baseUrl}/${locale}`,
       siteName: 'Vibe Georgia',
-      images: [{ url: '/images/og-image.jpg', width: 1200, height: 630, alt: 'Vibe Georgia Tours' }],
+      images: [{ url: `${baseUrl}/images/og-image.jpg`, width: 1200, height: 630, alt: 'Vibe Georgia Tours' }],
       locale: langMap[locale] || 'en_US',
       type: 'website',
     },
     verification: { 
       google: 'sc-domain:vibegeorgia.com',
-      // Yandex-ის ვერიფიკაცია უკვე Cloudflare-ში დაამატეთ, აქ აღარ გვჭირდება
     },
     robots: { index: true, follow: true }
   }
@@ -89,7 +90,6 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className="antialiased">
-        {/* ✅ TBT-ის ოპტიმიზაცია: GA არ აფერხებს საიტის გახსნას */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`}
           strategy="lazyOnload" 

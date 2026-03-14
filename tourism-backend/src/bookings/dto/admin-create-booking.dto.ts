@@ -42,6 +42,14 @@ export class AdminBookingTourDto {
 
   @IsEnum(CarType)
   carType: CarType;
+
+  @IsOptional()
+  @IsUUID()
+  driverId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  guideId?: string;
 }
 
 export class AdminBookingHotelRoomDto {

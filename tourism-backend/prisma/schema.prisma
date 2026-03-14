@@ -26,12 +26,15 @@ model User {
   lastName     String
   phone        String
   role         UserRole       @default(USER)
+  partnerType  PartnerType?
   isActive     Boolean        @default(true)
   lastLoginAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   bookings     Booking[]
   notifications Notification[]
+  assignedDriverTours BookingTour[] @relation("BookingTourDriver")
+  assignedGuideTours  BookingTour[] @relation("BookingTourGuide")
 }
 
 model Tour {
@@ -123,6 +126,41 @@ model Hotel {
   @@unique([name, email])
 }
 
+model PartnerHotel {
+  id                  String              @id @default(uuid())
+  slug                String              @unique
+  name                String
+  starRating          Int
+  coverImageUrl       String
+  coverImagePublicId  String
+  shortDescription_ka String
+  shortDescription_en String
+  shortDescription_ru String
+  description_ka      String
+  description_en      String
+  description_ru      String
+  address             String
+  contactPhone        String
+  website             String?
+  isVisible           Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  images              PartnerHotelImage[]
+
+  @@index([isVisible, createdAt])
+}
+
+model PartnerHotelImage {
+  id             String       @id @default(uuid())
+  partnerHotelId String
+  url            String
+  publicId       String
+  createdAt      DateTime     @default(now())
+  partnerHotel   PartnerHotel @relation(fields: [partnerHotelId], references: [id], onDelete: Cascade)
+
+  @@index([partnerHotelId])
+}
+
 model BookingTour {
   id          String   @id @default(uuid())
   bookingId   String
@@ -131,13 +169,19 @@ model BookingTour {
   adults      Int      @default(1)
   children    Int      @default(0)
   carType     CarType
+  driverId    String?
+  guideId     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   tour        Tour     @relation(fields: [tourId], references: [id], onDelete: Restrict)
+  driver      User?    @relation("BookingTourDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  guide       User?    @relation("BookingTourGuide", fields: [guideId], references: [id], onDelete: SetNull)
 
   @@index([bookingId])
   @@index([tourId, desiredDate])
+  @@index([driverId])
+  @@index([guideId])
 }
 
 model BookingHotelService {
@@ -301,6 +345,13 @@ enum UserRole {
   USER
   ADMIN
   MODERATOR
+}
+
+enum PartnerType {
+  DRIVER
+  GUIDE
+  PARTNER
+  CUSTOMER
 }
 
 enum Currency {

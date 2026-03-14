@@ -2,40 +2,76 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 
 describe('BookingsService', () => {
-  const createPrismaMock = () => ({
-    user: {
-      findUnique: jest.fn(),
-    },
-    tour: {
-      findUnique: jest.fn(),
-    },
-    booking: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findMany: jest.fn(),
-    },
-    bookingChangeRequest: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      update: jest.fn(),
-    },
-    $transaction: jest.fn(async (ops: Promise<unknown>[] | ((tx: any) => Promise<unknown>)) => {
-      if (typeof ops === 'function') {
-        return ops({
-          booking: {
-            update: jest.fn(),
-          },
-          bookingChangeRequest: {
-            update: jest.fn(),
-          },
-        });
-      }
-      return Promise.all(ops);
-    }),
-  });
+  const createPrismaMock = () => {
+    const tx = {
+      booking: {
+        update: jest.fn(),
+      },
+      bookingTour: {
+        deleteMany: jest.fn(),
+        createMany: jest.fn(),
+      },
+      bookingHotelService: {
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        create: jest.fn(),
+        delete: jest.fn(),
+      },
+      bookingHotelRoom: {
+        deleteMany: jest.fn(),
+        createMany: jest.fn(),
+      },
+      bookingChangeRequest: {
+        update: jest.fn(),
+      },
+    };
+
+    return {
+      __tx: tx,
+      user: {
+        findUnique: jest.fn(),
+      },
+      tour: {
+        findUnique: jest.fn(),
+      },
+      hotel: {
+        findUnique: jest.fn(),
+      },
+      booking: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        findMany: jest.fn(),
+      },
+      bookingTour: {
+        createMany: jest.fn(),
+        deleteMany: jest.fn(),
+      },
+      bookingHotelService: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      bookingHotelRoom: {
+        createMany: jest.fn(),
+        deleteMany: jest.fn(),
+      },
+      bookingChangeRequest: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+      },
+      $transaction: jest.fn(async (ops: Promise<unknown>[] | ((innerTx: any) => Promise<unknown>)) => {
+        if (typeof ops === 'function') {
+          return ops(tx);
+        }
+        return Promise.all(ops);
+      }),
+    };
+  };
 
   it('creates pending booking for active tour', async () => {
     const prisma = createPrismaMock();
@@ -126,6 +162,132 @@ describe('BookingsService', () => {
     expect(result.balanceDue).toBe(150);
     expect(result.user).toBeNull();
     expect(result.guestName).toBe('Guest Person');
+  });
+
+  it('creates admin booking tours with optional driver and guide assignments', async () => {
+    const prisma = createPrismaMock();
+    const notifications = { createForUser: jest.fn() };
+    const email = { sendBookingCreatedEmail: jest.fn() };
+    const service = new BookingsService(prisma as any, notifications as any, email as any);
+
+    prisma.tour.findUnique.mockResolvedValue({ id: 'tour-1', status: true });
+    prisma.user.findUnique
+      .mockResolvedValueOnce({ id: 'driver-1', isActive: true, partnerType: 'DRIVER' })
+      .mockResolvedValueOnce({ id: 'guide-1', isActive: true, partnerType: 'GUIDE' });
+    prisma.booking.create.mockResolvedValue({
+      id: 'booking-driver-guide-1',
+      userId: null,
+      guestName: 'Guest Driver',
+      guestEmail: 'guest@test.com',
+      guestPhone: '+995555000222',
+      tourId: 'tour-1',
+      desiredDate: new Date('2026-03-20T00:00:00.000Z'),
+      adults: 2,
+      children: 0,
+      roomType: 'double',
+      hotelName: null,
+      hotelCheckIn: null,
+      hotelCheckOut: null,
+      hotelRoomType: null,
+      hotelGuests: null,
+      hotelNotes: null,
+      totalPrice: 400,
+      amountPaid: 100,
+      note: null,
+      adminNote: null,
+      serviceStatus: 'PENDING',
+      status: 'APPROVED',
+      approvedAt: new Date('2026-03-01T00:00:00.000Z'),
+      rejectedAt: null,
+      cancelledAt: null,
+      createdAt: new Date('2026-03-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-01T00:00:00.000Z'),
+      user: null,
+      tour: {
+        id: 'tour-1',
+        slug: 'kazbegi',
+        title_ka: 'ყაზბეგი',
+        title_en: 'Kazbegi',
+        title_ru: 'Казбеги',
+      },
+      tours: [
+        {
+          id: 'booking-tour-1',
+          tourId: 'tour-1',
+          desiredDate: new Date('2026-03-20T00:00:00.000Z'),
+          adults: 2,
+          children: 0,
+          carType: 'SUV',
+          driverId: 'driver-1',
+          guideId: 'guide-1',
+          driver: {
+            id: 'driver-1',
+            firstName: 'Nika',
+            lastName: 'Driver',
+            email: 'driver@test.com',
+            phone: '+995555000333',
+          },
+          guide: {
+            id: 'guide-1',
+            firstName: 'Ana',
+            lastName: 'Guide',
+            email: 'guide@test.com',
+            phone: '+995555000444',
+          },
+          tour: {
+            id: 'tour-1',
+            slug: 'kazbegi',
+            title_ka: 'ყაზბეგი',
+            title_en: 'Kazbegi',
+            title_ru: 'Казбеги',
+          },
+        },
+      ],
+      hotelService: null,
+      currency: 'GEL',
+      amountPaidMode: 'FLAT',
+      amountPaidPercent: null,
+      isDeleted: false,
+      deletedAt: null,
+      changeRequests: [],
+    });
+
+    const result = await service.createAdmin({
+      guestName: 'Guest Driver',
+      guestEmail: 'guest@test.com',
+      guestPhone: '+995555000222',
+      tours: [
+        {
+          tourId: 'tour-1',
+          desiredDate: '2026-03-20',
+          adults: 2,
+          children: 0,
+          carType: 'SUV',
+          driverId: 'driver-1',
+          guideId: 'guide-1',
+        },
+      ],
+      totalPrice: 400,
+      amountPaid: 100,
+    } as any);
+
+    expect(prisma.booking.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tours: {
+            create: [
+              expect.objectContaining({
+                tourId: 'tour-1',
+                driverId: 'driver-1',
+                guideId: 'guide-1',
+              }),
+            ],
+          },
+        }),
+      }),
+    );
+    expect((result as any).tours[0].driverId).toBe('driver-1');
+    expect((result as any).tours[0].guideId).toBe('guide-1');
   });
 
   it('fails admin create when no tour or hotel service is provided', async () => {
@@ -259,6 +421,137 @@ describe('BookingsService', () => {
 
     expect(result.serviceStatus).toBe('COMPLETED');
     expect(result.balanceDue).toBe(80);
+  });
+
+  it('replaces booking tour assignments when admin updates driver and guide selections', async () => {
+    const prisma = createPrismaMock();
+    const notifications = { createForUser: jest.fn() };
+    const email = { sendBookingCreatedEmail: jest.fn() };
+    const service = new BookingsService(prisma as any, notifications as any, email as any);
+
+    const existingRecord = {
+      id: 'booking-2',
+      userId: null,
+      guestName: 'Guest Person',
+      guestEmail: 'guest@test.com',
+      guestPhone: '+995555000555',
+      tourId: 'tour-1',
+      desiredDate: new Date('2026-03-10T00:00:00.000Z'),
+      adults: 2,
+      children: 0,
+      roomType: 'double',
+      hotelName: null,
+      hotelCheckIn: null,
+      hotelCheckOut: null,
+      hotelRoomType: null,
+      hotelGuests: null,
+      hotelNotes: null,
+      totalPrice: 500,
+      amountPaid: 100,
+      note: null,
+      adminNote: null,
+      serviceStatus: 'PENDING',
+      status: 'APPROVED',
+      approvedAt: null,
+      rejectedAt: null,
+      cancelledAt: null,
+      createdAt: new Date('2026-03-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-01T00:00:00.000Z'),
+      user: null,
+      tour: {
+        id: 'tour-1',
+        slug: 'kazbegi',
+        title_ka: 'ყაზბეგი',
+        title_en: 'Kazbegi',
+        title_ru: 'Казбеги',
+      },
+      tours: [
+        {
+          id: 'booking-tour-1',
+          tourId: 'tour-1',
+          desiredDate: new Date('2026-03-10T00:00:00.000Z'),
+          adults: 2,
+          children: 0,
+          carType: 'SEDAN',
+          driverId: null,
+          guideId: null,
+          driver: null,
+          guide: null,
+          tour: {
+            id: 'tour-1',
+            slug: 'kazbegi',
+            title_ka: 'ყაზბეგი',
+            title_en: 'Kazbegi',
+            title_ru: 'Казбеги',
+          },
+        },
+      ],
+      hotelService: null,
+      currency: 'GEL',
+      amountPaidMode: 'FLAT',
+      amountPaidPercent: null,
+      isDeleted: false,
+      deletedAt: null,
+      changeRequests: [],
+    };
+
+    prisma.user.findUnique
+      .mockResolvedValueOnce({ id: 'driver-1', isActive: true, partnerType: 'DRIVER' })
+      .mockResolvedValueOnce({ id: 'guide-1', isActive: true, partnerType: 'GUIDE' });
+    prisma.tour.findUnique.mockResolvedValue({ id: 'tour-1', status: true });
+    prisma.booking.findUnique
+      .mockResolvedValueOnce(existingRecord)
+      .mockResolvedValueOnce({
+        ...existingRecord,
+        tours: [
+          {
+            ...existingRecord.tours[0],
+            driverId: 'driver-1',
+            guideId: 'guide-1',
+            driver: {
+              id: 'driver-1',
+              firstName: 'Nika',
+              lastName: 'Driver',
+              email: 'driver@test.com',
+              phone: '+995555000333',
+            },
+            guide: {
+              id: 'guide-1',
+              firstName: 'Ana',
+              lastName: 'Guide',
+              email: 'guide@test.com',
+              phone: '+995555000444',
+            },
+          },
+        ],
+      });
+
+    await service.updateAdmin('booking-2', {
+      tours: [
+        {
+          tourId: 'tour-1',
+          desiredDate: '2026-03-10',
+          adults: 2,
+          children: 0,
+          carType: 'SEDAN',
+          driverId: 'driver-1',
+          guideId: 'guide-1',
+        },
+      ],
+    } as any);
+
+    expect(prisma.__tx.bookingTour.deleteMany).toHaveBeenCalledWith({
+      where: { bookingId: 'booking-2' },
+    });
+    expect(prisma.__tx.bookingTour.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          bookingId: 'booking-2',
+          driverId: 'driver-1',
+          guideId: 'guide-1',
+        }),
+      ],
+    });
   });
 
   it('returns monthly revenue summary', async () => {

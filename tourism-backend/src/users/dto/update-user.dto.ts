@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { PartnerType, UserRole } from '@prisma/client';
 import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
@@ -29,4 +29,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsEnum(PartnerType)
+  partnerType?: PartnerType | null;
 }

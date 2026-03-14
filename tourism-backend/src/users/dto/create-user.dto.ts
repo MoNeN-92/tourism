@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { PartnerType, UserRole } from '@prisma/client';
 import {
   IsBoolean,
   IsEmail,
@@ -34,6 +34,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsEnum(PartnerType)
+  partnerType?: PartnerType;
 
   @IsOptional()
   @IsBoolean()

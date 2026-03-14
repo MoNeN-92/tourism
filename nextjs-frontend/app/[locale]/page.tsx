@@ -46,6 +46,31 @@ interface BlogPost {
   publishedDate: string
 }
 
+interface PartnerHotelImage {
+  id: string
+  url: string
+  publicId: string
+  createdAt: string
+}
+
+interface PartnerHotel {
+  id: string
+  slug: string
+  name: string
+  starRating: number
+  coverImageUrl: string
+  shortDescription_ka: string
+  shortDescription_en: string
+  shortDescription_ru: string
+  description_ka: string
+  description_en: string
+  description_ru: string
+  address: string
+  contactPhone: string
+  website: string | null
+  images: PartnerHotelImage[]
+}
+
 interface ApiBlogPost {
   id: string
   slug: string
@@ -63,19 +88,19 @@ interface ApiBlogPost {
 }
 
 // --- Helper Functions ---
-function getLocalizedField<T extends Tour | BlogPost>(
-  item: T,
-  field: 'title' | 'excerpt' | 'description' | 'location',
+function getLocalizedField(
+  item: any,
+  field: 'title' | 'excerpt' | 'description' | 'location' | 'shortDescription',
   locale: string
 ): string {
-  const fieldMap: Record<string, keyof T> = {
-    ka: `${field}_ka` as keyof T,
-    en: `${field}_en` as keyof T,
-    ru: `${field}_ru` as keyof T,
+  const fieldMap: Record<string, string> = {
+    ka: `${field}_ka`,
+    en: `${field}_en`,
+    ru: `${field}_ru`,
   }
   const localizedFieldKey = fieldMap[locale] || fieldMap['ka']
   const localizedValue = item[localizedFieldKey]
-  const fallbackValue = item[`${field}_ka` as keyof T]
+  const fallbackValue = item[`${field}_ka`]
   return (localizedValue as string) || (fallbackValue as string) || ''
 }
 
@@ -136,6 +161,17 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
   }
 }
 
+async function getPartnerHotels(): Promise<PartnerHotel[]> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const res = await fetch(`${apiUrl}/partner-hotels`, { cache: 'no-store' })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'home' })
@@ -165,15 +201,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const featuredTours = await getFeaturedTours()
   const latestPosts = await getLatestBlogPosts()
-
-  const destinations = [
-    { name: t('destinations.svaneti'), image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
-    { name: t('destinations.kazbegi'), image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&q=80' },
-    { name: t('destinations.batumi'), image: 'https://api.visitbatumi.com/media/image/ec568ecc98e84a9db0c9d34c051c2191.jpg' },
-    { name: t('destinations.tbilisi'), image: 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/13/b0/81/77/narikala-fortress-largejpg.jpg?w=700&h=-1&s=1' },
-    { name: t('destinations.kakheti'), image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800&q=80' },
-    { name: t('destinations.gudauri'), image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80' },
-  ]
+  const partnerHotels = await getPartnerHotels()
 
   return (
     <div className="min-h-screen">
@@ -258,48 +286,58 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-{/* 4. Destinations Grid */}
-<section className="py-16 bg-white">
-  <div className="container mx-auto px-4 text-center">
-    <h2 className="text-3xl sm:text-5xl font-bold mb-12">
-      {t('destinations.title')}
-    </h2>
-    
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-      {destinations.map((dest, i) => (
-        <Link 
-          key={i} 
-          href={`/${locale}/tours`} // ნებისმიერი კლიკი გადაიყვანს ტურების გვერდზე
-          className="group relative h-64 rounded-xl overflow-hidden shadow-lg block cursor-pointer transition-all duration-300 hover:shadow-2xl"
-        >
-          {/* სურათი */}
-          <Image 
-            src={dest.image} 
-            alt={dest.name} 
-            fill 
-            sizes="(max-width: 768px) 50vw, 33vw" 
-            className="object-cover group-hover:scale-110 transition-transform duration-700" 
-          />
-          
-          {/* შავი გადასაკვრელი (Overlay) - ჰოვერზე უფრო მუქდება */}
-          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300" />
-          
-          {/* ტექსტი ცენტრში */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-            <h3 className="text-white text-2xl font-bold drop-shadow-lg transform transition-transform duration-300 group-hover:scale-105">
-              {dest.name}
-            </h3>
-            
-            {/* პატარა მანიშნებელი, რომ კლიკებადია (სურვილისამებრ) */}
-            <span className="mt-2 text-white/0 group-hover:text-white/100 text-xs uppercase tracking-widest transition-all duration-300 border-t border-white/40 pt-2">
-              {t('hero.ctaViewTours')} 
-            </span>
+      {/* 4. Partner Hotels */}
+      <section className="py-16 bg-[#f6f3ee]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
+            <div>
+              <h2 className="text-3xl sm:text-5xl font-bold text-[#101820]">{t('partnerHotels.title')}</h2>
+              <p className="mt-3 max-w-2xl text-[#556070]">{t('partnerHotels.subtitle')}</p>
+            </div>
           </div>
-        </Link>
-      ))}
-    </div>
-  </div>
-</section>
+
+          {partnerHotels.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {partnerHotels.map((hotel) => (
+                <article
+                  key={hotel.id}
+                  className="group overflow-hidden rounded-[28px] border border-[#e5dfd4] bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <Link href={`/${locale}/partner-hotels/${hotel.slug}`}>
+                    <div className="relative h-72 overflow-hidden">
+                      <Image
+                        src={buildCloudinaryUrl(hotel.coverImageUrl)}
+                        alt={hotel.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-2xl font-semibold text-[#101820]">{hotel.name}</h3>
+                        <span className="rounded-full bg-[#efe8da] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#6a6258]">
+                          {hotel.starRating}/5
+                        </span>
+                      </div>
+                      <p className="mt-4 line-clamp-3 text-sm leading-7 text-[#576273]">
+                        {getLocalizedField(hotel, 'shortDescription', locale)}
+                      </p>
+                      <span className="mt-6 inline-flex min-h-[44px] items-center rounded-full bg-[#101820] px-5 text-sm font-medium text-white transition-colors group-hover:bg-[#0f6b66]">
+                        {t('partnerHotels.viewHotel')}
+                      </span>
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[28px] border border-dashed border-[#d3cab9] bg-white px-6 py-12 text-center text-[#687384]">
+              {t('partnerHotels.empty')}
+            </div>
+          )}
+        </div>
+      </section>
       {/* 5. Blog Section */}
 <section className="py-16 bg-white">
   <div className="container mx-auto px-4">

@@ -15,6 +15,7 @@ import { EmailModule } from './email/email.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { HotelsModule } from './hotels/hotels.module';
+import { PartnerHotelsModule } from './partner-hotels/partner-hotels.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { HotelsModule } from './hotels/hotels.module';
     EmailModule,
     BookingsModule,
     HotelsModule,
+    PartnerHotelsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AdminBootstrapService],

@@ -10,6 +10,7 @@ import {
   BookingStatus,
   Currency,
   NotificationType,
+  PartnerType,
   PaymentAmountMode,
   Prisma,
   RoomType,
@@ -53,6 +54,24 @@ const BOOKING_ADMIN_INCLUDE = {
   },
   tours: {
     include: {
+      driver: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+        },
+      },
+      guide: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+        },
+      },
       tour: {
         select: {
           id: true,
@@ -181,6 +200,8 @@ type NormalizedTourService = {
   adults: number;
   children: number;
   carType: CarType;
+  driverId: string | null;
+  guideId: string | null;
 };
 
 type NormalizedHotelRoom = {
@@ -247,6 +268,30 @@ export class BookingsService {
     }
   }
 
+  private async validatePartnerAssignment(userId: string, partnerType: PartnerType) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        isActive: true,
+        partnerType: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('Assigned partner must be active');
+    }
+
+    if (user.partnerType !== partnerType) {
+      const label = partnerType === PartnerType.DRIVER ? 'Driver' : 'Guide';
+      throw new BadRequestException(`${label} assignment requires a matching partner type`);
+    }
+  }
+
   private parseHotelDates(input: {
     checkIn?: string | null;
     checkOut?: string | null;
@@ -294,6 +339,8 @@ export class BookingsService {
         adults: item.adults,
         children: item.children,
         carType: item.carType,
+        driverId: item.driverId ?? null,
+        guideId: item.guideId ?? null,
       }));
     }
 
@@ -305,6 +352,8 @@ export class BookingsService {
           adults: fallback.adults ?? 1,
           children: fallback.children ?? 0,
           carType: CarType.SEDAN,
+          driverId: null,
+          guideId: null,
         },
       ];
     }
@@ -763,6 +812,12 @@ export class BookingsService {
 
     for (const tourItem of normalizedTours) {
       await this.validateTourExists(tourItem.tourId);
+      if (tourItem.driverId) {
+        await this.validatePartnerAssignment(tourItem.driverId, PartnerType.DRIVER);
+      }
+      if (tourItem.guideId) {
+        await this.validatePartnerAssignment(tourItem.guideId, PartnerType.GUIDE);
+      }
     }
 
     const normalizedHotelResult = this.toNormalizedHotelService(dto.hotelService, {
@@ -854,6 +909,8 @@ export class BookingsService {
                   adults: tourItem.adults,
                   children: tourItem.children,
                   carType: tourItem.carType,
+                  driverId: tourItem.driverId,
+                  guideId: tourItem.guideId,
                 })),
               },
             }
@@ -947,6 +1004,8 @@ export class BookingsService {
       adults: tourItem.adults,
       children: tourItem.children,
       carType: tourItem.carType,
+      driverId: tourItem.driverId,
+      guideId: tourItem.guideId,
     }));
 
     if (dto.tours !== undefined) {
@@ -981,6 +1040,12 @@ export class BookingsService {
 
     for (const tourItem of normalizedTours) {
       await this.validateTourExists(tourItem.tourId);
+      if (tourItem.driverId) {
+        await this.validatePartnerAssignment(tourItem.driverId, PartnerType.DRIVER);
+      }
+      if (tourItem.guideId) {
+        await this.validatePartnerAssignment(tourItem.guideId, PartnerType.GUIDE);
+      }
     }
 
     let normalizedHotel: NormalizedHotelService | null = existing.hotelService
@@ -1124,6 +1189,8 @@ export class BookingsService {
               adults: tourItem.adults,
               children: tourItem.children,
               carType: tourItem.carType,
+              driverId: tourItem.driverId,
+              guideId: tourItem.guideId,
             })),
           });
         }
@@ -1289,6 +1356,10 @@ export class BookingsService {
           adults: tourItem.adults,
           children: tourItem.children,
           carType: tourItem.carType,
+          driverId: tourItem.driverId,
+          guideId: tourItem.guideId,
+          driver: tourItem.driver,
+          guide: tourItem.guide,
           tour: tourItem.tour,
         })),
         tour:

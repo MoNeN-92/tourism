@@ -36,6 +36,12 @@
       "title": "Featured Tours",
       "subtitle": "Choose the best routes from our collection"
     },
+    "partnerHotels": {
+      "title": "Our Partner Hotels",
+      "subtitle": "Stay with trusted hospitality partners handpicked by Vibe Georgia.",
+      "viewHotel": "View Hotel",
+      "empty": "Partner hotels will appear here soon."
+    },
     "tours": {
       "noTours": "No Tours Available"
     },
@@ -79,6 +85,18 @@
       "subtitle": "Read our latest articles and travel tips",
       "viewAll": "All Articles"
     }
+  },
+  "partnerHotels": {
+    "backToHome": "Back to Home",
+    "stars": "stars",
+    "overview": "Hotel Overview",
+    "gallery": "Gallery",
+    "contactTitle": "Contact Information",
+    "address": "Address",
+    "phone": "Phone",
+    "website": "Website",
+    "partnerBadge": "Verified Partner",
+    "partnerIntro": "This hotel is part of our trusted partner network for premium stays across Georgia."
   },
   "tours": {
     "title": "Explore Tours",
@@ -418,6 +436,7 @@
       "tours": "Tours",
       "bookings": "Bookings",
       "hotels": "Hotels",
+      "partnerHotels": "Partner Hotels",
       "calendar": "Calendar",
       "users": "Users",
       "blog": "Blog",
@@ -506,6 +525,7 @@
       "user": "User",
       "phone": "Phone",
       "role": "Role",
+      "partnerType": "Partner Type",
       "status": "Status",
       "lastLogin": "Last Login",
       "actions": "Actions",
@@ -527,10 +547,18 @@
       "promptPhone": "Phone",
       "promptActive": "Active account",
       "promptRole": "Role",
+      "promptPartnerType": "Partner type",
+      "partnerTypeEmpty": "No partner type",
       "roleValue": {
         "user": "Customer",
         "moderator": "Moderator",
         "admin": "Admin"
+      },
+      "partnerTypeValue": {
+        "driver": "Driver",
+        "guide": "Guide",
+        "partner": "Partner",
+        "customer": "Customer"
       }
     },
     "hotels": {

@@ -11,12 +11,14 @@ interface UserItem {
   lastName: string
   phone: string
   role: UserRole
+  partnerType: PartnerType | null
   isActive: boolean
   lastLoginAt?: string | null
   createdAt: string
 }
 
 type UserRole = 'USER' | 'MODERATOR' | 'ADMIN'
+type PartnerType = 'DRIVER' | 'GUIDE' | 'PARTNER' | 'CUSTOMER'
 
 interface UsersResponse {
   items: UserItem[]
@@ -31,6 +33,7 @@ interface UserEditForm {
   lastName: string
   phone: string
   role: UserRole
+  partnerType: PartnerType | ''
 }
 
 interface CreateUserForm {
@@ -40,8 +43,16 @@ interface CreateUserForm {
   lastName: string
   phone: string
   role: UserRole
+  partnerType: PartnerType | ''
   isActive: boolean
 }
+
+const PARTNER_TYPE_OPTIONS: Array<{ value: PartnerType; labelKey: string }> = [
+  { value: 'DRIVER', labelKey: 'driver' },
+  { value: 'GUIDE', labelKey: 'guide' },
+  { value: 'PARTNER', labelKey: 'partner' },
+  { value: 'CUSTOMER', labelKey: 'customer' },
+]
 
 function formatDate(value?: string | null) {
   if (!value) return ''
@@ -64,6 +75,7 @@ export default function AdminUsersPage() {
     lastName: '',
     phone: '',
     role: 'USER',
+    partnerType: '',
     isActive: true,
   })
   const [editForm, setEditForm] = useState<UserEditForm>({
@@ -71,6 +83,7 @@ export default function AdminUsersPage() {
     lastName: '',
     phone: '',
     role: 'USER',
+    partnerType: '',
   })
 
   const fetchUsers = async (searchValue = search) => {
@@ -119,6 +132,7 @@ export default function AdminUsersPage() {
         lastName: editForm.lastName.trim(),
         phone: editForm.phone.trim(),
         role: editForm.role,
+        partnerType: editForm.partnerType || null,
       })
       await fetchUsers()
       setEditingUser(null)
@@ -135,6 +149,7 @@ export default function AdminUsersPage() {
       lastName: item.lastName,
       phone: item.phone,
       role: item.role,
+      partnerType: item.partnerType || '',
     })
     setEditingUser(item)
   }
@@ -147,6 +162,7 @@ export default function AdminUsersPage() {
       lastName: '',
       phone: '',
       role: 'USER',
+      partnerType: '',
       isActive: true,
     })
   }
@@ -172,6 +188,7 @@ export default function AdminUsersPage() {
         lastName: createForm.lastName.trim(),
         phone: createForm.phone.trim(),
         role: createForm.role,
+        partnerType: createForm.partnerType || undefined,
         isActive: createForm.isActive,
       })
       await fetchUsers()
@@ -223,12 +240,14 @@ export default function AdminUsersPage() {
           <p className="text-gray-600">{t('loading')}</p>
         ) : data && data.items.length > 0 ? (
           <div className="bg-white border rounded-xl overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('user')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('phone')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('role')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('partnerType')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('status')}</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{t('lastLogin')}</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{t('actions')}</th>
@@ -245,6 +264,9 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{item.phone}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{t(`roleValue.${item.role.toLowerCase()}`)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {item.partnerType ? t(`partnerTypeValue.${item.partnerType.toLowerCase()}`) : '—'}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -278,7 +300,8 @@ export default function AdminUsersPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         ) : (
           <p className="text-gray-600">{t('noUsers')}</p>
@@ -329,6 +352,23 @@ export default function AdminUsersPage() {
                   <option value="USER">{t('roleValue.user')}</option>
                   <option value="MODERATOR">{t('roleValue.moderator')}</option>
                   <option value="ADMIN">{t('roleValue.admin')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptPartnerType')}</label>
+                <select
+                  value={editForm.partnerType}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({ ...prev, partnerType: event.target.value as PartnerType | '' }))
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{t('partnerTypeEmpty')}</option>
+                  {PARTNER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {t(`partnerTypeValue.${option.labelKey}`)}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -414,6 +454,23 @@ export default function AdminUsersPage() {
                   <option value="USER">{t('roleValue.user')}</option>
                   <option value="MODERATOR">{t('roleValue.moderator')}</option>
                   <option value="ADMIN">{t('roleValue.admin')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptPartnerType')}</label>
+                <select
+                  value={createForm.partnerType}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, partnerType: event.target.value as PartnerType | '' }))
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{t('partnerTypeEmpty')}</option>
+                  {PARTNER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {t(`partnerTypeValue.${option.labelKey}`)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">

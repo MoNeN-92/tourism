@@ -24,6 +24,7 @@ describe('UsersService', () => {
       lastName: 'User',
       phone: '+995599000001',
       role: 'MODERATOR',
+      partnerType: 'GUIDE',
       isActive: true,
       lastLoginAt: null,
       createdAt: new Date('2026-02-01T00:00:00.000Z'),
@@ -37,20 +38,68 @@ describe('UsersService', () => {
       lastName: 'User',
       phone: '+995599000001',
       role: 'MODERATOR',
+      partnerType: 'GUIDE',
       isActive: true,
-    });
+    } as any);
 
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           email: 'staff@test.com',
           role: 'MODERATOR',
+          partnerType: 'GUIDE',
           isActive: true,
         }),
       }),
     );
     expect(result.email).toBe('staff@test.com');
     expect(result.role).toBe('MODERATOR');
+  });
+
+  it('updates partner type on an existing user', async () => {
+    const prisma = createPrismaMock();
+    const service = new UsersService(prisma as any);
+
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-2',
+      email: 'driver@test.com',
+      firstName: 'Driver',
+      lastName: 'User',
+      phone: '+995599000002',
+      role: 'USER',
+      partnerType: null,
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: new Date('2026-02-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-02-01T00:00:00.000Z'),
+    });
+    prisma.user.update.mockResolvedValue({
+      id: 'user-2',
+      email: 'driver@test.com',
+      firstName: 'Driver',
+      lastName: 'User',
+      phone: '+995599000002',
+      role: 'USER',
+      partnerType: 'DRIVER',
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: new Date('2026-02-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-02-02T00:00:00.000Z'),
+    });
+
+    const result = await service.update('user-2', {
+      partnerType: 'DRIVER',
+    } as any);
+
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'user-2' },
+        data: expect.objectContaining({
+          partnerType: 'DRIVER',
+        }),
+      }),
+    );
+    expect((result as any).partnerType).toBe('DRIVER');
   });
 
   it('fails when email already exists', async () => {

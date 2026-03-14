@@ -11,6 +11,7 @@ type AdminRole = 'ADMIN' | 'MODERATOR'
 type Currency = 'GEL' | 'USD' | 'EUR'
 type PaymentAmountMode = 'FLAT' | 'PERCENT'
 type CarType = 'SEDAN' | 'SUV' | 'MINIVAN' | 'MINIBUS' | 'BUS' | 'LUXURY'
+type PartnerType = 'DRIVER' | 'GUIDE' | 'PARTNER' | 'CUSTOMER'
 
 interface ChangeRequest {
   id: string
@@ -28,6 +29,10 @@ interface BookingTourItem {
   adults: number
   children: number
   carType: CarType
+  driverId: string | null
+  guideId: string | null
+  driver: AdminUserOption | null
+  guide: AdminUserOption | null
   tour: {
     id: string
     slug: string
@@ -117,6 +122,7 @@ interface AdminUserOption {
   lastName: string
   email: string
   phone: string
+  partnerType?: PartnerType | null
 }
 
 interface AdminTourOption {
@@ -139,6 +145,8 @@ interface BookingFormTour {
   adults: number
   children: number
   carType: CarType
+  driverId: string
+  guideId: string
 }
 
 interface BookingFormRoom {
@@ -205,6 +213,8 @@ function emptyTourRow(): BookingFormTour {
     adults: 1,
     children: 0,
     carType: 'SEDAN',
+    driverId: '',
+    guideId: '',
   }
 }
 
@@ -299,6 +309,8 @@ export default function AdminBookingsPage() {
   }
 
   const getUserLabel = (user: AdminUserOption) => `${user.firstName} ${user.lastName} (${user.email})`
+  const driverUsers = useMemo(() => users.filter((user) => user.partnerType === 'DRIVER'), [users])
+  const guideUsers = useMemo(() => users.filter((user) => user.partnerType === 'GUIDE'), [users])
 
   const filteredBookings = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -457,6 +469,8 @@ export default function AdminBookingsPage() {
             adults: toNumber(item.adults, 1),
             children: toNumber(item.children, 0),
             carType: item.carType,
+            driverId: item.driverId || '',
+            guideId: item.guideId || '',
           }))
         : booking.tourId
           ? [
@@ -466,6 +480,8 @@ export default function AdminBookingsPage() {
                 adults: toNumber(booking.adults, 1),
                 children: toNumber(booking.children, 0),
                 carType: 'SEDAN',
+                driverId: '',
+                guideId: '',
               },
             ]
           : [emptyTourRow()]
@@ -598,6 +614,8 @@ export default function AdminBookingsPage() {
           adults: tour.adults,
           children: tour.children,
           carType: tour.carType,
+          driverId: tour.driverId || undefined,
+          guideId: tour.guideId || undefined,
         })),
       ...(form.includeHotel
         ? {
@@ -1138,6 +1156,48 @@ export default function AdminBookingsPage() {
                           className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
                           placeholder="Children"
                         />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <select
+                          value={tourRow.driverId}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              tours: prev.tours.map((item, idx) =>
+                                idx === index ? { ...item, driverId: event.target.value } : item,
+                              ),
+                            }))
+                          }
+                          className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        >
+                          <option value="">Driver (optional)</option>
+                          {driverUsers.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {getUserLabel(user)}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={tourRow.guideId}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              tours: prev.tours.map((item, idx) =>
+                                idx === index ? { ...item, guideId: event.target.value } : item,
+                              ),
+                            }))
+                          }
+                          className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        >
+                          <option value="">Guide (optional)</option>
+                          {guideUsers.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {getUserLabel(user)}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   ))}

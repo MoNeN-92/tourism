@@ -905,7 +905,7 @@ export default function AdminBookingsPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-row xl:flex-col gap-2 flex-wrap xl:w-[240px]">
+                    <div className="flex flex-row xl:flex-col gap-2 flex-wrap w-full xl:w-[240px]">
                       {activeTab === 'active' ? (
                         <>
                           <button
@@ -984,8 +984,8 @@ export default function AdminBookingsPage() {
       </div>
 
       {showFormModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl p-4 sm:p-6 my-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-start sm:items-center p-2 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               {editingBooking ? 'Edit Booking' : 'Create Booking'}
             </h2>
@@ -1275,20 +1275,29 @@ export default function AdminBookingsPage() {
 
                     <div className="space-y-2">
                       {form.hotelRooms.map((room, index) => (
-                        <div key={index} className="grid grid-cols-[1fr_110px_80px] gap-2 items-center">
+                        <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_110px_80px] gap-2 items-center">
                           <input
-                            value={room.roomType}
-                            onChange={(event) =>
-                              setForm((prev) => ({
-                                ...prev,
-                                hotelRooms: prev.hotelRooms.map((item, idx) =>
-                                  idx === index ? { ...item, roomType: event.target.value } : item,
-                                ),
-                              }))
-                            }
-                            className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                            placeholder="Room type"
-                          />
+  list="room-types"
+  value={room.roomType}
+  onChange={(event) =>
+    setForm((prev) => ({
+      ...prev,
+      hotelRooms: prev.hotelRooms.map((item, idx) =>
+        idx === index ? { ...item, roomType: event.target.value } : item,
+      ),
+    }))
+  }
+  className="w-full min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
+  placeholder="Room type"
+/>
+
+<datalist id="room-types">
+  <option value="Standard" />
+  <option value="Deluxe" />
+  <option value="Suite" />
+  <option value="Family Room" />
+  <option value="Twin Room" />
+</datalist>
                           <input
                             type="number"
                             min={1}

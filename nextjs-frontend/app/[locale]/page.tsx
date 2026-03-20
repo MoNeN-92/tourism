@@ -207,15 +207,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <div className="min-h-screen">
       {/* 1. Hero Section */}
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
-  <Image
-    src="https://res.cloudinary.com/dj7qaif1i/image/upload/c_scale,w_1600,q_60,f_auto/v1771396197/cover_1_secna5.jpg"
-    alt={t('hero.imageAlt')}
-    priority={true}
-    fill
-    sizes="100vw"
-    fetchPriority="high"
-    className="object-cover"
-  />
+<Image
+  // 1. URL: დავტოვე ზუსტად შენი მითითებული ფორმატი, რომელიც ხელით მუშაობს
+  src="https://res.cloudinary.com/dj7qaif1i/image/upload/c_scale,w_1600,q_60,f_auto/v1771396197/cover_1_secna5.jpg"
+  alt={t('hero.imageAlt')}
+  
+  // 2. SEO & Performance: ეს ორი აუცილებელია Hero სურათისთვის
+  priority={true} // Next.js-ს ეუბნება, რომ ეს პირველივე წამს ჩატვირთოს
+  fetchPriority="high" // ბრაუზერს ეუბნება, რომ ეს პრიორიტეტული ფაილია
+  
+  // 3. Layout: fill და object-cover უზრუნველყოფს, რომ სურათი სრულად ფარავდეს კონტეინერს
+  fill
+  className="object-cover"
+
+  // 4. ✅ გადამწყვეტი ცვლილება Coolify/Docker-ისთვის:
+  // sizes="100vw" მაინც აიძულებს Next.js-ს, რომ თავისი ოპტიმიზაცია გამოიყენოს.
+  // sizes="1600px" და unoptimized={true} ერთობლივად აიძულებს ბრაუზერს,
+  // რომ პირდაპირ Cloudinary-ს ლინკიდან წამოიღოს სურათი.
+  sizes="1600px" 
+  unoptimized={true} 
+/>
   <div className="absolute inset-0 bg-black/20" />
   <div className="absolute inset-0 flex items-center justify-center">
     <div className="container mx-auto px-4 text-center">

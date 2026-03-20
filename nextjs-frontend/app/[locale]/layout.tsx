@@ -31,12 +31,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     
     alternates: {
       // ✅ Canonical ლოგიკა: თუ ინგლისურია (default), მისამართი სუფთაა, სხვა შემთხვევაში ენით
-      canonical: locale === defaultLocale ? `${baseUrl}/` : `${baseUrl}/${locale}`, 
+     canonical: `${baseUrl}/${locale}`, 
       languages: {
         'ka-GE': `${baseUrl}/ka`,
         'en-US': `${baseUrl}/en`,
         'ru-RU': `${baseUrl}/ru`,
-        'x-default': `${baseUrl}/`, 
+        'x-default': `${baseUrl}/en`, 
       },
     },
 

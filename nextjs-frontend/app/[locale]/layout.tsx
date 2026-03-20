@@ -94,14 +94,43 @@ export default async function LocaleLayout({
           src={`https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`}
           strategy="lazyOnload" 
         />
-        <Script id="google-analytics" strategy="lazyOnload">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-ZNGHZ2EQ9P');
-          `}
-        </Script>
+        {/* 1. მთავარი Google Tag Manager სკრიპტი */}
+<Script
+  src="https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P"
+  strategy="afterInteractive"
+/>
+
+{/* 2. ინლაინ სკრიპტი დაყოვნების ლოგიკით */}
+<Script id="google-analytics" strategy="afterInteractive">
+  {`
+    (function() {
+      const loadGA = () => {
+        if (window.gaLoaded) return;
+        window.gaLoaded = true;
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZNGHZ2EQ9P', {
+          page_path: window.location.pathname,
+        });
+
+        // მოვაშოროთ ივენთები, რადგან უკვე ჩაიტვირთა
+        window.removeEventListener('scroll', loadGA);
+        window.removeEventListener('mousemove', loadGA);
+        window.removeEventListener('touchstart', loadGA);
+      };
+
+      // დაველოდოთ მომხმარებლის პირველ მოქმედებას
+      window.addEventListener('scroll', loadGA, { passive: true });
+      window.addEventListener('mousemove', loadGA, { passive: true });
+      window.addEventListener('touchstart', loadGA, { passive: true });
+
+      // თუ მომხმარებელი საერთოდ არაფერს აკეთებს, მაინც ჩაიტვირთოს 5 წამში
+      setTimeout(loadGA, 5000);
+    })();
+  `}
+</Script>
 
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">

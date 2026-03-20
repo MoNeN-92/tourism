@@ -224,7 +224,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // sizes="100vw" მაინც აიძულებს Next.js-ს, რომ თავისი ოპტიმიზაცია გამოიყენოს.
   // sizes="1600px" და unoptimized={true} ერთობლივად აიძულებს ბრაუზერს,
   // რომ პირდაპირ Cloudinary-ს ლინკიდან წამოიღოს სურათი.
-  sizes="1600px" 
+  sizes="100vw" 
   unoptimized={true} 
 />
   <div className="absolute inset-0 bg-black/20" />

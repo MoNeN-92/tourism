@@ -25,7 +25,7 @@ export default function Footer() {
 
           {/* 2. კონტაქტი */}
           <div>
-            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider text-xs">
+            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider">
               {t('contact')}
             </h4>
             <ul className="space-y-4">
@@ -33,6 +33,7 @@ export default function Footer() {
                 <a 
                   href="mailto:info@vibegeorgia.com"
                   className="flex items-center gap-3 hover:text-blue-400 transition-colors group w-fit"
+                  aria-label="Send an email to info@vibegeorgia.com"
                 >
                   <div className="bg-gray-800 p-2 rounded-lg group-hover:bg-blue-900/30 transition-colors">
                     <Mail size={16} className="text-gray-400 group-hover:text-blue-400" />
@@ -46,6 +47,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 hover:text-green-400 transition-colors group w-fit"
+                  aria-label="Contact us on WhatsApp"
                 >
                   <div className="bg-gray-800 p-2 rounded-lg group-hover:bg-green-900/30 transition-colors">
                     <Phone size={16} className="text-gray-400 group-hover:text-green-400" />
@@ -58,47 +60,42 @@ export default function Footer() {
 
           {/* 3. სოციალური ქსელები */}
           <div>
-            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider text-xs">
+            <h4 className="text-base text-white font-semibold mb-6 uppercase tracking-wider">
               {t('followUs')}
             </h4>
             <div className="flex gap-4">
               <a 
-  href="https://www.facebook.com/vibege" // ჩაწერეთ ჩვეულებრივი ლინკი
-  target="_blank" 
-  rel="noopener noreferrer"
-  className="bg-gray-100 p-3 rounded-full text-gray-600 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md inline-flex items-center justify-center"
-  aria-label="Facebook"
->
-  <Facebook size={20} />
-</a>
-              {/* <a 
-                // href="https://instagram.com/vibegeorgia" 
+                href="https://www.facebook.com/vibege" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="bg-gray-800 p-3 rounded-xl hover:bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-500 hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg"
-                aria-label="Instagram"
+                className="bg-gray-800 p-3 rounded-xl text-gray-400 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg inline-flex items-center justify-center"
+                aria-label="Follow us on Facebook"
               >
-                <Instagram size={20} />
+                <Facebook size={20} />
               </a>
-              <a 
-                href="https://t.me/vibegeorgia" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-gray-800 p-3 rounded-xl hover:bg-sky-500 hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg"
-                aria-label="Telegram"
-              >
-                <Send size={20} />
-              </a> */}
+              {/* Instagram და Telegram სექცია თუ დაგჭირდება, დაამატე aria-label-ით */}
             </div>
           </div>
         </div>
 
-        {/* ქვედა ზოლი */}
-        <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-500">
+        {/* ქვედა ზოლი - გასწორებული SEO & Accessibility-სთვის */}
+        <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[12px] uppercase tracking-widest text-gray-500">
           <p>&copy; {new Date().getFullYear()} Vibe Georgia. {t('rights')}</p>
           <div className="flex gap-6">
-            <Link href={`/${locale}/privacy`} className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href={`/${locale}/terms`} className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link 
+              href={`/${locale}/privacy`} 
+              className="hover:text-white transition-colors"
+              aria-label="View our Privacy Policy"
+            >
+              {t('privacyPolicy') || 'Privacy Policy'}
+            </Link>
+            <Link 
+              href={`/${locale}/terms`} 
+              className="hover:text-white transition-colors"
+              aria-label="View our Terms of Service"
+            >
+              {t('termsOfService') || 'Terms of Service'}
+            </Link>
           </div>
         </div>
       </div>

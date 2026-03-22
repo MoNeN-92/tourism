@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import TourDetailClient, { type TourDetail } from './TourDetailClient'
-import { absoluteUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
+import { absoluteUrl, localizedAlternates, openGraphLocale, localePath } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 
 function getLocalizedField(
@@ -30,9 +30,7 @@ async function getTour(slug: string): Promise<TourDetail | null> {
       cache: 'no-store',
     })
 
-    if (!response.ok) {
-      return null
-    }
+    if (!response.ok) return null
 
     return response.json()
   } catch {
@@ -66,11 +64,17 @@ export async function generateMetadata({
   return {
     title,
     description,
+
+    // ✅ FIX: localizedAlternates ახლა სწორ canonical-ს აბრუნებს
+    // ka → https://vibegeorgia.com/tours/slug  (prefix გარეშე)
+    // en → https://vibegeorgia.com/en/tours/slug
     alternates: localizedAlternates(locale, `/tours/${slug}`),
+
     openGraph: {
       title,
       description,
-      url: absoluteUrl(`/${locale}/tours/${slug}`),
+      // ✅ FIX: absoluteUrl(localePath(...)) — ადრე /en/tours/slug იყო ka-სთვისაც
+      url: absoluteUrl(localePath(locale, `/tours/${slug}`)),
       siteName: 'Vibe Georgia',
       locale: openGraphLocale(locale),
       type: 'article',
@@ -85,6 +89,7 @@ export async function generateMetadata({
           ]
         : undefined,
     },
+
     twitter: {
       card: 'summary_large_image',
       title,
@@ -102,9 +107,7 @@ export default async function TourPage({
   const { locale, slug } = await params
   const tour = await getTour(slug)
 
-  if (!tour) {
-    notFound()
-  }
+  if (!tour) notFound()
 
   return <TourDetailClient locale={locale} tour={tour} />
 }

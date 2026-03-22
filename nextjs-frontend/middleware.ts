@@ -4,25 +4,24 @@ import { locales, defaultLocale } from './i18n/config'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
+// ✅ FIX: 'always' → 'as-needed'
+// 'always'    = /ka, /en, /ru  (კა-სთვის /ka URL, რომელიც redirect ხდება — Google ერორი!)
+// 'as-needed' = /, /en, /ru   (კა root-ზეა, სხვები prefix-ით)
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always',
+  localePrefix: 'as-needed',
 })
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split('.')
-
-    if (parts.length < 2) {
-      return null
-    }
+    if (parts.length < 2) return null
 
     const payload = parts[1]
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
     const decoded = atob(padded)
-
     return JSON.parse(decoded)
   } catch {
     return null
@@ -45,7 +44,9 @@ function isAdminOnlyRoute(pathname: string): boolean {
 }
 
 function buildAccountLoginUrl(locale: string, pathname: string, requestUrl: string) {
-  const loginUrl = new URL(`/${locale}/account/login`, requestUrl)
+  // ✅ FIX: ka locale-სთვის login URL root-ზეა, არა /ka/...
+  const localePrefix = locale === defaultLocale ? '' : `/${locale}`
+  const loginUrl = new URL(`${localePrefix}/account/login`, requestUrl)
   loginUrl.searchParams.set('next', pathname)
   return loginUrl
 }
@@ -53,6 +54,7 @@ function buildAccountLoginUrl(locale: string, pathname: string, requestUrl: stri
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // სტატიკური ფაილები და API — გამოვტოვოთ
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
@@ -76,12 +78,15 @@ export default function middleware(request: NextRequest) {
     const role = payload?.role as AdminRole | undefined
 
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      const accountUrl = new URL(`/${locale}/account/notifications`, request.url)
+      // ✅ FIX: ka-სთვის /account/notifications (prefix გარეშე)
+      const localePrefix = locale === defaultLocale ? '' : `/${locale}`
+      const accountUrl = new URL(`${localePrefix}/account/notifications`, request.url)
       return NextResponse.redirect(accountUrl)
     }
 
     if (isAdminOnlyRoute(pathname) && role !== 'ADMIN') {
-      const fallbackUrl = new URL(`/${locale}/admin/bookings`, request.url)
+      const localePrefix = locale === defaultLocale ? '' : `/${locale}`
+      const fallbackUrl = new URL(`${localePrefix}/admin/bookings`, request.url)
       return NextResponse.redirect(fallbackUrl)
     }
   }

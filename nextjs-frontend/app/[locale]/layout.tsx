@@ -2,73 +2,118 @@ import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import { locales, defaultLocale } from '@/i18n/config' // დავამატე defaultLocale იმპორტი
+import { locales, defaultLocale } from '@/i18n/config'
 import Script from 'next/script'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com'
+
+/**
+ * locale → canonical URL
+ *
+ * 'as-needed' prefix რეჟიმში:
+ *   ka → https://vibegeorgia.com        (root, prefix გარეშე)
+ *   en → https://vibegeorgia.com/en
+ *   ru → https://vibegeorgia.com/ru
+ */
+function getCanonicalUrl(locale: string, path = ''): string {
+  if (locale === defaultLocale) {
+    return `${BASE_URL}${path}`
+  }
+  return `${BASE_URL}/${locale}${path}`
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
   const { locale } = await params
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com'
-  
-  const langMap: { [key: string]: string } = {
-    ka: 'ka-GE',
-    en: 'en-US',
-    ru: 'ru-RU',
+
+  // OpenGraph locale format: ka_GE, en_US, ru_RU
+  const ogLocaleMap: Record<string, string> = {
+    ka: 'ka_GE',
+    en: 'en_US',
+    ru: 'ru_RU',
   }
 
   return {
     title: {
       default: 'Vibe Georgia | Unique Tours & Travel Experiences',
-      template: '%s | Vibe Georgia'
+      template: '%s | Vibe Georgia',
     },
-    description: 'Explore Georgia with Vibe Georgia. We offer unique tours, local experiences, and hidden gems across the country.',
-    keywords: ['travel Georgia', 'Tbilisi tours', 'Georgian wine tours', 'mountain adventures', 'Vibe Georgia tours'],
+    description:
+      'Explore Georgia with Vibe Georgia. We offer unique tours, local experiences, and hidden gems across the country.',
+    keywords: [
+      'travel Georgia',
+      'Tbilisi tours',
+      'Georgian wine tours',
+      'mountain adventures',
+      'Vibe Georgia tours',
+    ],
     authors: [{ name: 'Vibe Georgia' }],
-    metadataBase: new URL(baseUrl),
-    
+    metadataBase: new URL(BASE_URL),
+
     alternates: {
-      // ✅ Canonical ლოგიკა: თუ ინგლისურია (default), მისამართი სუფთაა, სხვა შემთხვევაში ენით
-     canonical: `${baseUrl}/${locale}`, 
+      // ✅ ka → root, en → /en, ru → /ru
+      canonical: getCanonicalUrl(locale),
+
       languages: {
-        'ka-GE': `${baseUrl}/ka`,
-        'en-US': `${baseUrl}/en`,
-        'ru-RU': `${baseUrl}/ru`,
-        'x-default': `${baseUrl}/en`, 
+        // ✅ ka hreflang → root-ზე (არა /ka — ის redirect-ია!)
+        'ka':        BASE_URL,
+        'ka-GE':     BASE_URL,
+
+        'en':        `${BASE_URL}/en`,
+        'en-US':     `${BASE_URL}/en`,
+
+        'ru':        `${BASE_URL}/ru`,
+        'ru-RU':     `${BASE_URL}/ru`,
+
+        // ✅ x-default = root (Georgian არის default locale)
+        'x-default': BASE_URL,
       },
     },
 
-    // ✅ Favicon-ის გასწორება Yandex-ისთვის და სხვა ბოტებისთვის
     icons: {
       icon: [
-        { url: `${baseUrl}/favicon.ico`, type: 'image/x-icon' }, // აბსოლუტური გზა
-        { url: `${baseUrl}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
-        { url: `${baseUrl}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
+        { url: `${BASE_URL}/favicon.ico`, type: 'image/x-icon' },
+        { url: `${BASE_URL}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { url: `${BASE_URL}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
       ],
-      shortcut: [`${baseUrl}/favicon.ico`],
+      shortcut: [`${BASE_URL}/favicon.ico`],
       apple: [
-        { url: `${baseUrl}/images/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' },
+        { url: `${BASE_URL}/images/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' },
       ],
     },
-    
-    // ✅ მანიფესტიც აბსოლუტური მისამართით
-    manifest: `${baseUrl}/manifest.json`,
+
+    manifest: `${BASE_URL}/manifest.json`,
 
     openGraph: {
       title: 'Vibe Georgia - Discover the Caucasus',
       description: 'Unforgettable travel experiences in the heart of Georgia.',
-      url: `${baseUrl}/${locale}`,
+      // ✅ OG url-იც canonical ლოგიკით
+      url: getCanonicalUrl(locale),
       siteName: 'Vibe Georgia',
-      images: [{ url: `${baseUrl}/images/og-image.jpg`, width: 1200, height: 630, alt: 'Vibe Georgia Tours' }],
-      locale: langMap[locale] || 'en_US',
+      images: [
+        {
+          url: `${BASE_URL}/images/og-image.jpg`,
+          width: 1200,
+          height: 630,
+          alt: 'Vibe Georgia Tours',
+        },
+      ],
+      locale: ogLocaleMap[locale] ?? 'ka_GE',
       type: 'website',
     },
-    verification: { 
+
+    verification: {
       google: 'sc-domain:vibegeorgia.com',
     },
-    robots: { index: true, follow: true }
+
+    robots: { index: true, follow: true },
   }
 }
 
@@ -78,59 +123,53 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
   if (!locales.includes(locale as any)) notFound()
+
   const messages = await getMessages()
 
   return (
     <html lang={locale}>
       <body className="antialiased">
+        {/* ✅ FIX: ადრე ორი ერთნაირი <Script> იყო (lazyOnload + afterInteractive).
+            დარჩა მხოლოდ afterInteractive — სწორი სტრატეგია GTM-ისთვის */}
         <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`}
-          strategy="lazyOnload" 
+          src="https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P"
+          strategy="afterInteractive"
         />
-        {/* 1. მთავარი Google Tag Manager სკრიპტი */}
-<Script
-  src="https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P"
-  strategy="afterInteractive"
-/>
 
-{/* 2. ინლაინ სკრიპტი დაყოვნების ლოგიკით */}
-<Script id="google-analytics" strategy="afterInteractive">
-  {`
-    (function() {
-      const loadGA = () => {
-        if (window.gaLoaded) return;
-        window.gaLoaded = true;
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            (function() {
+              const loadGA = () => {
+                if (window.gaLoaded) return;
+                window.gaLoaded = true;
 
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-ZNGHZ2EQ9P', {
-          page_path: window.location.pathname,
-        });
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-ZNGHZ2EQ9P', {
+                  page_path: window.location.pathname,
+                });
 
-        // მოვაშოროთ ივენთები, რადგან უკვე ჩაიტვირთა
-        window.removeEventListener('scroll', loadGA);
-        window.removeEventListener('mousemove', loadGA);
-        window.removeEventListener('touchstart', loadGA);
-      };
+                window.removeEventListener('scroll', loadGA);
+                window.removeEventListener('mousemove', loadGA);
+                window.removeEventListener('touchstart', loadGA);
+              };
 
-      // დაველოდოთ მომხმარებლის პირველ მოქმედებას
-      window.addEventListener('scroll', loadGA, { passive: true });
-      window.addEventListener('mousemove', loadGA, { passive: true });
-      window.addEventListener('touchstart', loadGA, { passive: true });
-
-      // თუ მომხმარებელი საერთოდ არაფერს აკეთებს, მაინც ჩაიტვირთოს 5 წამში
-      setTimeout(loadGA, 5000);
-    })();
-  `}
-</Script>
+              window.addEventListener('scroll', loadGA, { passive: true });
+              window.addEventListener('mousemove', loadGA, { passive: true });
+              window.addEventListener('touchstart', loadGA, { passive: true });
+              // მომხმარებლის მოქმედების გარეშეც 5 წამში ჩაიტვირთოს
+              setTimeout(loadGA, 5000);
+            })();
+          `}
+        </Script>
 
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">

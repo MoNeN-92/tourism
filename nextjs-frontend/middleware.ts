@@ -4,10 +4,11 @@ import { locales, defaultLocale } from './i18n/config'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
+// 1. ინიციალიზაცია სწორი პარამეტრებით
 const intlMiddleware = createMiddleware({
   locales,
-  defaultLocale,
-  localePrefix: 'always', // ინარჩუნებს /ka, /en, /ru სტრუქტურას
+  defaultLocale, // აქ ავტომატურად ჩაჯდება 'ka' შენი კონფიგიდან
+  localePrefix: 'always'
 })
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -27,6 +28,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // სტატიკური ფაილების გატარება
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
@@ -35,10 +37,13 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 1. ჯერ ვუშვებთ intlMiddleware-ს, რომ მან მართოს ენები
-  const response = intlMiddleware(request)
+  // 2. მთავარი გვერდის (root) რევიზია: 
+  // თუ მომხმარებელი შედის vibegeorgia.com-ზე, ვაგზავნით /ka-ზე
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
+  }
 
-  // 2. ადმინ პანელის შემოწმება
+  // 3. ადმინ პანელის დაცვის ლოგიკა
   const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
   if (isAdminRoute) {
     const token = request.cookies.get('token')?.value
@@ -46,7 +51,9 @@ export default function middleware(request: NextRequest) {
     const currentLocale = locales.includes(segments[1] as any) ? segments[1] : defaultLocale
 
     if (!token) {
-      return NextResponse.redirect(new URL(`/${currentLocale}/account/login?next=${pathname}`, request.url))
+      const loginUrl = new URL(`/${currentLocale}/account/login`, request.url)
+      loginUrl.searchParams.set('next', pathname)
+      return NextResponse.redirect(loginUrl)
     }
 
     const payload = decodeJwtPayload(token)
@@ -56,7 +63,7 @@ export default function middleware(request: NextRequest) {
     }
   }
 
-  return response
+  return intlMiddleware(request)
 }
 
 export const config = {

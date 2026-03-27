@@ -42,9 +42,8 @@ export async function generateMetadata({
     authors: [{ name: 'Vibe Georgia' }],
     metadataBase: new URL(BASE_URL),
 
-    alternates: {
-      // ✅ ყველა ენას (ka-ს ჩათვლით) ვაძლევთ თავის პრეფიქსიან მისამართს.
-      // ეს გამორიცხავს middleware-ის მიერ ენის ავტომატურ შეცვლას.
+  alternates: {
+      // ✅ Canonical ყოველთვის მიჰყვება მიმდინარე locale-ს
       canonical: `${BASE_URL}/${locale}`,
 
       languages: {
@@ -54,7 +53,12 @@ export async function generateMetadata({
         'en-US':     `${BASE_URL}/en`,
         'ru':        `${BASE_URL}/ru`,
         'ru-RU':     `${BASE_URL}/ru`,
-        'x-default': `${BASE_URL}/en`, // საერთაშორისო სტუმრებისთვის default იყოს ინგლისური.
+        
+        // ✅ მნიშვნელოვანი ცვლილება: 
+        // რადგან შენი defaultLocale არის 'ka', x-default-იც უნდა იყოს /ka.
+        // ეს ეუბნება Google-ს, რომ გაურკვეველი ლოკაციის მომხმარებელი ქართულზე დასვას,
+        // რაც ემთხვევა შენი სისტემის ლოგიკას და წყვეტს Redirect Loop-ს.
+        'x-default': `${BASE_URL}/ka`, 
       },
     },
 

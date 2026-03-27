@@ -1,26 +1,11 @@
-// next.config.ts
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
-  // ✅ FIX: /ka და /ka/* → root-ზე 301 redirect
-  // Nginx-ის გარდა Next.js-შიც უნდა იყოს, რომ SSR დონეზე სწორად მუშაობდეს
-  async redirects() {
-    return [
-      {
-        source: '/ka',
-        destination: '/',
-        permanent: true, // 301 — Google-ს ეტყვის: "ეს URL სამუდამოდ გადავიდა"
-      },
-      {
-        source: '/ka/:path*',
-        destination: '/:path*',
-        permanent: true,
-      },
-    ]
-  },
+  // ✅ წავშალეთ redirects ბლოკი! 
+  // ის იწვევდა კონფლიქტს Middleware-თან და Infinite Loop-ს.
 
   images: {
     loader: 'custom',

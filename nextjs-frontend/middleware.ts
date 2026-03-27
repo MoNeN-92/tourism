@@ -4,20 +4,19 @@ import { locales, defaultLocale } from './i18n/config'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
-// ✅ FIX: 'always' → 'as-needed'
-// 'always'    = /ka, /en, /ru  (კა-სთვის /ka URL, რომელიც redirect ხდება — Google ერორი!)
-// 'as-needed' = /, /en, /ru   (კა root-ზეა, სხვები prefix-ით)
+// ✅ გადაწყვეტილება: ვიყენებთ 'always'. 
+// ეს ნიშნავს, რომ URL იქნება /ka, /en, /ru. 
+// ეს აგვარებს Google-ის ერორს, რადგან თითოეულ ენას აქვს თავისი მკაფიო მისამართი.
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'as-needed',
+  localePrefix: 'always', // შევცვალეთ 'always'-ზე სტაბილურობისთვის
 })
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split('.')
     if (parts.length < 2) return null
-
     const payload = parts[1]
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
@@ -29,10 +28,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 function getLocaleFromPath(pathname: string): string {
-  const pathnameLocale = pathname.split('/')[1]
-  return locales.includes(pathnameLocale as (typeof locales)[number])
-    ? pathnameLocale
-    : defaultLocale
+  const segments = pathname.split('/')
+  const pathnameLocale = segments[1]
+  return locales.includes(pathnameLocale as any) ? pathnameLocale : defaultLocale
 }
 
 function isAdminOnlyRoute(pathname: string): boolean {
@@ -43,18 +41,10 @@ function isAdminOnlyRoute(pathname: string): boolean {
   )
 }
 
-function buildAccountLoginUrl(locale: string, pathname: string, requestUrl: string) {
-  // ✅ FIX: ka locale-სთვის login URL root-ზეა, არა /ka/...
-  const localePrefix = locale === defaultLocale ? '' : `/${locale}`
-  const loginUrl = new URL(`${localePrefix}/account/login`, requestUrl)
-  loginUrl.searchParams.set('next', pathname)
-  return loginUrl
-}
-
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // სტატიკური ფაილები და API — გამოვტოვოთ
+  // 1. გამოვტოვოთ სტატიკური ფაილები და API
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
@@ -66,11 +56,14 @@ export default function middleware(request: NextRequest) {
   const locale = getLocaleFromPath(pathname)
   const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
 
+  // 2. ადმინ პანელის დაცვა
   if (isAdminRoute) {
     const token = request.cookies.get('token')?.value
 
     if (!token) {
-      const loginUrl = buildAccountLoginUrl(locale, pathname, request.url)
+      // ✅ ყოველთვის ვიყენებთ locale-ს პრეფიქსს რედაირექტისთვის
+      const loginUrl = new URL(`/${locale}/account/login`, request.url)
+      loginUrl.searchParams.set('next', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
@@ -78,17 +71,19 @@ export default function middleware(request: NextRequest) {
     const role = payload?.role as AdminRole | undefined
 
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      // ✅ FIX: ka-სთვის /account/notifications (prefix გარეშე)
-      const localePrefix = locale === defaultLocale ? '' : `/${locale}`
-      const accountUrl = new URL(`${localePrefix}/account/notifications`, request.url)
+      const accountUrl = new URL(`/${locale}/account/notifications`, request.url)
       return NextResponse.redirect(accountUrl)
     }
 
     if (isAdminOnlyRoute(pathname) && role !== 'ADMIN') {
-      const localePrefix = locale === defaultLocale ? '' : `/${locale}`
-      const fallbackUrl = new URL(`${localePrefix}/admin/bookings`, request.url)
+      const fallbackUrl = new URL(`/${locale}/admin/bookings`, request.url)
       return NextResponse.redirect(fallbackUrl)
     }
+  }
+
+  // 3. თუ მომხმარებელი შედის პირდაპირ root-ზე (/), გადავიყვანოთ default ენაზე (/en ან /ka)
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
   }
 
   return intlMiddleware(request)
@@ -96,6 +91,7 @@ export default function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // ✅ მატჩერი, რომელიც მოიცავს ყველა საჭირო გვერდს
     '/((?!api|_next|_vercel|sitemap\\.xml|robots\\.txt|manifest\\.json|[\\w-]+\\.\\w+).*)',
   ],
 }

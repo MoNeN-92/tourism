@@ -4,13 +4,10 @@ import { locales, defaultLocale } from './i18n/config'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
-// ✅ გადაწყვეტილება: ვიყენებთ 'always'. 
-// ეს ნიშნავს, რომ URL იქნება /ka, /en, /ru. 
-// ეს აგვარებს Google-ის ერორს, რადგან თითოეულ ენას აქვს თავისი მკაფიო მისამართი.
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always', // შევცვალეთ 'always'-ზე სტაბილურობისთვის
+  localePrefix: 'always', // ინარჩუნებს /ka, /en, /ru სტრუქტურას
 })
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -27,24 +24,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-function getLocaleFromPath(pathname: string): string {
-  const segments = pathname.split('/')
-  const pathnameLocale = segments[1]
-  return locales.includes(pathnameLocale as any) ? pathnameLocale : defaultLocale
-}
-
-function isAdminOnlyRoute(pathname: string): boolean {
-  return (
-    pathname.includes('/admin/users') ||
-    pathname.includes('/admin/tours') ||
-    pathname.includes('/admin/blog')
-  )
-}
-
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 1. გამოვტოვოთ სტატიკური ფაილები და API
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
@@ -53,45 +35,30 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const locale = getLocaleFromPath(pathname)
-  const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
+  // 1. ჯერ ვუშვებთ intlMiddleware-ს, რომ მან მართოს ენები
+  const response = intlMiddleware(request)
 
-  // 2. ადმინ პანელის დაცვა
+  // 2. ადმინ პანელის შემოწმება
+  const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
   if (isAdminRoute) {
     const token = request.cookies.get('token')?.value
+    const segments = pathname.split('/')
+    const currentLocale = locales.includes(segments[1] as any) ? segments[1] : defaultLocale
 
     if (!token) {
-      // ✅ ყოველთვის ვიყენებთ locale-ს პრეფიქსს რედაირექტისთვის
-      const loginUrl = new URL(`/${locale}/account/login`, request.url)
-      loginUrl.searchParams.set('next', pathname)
-      return NextResponse.redirect(loginUrl)
+      return NextResponse.redirect(new URL(`/${currentLocale}/account/login?next=${pathname}`, request.url))
     }
 
     const payload = decodeJwtPayload(token)
     const role = payload?.role as AdminRole | undefined
-
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      const accountUrl = new URL(`/${locale}/account/notifications`, request.url)
-      return NextResponse.redirect(accountUrl)
-    }
-
-    if (isAdminOnlyRoute(pathname) && role !== 'ADMIN') {
-      const fallbackUrl = new URL(`/${locale}/admin/bookings`, request.url)
-      return NextResponse.redirect(fallbackUrl)
+      return NextResponse.redirect(new URL(`/${currentLocale}/account/notifications`, request.url))
     }
   }
 
-  // 3. თუ მომხმარებელი შედის პირდაპირ root-ზე (/), გადავიყვანოთ default ენაზე (/en ან /ka)
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
-  }
-
-  return intlMiddleware(request)
+  return response
 }
 
 export const config = {
-  matcher: [
-    // ✅ მატჩერი, რომელიც მოიცავს ყველა საჭირო გვერდს
-    '/((?!api|_next|_vercel|sitemap\\.xml|robots\\.txt|manifest\\.json|[\\w-]+\\.\\w+).*)',
-  ],
+  matcher: ['/((?!api|_next|.*\\..*).*)']
 }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import { locales, defaultLocale } from '@/i18n/config'
+import { locales } from '@/i18n/config'
 import Script from 'next/script'
 import '../globals.css'
 import Header from '@/components/Header'
@@ -11,21 +11,6 @@ import CookieBanner from '@/components/CookieBanner'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com'
 
-/**
- * locale → canonical URL
- *
- * 'as-needed' prefix რეჟიმში:
- *   ka → https://vibegeorgia.com        (root, prefix გარეშე)
- *   en → https://vibegeorgia.com/en
- *   ru → https://vibegeorgia.com/ru
- */
-function getCanonicalUrl(locale: string, path = ''): string {
-  if (locale === defaultLocale) {
-    return `${BASE_URL}${path}`
-  }
-  return `${BASE_URL}/${locale}${path}`
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -33,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params
 
-  // OpenGraph locale format: ka_GE, en_US, ru_RU
+  // OpenGraph locale ფორმატი: ka_GE, en_US, ru_RU
   const ogLocaleMap: Record<string, string> = {
     ka: 'ka_GE',
     en: 'en_US',
@@ -58,28 +43,24 @@ export async function generateMetadata({
     metadataBase: new URL(BASE_URL),
 
     alternates: {
-      // ✅ ka → root, en → /en, ru → /ru
-      canonical: getCanonicalUrl(locale),
+      // ✅ ყველა ენას (ka-ს ჩათვლით) ვაძლევთ თავის პრეფიქსიან მისამართს.
+      // ეს გამორიცხავს middleware-ის მიერ ენის ავტომატურ შეცვლას.
+      canonical: `${BASE_URL}/${locale}`,
 
       languages: {
-        // ✅ ka hreflang → root-ზე (არა /ka — ის redirect-ია!)
-        'ka':        BASE_URL,
-        'ka-GE':     BASE_URL,
-
+        'ka':        `${BASE_URL}/ka`,
+        'ka-GE':     `${BASE_URL}/ka`,
         'en':        `${BASE_URL}/en`,
         'en-US':     `${BASE_URL}/en`,
-
         'ru':        `${BASE_URL}/ru`,
         'ru-RU':     `${BASE_URL}/ru`,
-
-        // ✅ x-default = root (Georgian არის default locale)
-        'x-default': BASE_URL,
+        'x-default': `${BASE_URL}/en`, // საერთაშორისო სტუმრებისთვის default იყოს ინგლისური.
       },
     },
 
     icons: {
       icon: [
-        { url: `${BASE_URL}/favicon.ico`, type: 'image/x-icon' },
+        { url: `${BASE_URL}/favicon.ico`, type: 'image/x-icon' }, // აბსოლუტური URL Yandex-ისთვის.
         { url: `${BASE_URL}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
         { url: `${BASE_URL}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
       ],
@@ -89,13 +70,12 @@ export async function generateMetadata({
       ],
     },
 
-    manifest: `${BASE_URL}/manifest.json`,
+    manifest: `${BASE_URL}/manifest.json`, // მანიფესტიც აბსოლუტური მისამართით.
 
     openGraph: {
       title: 'Vibe Georgia - Discover the Caucasus',
       description: 'Unforgettable travel experiences in the heart of Georgia.',
-      // ✅ OG url-იც canonical ლოგიკით
-      url: getCanonicalUrl(locale),
+      url: `${BASE_URL}/${locale}`,
       siteName: 'Vibe Georgia',
       images: [
         {
@@ -105,7 +85,7 @@ export async function generateMetadata({
           alt: 'Vibe Georgia Tours',
         },
       ],
-      locale: ogLocaleMap[locale] ?? 'ka_GE',
+      locale: ogLocaleMap[locale] ?? 'en_US',
       type: 'website',
     },
 
@@ -136,8 +116,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className="antialiased">
-        {/* ✅ FIX: ადრე ორი ერთნაირი <Script> იყო (lazyOnload + afterInteractive).
-            დარჩა მხოლოდ afterInteractive — სწორი სტრატეგია GTM-ისთვის */}
+        {/* Google Analytics-ის ოპტიმიზებული ჩატვირთვა */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P"
           strategy="afterInteractive"
@@ -165,8 +144,7 @@ export default async function LocaleLayout({
               window.addEventListener('scroll', loadGA, { passive: true });
               window.addEventListener('mousemove', loadGA, { passive: true });
               window.addEventListener('touchstart', loadGA, { passive: true });
-              // მომხმარებლის მოქმედების გარეშეც 5 წამში ჩაიტვირთოს
-              setTimeout(loadGA, 5000);
+              setTimeout(loadGA, 4000); 
             })();
           `}
         </Script>

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import TourDetailClient, { type TourDetail } from './TourDetailClient'
 import { absoluteUrl, localizedAlternates, openGraphLocale, localePath } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
+import JsonLd from '@/components/JsonLd'
+import { buildTouristTripSchema } from '@/lib/structured-data'
 
 function getLocalizedField(
   tour: TourDetail,
@@ -104,5 +106,20 @@ export default async function TourPage({
 
   if (!tour) notFound()
 
-  return <TourDetailClient locale={locale} tour={tour} />
+  return (
+    <>
+      <JsonLd
+        data={buildTouristTripSchema({
+          locale,
+          slug: tour.slug,
+          name: getLocalizedField(tour, 'title', locale),
+          description: getLocalizedField(tour, 'description', locale),
+          duration: tour.duration,
+          itinerary: getLocalizedField(tour, 'location', locale) || null,
+          image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
+        })}
+      />
+      <TourDetailClient locale={locale} tour={tour} />
+    </>
+  )
 }

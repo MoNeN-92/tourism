@@ -7,6 +7,8 @@ import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogDat
 import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import ShareButtons from '@/components/ShareButtons'
+import JsonLd from '@/components/JsonLd'
+import { buildBlogPostingSchema } from '@/lib/structured-data'
 
 interface ApiBlogPost {
   id: string
@@ -153,7 +155,20 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
   if (!content) notFound()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <JsonLd
+        data={buildBlogPostingSchema({
+          locale,
+          slug,
+          headline: title,
+          description: excerpt,
+          image: buildCloudinaryUrl(post.coverImage),
+          author,
+          datePublished: publishedDate,
+          dateModified: publishedDate,
+        })}
+      />
+      <div className="min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] bg-gray-900">
         <Image
@@ -271,6 +286,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
           )}
         </article>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

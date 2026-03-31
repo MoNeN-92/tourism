@@ -6,6 +6,8 @@ import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
+import JsonLd from '@/components/JsonLd'
+import { buildTravelAgencySchema } from '@/lib/structured-data'
 
 // --- Interfaces ---
 interface TourImage {
@@ -204,7 +206,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const partnerHotels = await getPartnerHotels()
 
   return (
-    <div className="min-h-screen">
+    <>
+      <JsonLd data={buildTravelAgencySchema()} />
+      <div className="min-h-screen">
       {/* 1. Hero Section */}
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
 <Image
@@ -403,6 +407,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     </div>
   </div>
 </section>
-    </div>
+      </div>
+    </>
   )
 }

@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
+import JsonLd from '@/components/JsonLd'
+import { buildHotelSchema } from '@/lib/structured-data'
 
 interface PartnerHotelImage {
   id: string
@@ -133,7 +135,18 @@ export default async function PartnerHotelPage({
   const shortDescription = getLocalizedField(hotel, 'shortDescription', locale)
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee]">
+    <>
+      <JsonLd
+        data={buildHotelSchema({
+          locale,
+          slug: hotel.slug,
+          name: hotel.name,
+          description: shortDescription,
+          address: hotel.address,
+          image: hotel.coverImageUrl ? buildCloudinaryUrl(hotel.coverImageUrl) : null,
+        })}
+      />
+      <div className="min-h-screen bg-[#f7f4ee]">
       <section className="relative overflow-hidden bg-[#101820] text-white">
         <div className="absolute inset-0">
           <Image
@@ -232,6 +245,7 @@ export default async function PartnerHotelPage({
           </aside>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   )
 }

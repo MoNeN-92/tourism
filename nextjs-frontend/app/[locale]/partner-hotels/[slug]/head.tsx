@@ -5,7 +5,6 @@ import { buildHotelSchema } from '@/lib/structured-data'
 interface PartnerHotel {
   slug: string
   name: string
-  starRating: number
   coverImageUrl: string
   shortDescription_ka: string
   shortDescription_en: string
@@ -54,7 +53,6 @@ export default async function PartnerHotelHead({
         description: getLocalizedDescription(hotel, locale),
         address: hotel.address,
         image: hotel.coverImageUrl ? buildCloudinaryUrl(hotel.coverImageUrl) : null,
-        starRating: hotel.starRating,
       })}
     />
   )

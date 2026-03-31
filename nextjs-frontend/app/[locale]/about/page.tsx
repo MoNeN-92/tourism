@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import ProgressiveImage from '@/components/ProgressiveImage'
 import { buildCloudinarySources } from '@/lib/cloudinary'
+import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME, SITE_URL } from '@/lib/seo'
 
 const HERO_IMAGE = buildCloudinarySources(
   'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771399055/Tbilisi_panorama_nk1rmx.jpg',
@@ -11,25 +12,24 @@ const HERO_IMAGE = buildCloudinarySources(
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'about' })
-  
+
   const title = t('seo.title')
   const description = t('seo.description')
-  const url = `https://vibegeorgia.com/${locale}/about`
-  
+
   return {
     title,
     description,
     keywords: t('seo.keywords'),
-    authors: [{ name: 'Vibe Georgia' }],
+    authors: [{ name: SITE_NAME }],
     openGraph: {
       title,
       description,
-      url,
-      siteName: 'Vibe Georgia',
-      locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
+      url: buildCanonicalUrl(locale, '/about'),
+      siteName: SITE_NAME,
+      locale: openGraphLocale(locale),
       type: 'website',
       images: [{
-        url: 'https://vibegeorgia.com/og-about.jpg',
+        url: absoluteUrl('/og-about.jpg'),
         width: 1200,
         height: 630,
         alt: title,
@@ -39,16 +39,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://vibegeorgia.com/og-about.jpg'],
+      images: [absoluteUrl('/og-about.jpg')],
     },
-    alternates: {
-      canonical: url,
-      languages: {
-        'ka': 'https://vibegeorgia.com/ka/about',
-        'en': 'https://vibegeorgia.com/en/about',
-        'ru': 'https://vibegeorgia.com/ru/about',
-      },
-    },
+    alternates: localizedAlternates(locale, '/about'),
     robots: {
       index: true,
       follow: true,
@@ -62,11 +55,11 @@ export default function AboutPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
-    name: 'Vibe Georgia',
+    name: SITE_NAME,
     description: t('intro'),
-    url: 'https://vibegeorgia.com',
+    url: SITE_URL,
     telephone: '+995596550099',
-    email: '[email protected]',
+    email: 'info@vibegeorgia.com',
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Tbilisi',

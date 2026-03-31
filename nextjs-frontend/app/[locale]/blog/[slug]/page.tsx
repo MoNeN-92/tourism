@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogData'
-import { absoluteUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
+import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import ShareButtons from '@/components/ShareButtons'
 
@@ -93,8 +93,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title,
       description: excerpt,
-      url: absoluteUrl(`/${locale}/blog/${slug}`),
-      siteName: 'Vibe Georgia',
+      url: buildCanonicalUrl(locale, `/blog/${slug}`),
+      siteName: SITE_NAME,
       locale: openGraphLocale(locale),
       type: 'article',
       images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
@@ -127,7 +127,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
 
   const formattedDate = formatDate(publishedDate, locale)
   const relatedPosts = getRelatedPosts(slug)
-  const pageUrl = `https://vibegeorgia.com/${locale}/blog/${slug}`
+  const pageUrl = buildCanonicalUrl(locale, `/blog/${slug}`)
 
   let content: {
     intro: string

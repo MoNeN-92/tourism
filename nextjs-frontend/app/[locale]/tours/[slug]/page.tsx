@@ -64,16 +64,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-
-    // ✅ FIX: localizedAlternates ახლა სწორ canonical-ს აბრუნებს
-    // ka → https://vibegeorgia.com/tours/slug  (prefix გარეშე)
-    // en → https://vibegeorgia.com/en/tours/slug
     alternates: localizedAlternates(locale, `/tours/${slug}`),
 
     openGraph: {
       title,
       description,
-      // ✅ FIX: absoluteUrl(localePath(...)) — ადრე /en/tours/slug იყო ka-სთვისაც
       url: absoluteUrl(localePath(locale, `/tours/${slug}`)),
       siteName: 'Vibe Georgia',
       locale: openGraphLocale(locale),

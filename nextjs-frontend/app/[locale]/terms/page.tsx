@@ -1,4 +1,26 @@
-import { useTranslations } from 'next-intl';
+import type { Metadata } from 'next'
+import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
+import { localizedAlternates, SITE_NAME } from '@/lib/seo'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'Terms' })
+
+  return {
+    title: `${t('title')} | ${SITE_NAME}`,
+    description: t('section1_text'),
+    alternates: localizedAlternates(locale, '/terms'),
+    robots: {
+      index: true,
+      follow: true,
+    },
+  }
+}
 
 export default function TermsPage() {
   const t = useTranslations('Terms');

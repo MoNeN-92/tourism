@@ -4,12 +4,11 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { locales } from '@/i18n/config'
 import Script from 'next/script'
+import { SITE_NAME, SITE_URL } from '@/lib/seo'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com'
 
 export async function generateMetadata({
   params,
@@ -27,8 +26,8 @@ export async function generateMetadata({
 
   return {
     title: {
-      default: 'Vibe Georgia | Unique Tours & Travel Experiences',
-      template: '%s | Vibe Georgia',
+      default: `${SITE_NAME} | Unique Tours & Travel Experiences`,
+      template: `%s | ${SITE_NAME}`,
     },
     description:
       'Explore Georgia with Vibe Georgia. We offer unique tours, local experiences, and hidden gems across the country.',
@@ -39,54 +38,34 @@ export async function generateMetadata({
       'mountain adventures',
       'Vibe Georgia tours',
     ],
-    authors: [{ name: 'Vibe Georgia' }],
-    metadataBase: new URL(BASE_URL),
-
-  alternates: {
-      // ✅ Canonical ყოველთვის მიჰყვება მიმდინარე locale-ს
-      canonical: `${BASE_URL}/${locale}`,
-
-      languages: {
-        'ka':        `${BASE_URL}/ka`,
-        'ka-GE':     `${BASE_URL}/ka`,
-        'en':        `${BASE_URL}/en`,
-        'en-US':     `${BASE_URL}/en`,
-        'ru':        `${BASE_URL}/ru`,
-        'ru-RU':     `${BASE_URL}/ru`,
-        
-        // ✅ მნიშვნელოვანი ცვლილება: 
-        // რადგან შენი defaultLocale არის 'ka', x-default-იც უნდა იყოს /ka.
-        // ეს ეუბნება Google-ს, რომ გაურკვეველი ლოკაციის მომხმარებელი ქართულზე დასვას,
-        // რაც ემთხვევა შენი სისტემის ლოგიკას და წყვეტს Redirect Loop-ს.
-        'x-default': `${BASE_URL}/ka`, 
-      },
-    },
+    authors: [{ name: SITE_NAME }],
+    metadataBase: new URL(SITE_URL),
 
     icons: {
       icon: [
-        { url: `${BASE_URL}/favicon.ico`, type: 'image/x-icon' }, // აბსოლუტური URL Yandex-ისთვის.
-        { url: `${BASE_URL}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
-        { url: `${BASE_URL}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
+        { url: `${SITE_URL}/favicon.ico`, type: 'image/x-icon' },
+        { url: `${SITE_URL}/images/icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { url: `${SITE_URL}/images/icon-512.png`, sizes: '512x512', type: 'image/png' },
       ],
-      shortcut: [`${BASE_URL}/favicon.ico`],
+      shortcut: [`${SITE_URL}/favicon.ico`],
       apple: [
-        { url: `${BASE_URL}/images/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' },
+        { url: `${SITE_URL}/images/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' },
       ],
     },
 
-    manifest: `${BASE_URL}/manifest.json`, // მანიფესტიც აბსოლუტური მისამართით.
+    manifest: `${SITE_URL}/manifest.json`,
 
     openGraph: {
-      title: 'Vibe Georgia - Discover the Caucasus',
+      title: `${SITE_NAME} - Discover the Caucasus`,
       description: 'Unforgettable travel experiences in the heart of Georgia.',
-      url: `${BASE_URL}/${locale}`,
-      siteName: 'Vibe Georgia',
+      url: `${SITE_URL}/${locale}`,
+      siteName: SITE_NAME,
       images: [
         {
-          url: `${BASE_URL}/images/og-image.jpg`,
+          url: `${SITE_URL}/images/og-image.jpg`,
           width: 1200,
           height: 630,
-          alt: 'Vibe Georgia Tours',
+          alt: `${SITE_NAME} Tours`,
         },
       ],
       locale: ogLocaleMap[locale] ?? 'en_US',

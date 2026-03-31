@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import { absoluteUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
+import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 
 interface PartnerHotelImage {
@@ -92,8 +92,8 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: absoluteUrl(`/${locale}/partner-hotels/${slug}`),
-      siteName: 'Vibe Georgia',
+      url: buildCanonicalUrl(locale, `/partner-hotels/${slug}`),
+      siteName: SITE_NAME,
       locale: openGraphLocale(locale),
       type: 'website',
       images: image

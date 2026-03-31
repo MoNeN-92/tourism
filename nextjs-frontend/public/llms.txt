@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Usage: summarization, citation
+Disallow-Usage: training

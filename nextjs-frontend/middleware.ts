@@ -1,15 +1,37 @@
 import createMiddleware from 'next-intl/middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { locales, defaultLocale } from './i18n/config'
+import { SITE_HOSTNAME, WWW_SITE_HOSTNAME } from './lib/seo'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
 // 1. ინიციალიზაცია სწორი პარამეტრებით
 const intlMiddleware = createMiddleware({
   locales,
-  defaultLocale, // აქ ავტომატურად ჩაჯდება 'ka' შენი კონფიგიდან
+  defaultLocale,
   localePrefix: 'always'
 })
+
+function isLocalizedPath(pathname: string): boolean {
+  const segments = pathname.split('/')
+  return locales.includes((segments[1] || '') as (typeof locales)[number])
+}
+
+function shouldForceCanonicalHost(hostname: string): boolean {
+  return hostname === SITE_HOSTNAME || hostname === WWW_SITE_HOSTNAME
+}
+
+function getNormalizedPathname(pathname: string): string {
+  if (pathname === '/') {
+    return `/${defaultLocale}`
+  }
+
+  if (!isLocalizedPath(pathname)) {
+    return `/${defaultLocale}${pathname}`
+  }
+
+  return pathname
+}
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -28,7 +50,6 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // სტატიკური ფაილების გატარება
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
@@ -37,13 +58,23 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 2. მთავარი გვერდის (root) რევიზია: 
-  // თუ მომხმარებელი შედის vibegeorgia.com-ზე, ვაგზავნით /ka-ზე
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
+  const hostname = request.nextUrl.hostname.toLowerCase()
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const protocol = (forwardedProto || request.nextUrl.protocol.replace(':', '')).toLowerCase()
+  const normalizedPathname = getNormalizedPathname(pathname)
+  const shouldRedirectToCanonicalHost =
+    shouldForceCanonicalHost(hostname) &&
+    (hostname !== SITE_HOSTNAME || protocol !== 'https')
+
+  if (shouldRedirectToCanonicalHost || normalizedPathname !== pathname) {
+    const url = request.nextUrl.clone()
+    url.protocol = 'https:'
+    url.hostname = SITE_HOSTNAME
+    url.port = ''
+    url.pathname = normalizedPathname
+    return NextResponse.redirect(url, 308)
   }
 
-  // 3. ადმინ პანელის დაცვის ლოგიკა
   const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
   if (isAdminRoute) {
     const token = request.cookies.get('token')?.value

@@ -1,11 +1,8 @@
 import { MetadataRoute } from 'next'
 import { defaultLocale, locales } from '@/i18n/config'
+import { SITE_URL, localePath } from '@/lib/seo'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com').replace(
-    /\/+$/,
-    '',
-  )
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.vibegeorgia.com').replace(
     /\/+$/,
     '',
@@ -14,27 +11,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
   const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/privacy', '/terms']
 
-  // 1. სტატიკური გვერდები ყველა ენისთვის (მაგ: /en, /ka, /ru, /en/tours და ა.შ.)
   const staticRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     publicPaths.map((path) => {
-      const localizedPath = `/${locale}${path}`
+      const localizedPath = localePath(locale, path)
       return {
-        url: `${baseUrl}${localizedPath}`,
+        url: `${SITE_URL}${localizedPath}`,
         lastModified: now,
         changeFrequency: path === '' ? 'daily' : 'weekly',
         priority: path === '' ? 1 : 0.8,
         alternates: {
-          languages: buildLanguageAlternates(baseUrl, path),
+          languages: buildLanguageAlternates(path),
         },
       }
     }),
   )
 
-  // 2. დინამიური გვერდები (ტური და ბლოგი)
-  const [tourRoutes, blogRoutes] = await Promise.all([
+  const [tourRoutes, blogRoutes, partnerHotelRoutes] = await Promise.all([
     getDynamicRoutes({
       apiUrl,
-      baseUrl,
       contentPathPrefix: '/tours',
       endpoint: '/tours',
       changeFrequency: 'weekly',
@@ -42,16 +36,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     getDynamicRoutes({
       apiUrl,
-      baseUrl,
       contentPathPrefix: '/blog',
       endpoint: '/blog',
       changeFrequency: 'weekly',
       priority: 0.7,
     }),
+    getDynamicRoutes({
+      apiUrl,
+      contentPathPrefix: '/partner-hotels',
+      endpoint: '/partner-hotels',
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    }),
   ])
 
-  // ვაერთიანებთ ყველაფერს. rootRoute ([]) აქ აღარ გვჭირდება დუბლიკატების თავიდან ასაცილებლად.
-  return [...staticRoutes, ...tourRoutes, ...blogRoutes]
+  return [...staticRoutes, ...tourRoutes, ...blogRoutes, ...partnerHotelRoutes]
 }
 
 type DynamicContentItem = {
@@ -61,14 +60,12 @@ type DynamicContentItem = {
 
 async function getDynamicRoutes({
   apiUrl,
-  baseUrl,
   contentPathPrefix,
   endpoint,
   changeFrequency,
   priority,
 }: {
   apiUrl: string
-  baseUrl: string
   contentPathPrefix: string
   endpoint: string
   changeFrequency: 'daily' | 'weekly' | 'monthly'
@@ -78,14 +75,14 @@ async function getDynamicRoutes({
 
   return locales.flatMap((locale) =>
     items.map((item) => {
-      const path = `/${locale}${contentPathPrefix}/${item.slug}`
+      const path = localePath(locale, `${contentPathPrefix}/${item.slug}`)
       return {
-        url: `${baseUrl}${path}`,
+        url: `${SITE_URL}${path}`,
         lastModified: item.updatedAt ? new Date(item.updatedAt) : new Date(),
         changeFrequency,
         priority,
         alternates: {
-          languages: buildLanguageAlternates(baseUrl, `${contentPathPrefix}/${item.slug}`),
+          languages: buildLanguageAlternates(`${contentPathPrefix}/${item.slug}`),
         },
       }
     }),
@@ -134,16 +131,18 @@ function isDynamicContentItem(value: unknown): value is DynamicContentItem {
   return typeof candidate.slug === 'string' && candidate.slug.trim().length > 0
 }
 
-function buildLanguageAlternates(baseUrl: string, pathAfterLocale: string): Record<string, string> {
-  const normalizedPath = pathAfterLocale.startsWith('/') || pathAfterLocale === '' ? pathAfterLocale : `/${pathAfterLocale}`
+function buildLanguageAlternates(pathAfterLocale: string): Record<string, string> {
+  const normalizedPath =
+    pathAfterLocale.startsWith('/') || pathAfterLocale === ''
+      ? pathAfterLocale
+      : `/${pathAfterLocale}`
 
   const entries: Array<[string, string]> = locales.map((locale) => [
     locale,
-    `${baseUrl}/${locale}${normalizedPath}`,
+    `${SITE_URL}${localePath(locale, normalizedPath)}`,
   ])
 
-  // x-default მიუთითებს მთავარ ენაზე (მაგ: /en), რაც ეხმარება Google-ს ენების გარკვევაში
-  entries.push(['x-default', `${baseUrl}/${defaultLocale}${normalizedPath}`])
+  entries.push(['x-default', `${SITE_URL}${localePath(defaultLocale, normalizedPath)}`])
 
   return Object.fromEntries(entries)
 }

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
+import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
 
 // --- Interfaces ---
 interface TourImage {
@@ -177,19 +178,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const t = await getTranslations({ locale, namespace: 'home' })
   const title = t('seo.title')
   const description = t('seo.description')
-  const url = `https://vibegeorgia.com/${locale}`
   return {
     title,
     description,
     keywords: t('seo.keywords'),
-    alternates: {
-      canonical: url,
-      languages: {
-        'ka': 'https://vibegeorgia.com/ka',
-        'en': 'https://vibegeorgia.com/en',
-        'ru': 'https://vibegeorgia.com/ru',
-        'x-default': 'https://vibegeorgia.com/en',
-      },
+    alternates: localizedAlternates(locale),
+    openGraph: {
+      title,
+      description,
+      url: buildCanonicalUrl(locale),
+      siteName: SITE_NAME,
+      locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
+      type: 'website',
     },
   }
 }

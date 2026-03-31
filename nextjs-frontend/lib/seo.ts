@@ -1,6 +1,21 @@
 import { locales, defaultLocale, type Locale } from '@/i18n/config'
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://vibegeorgia.com').replace(/\/+$/, '')
+export const SITE_URL = 'https://vibegeorgia.com'
+export const SITE_HOSTNAME = 'vibegeorgia.com'
+export const WWW_SITE_HOSTNAME = 'www.vibegeorgia.com'
+export const SITE_NAME = 'Vibe Georgia'
+export const SITE_EMAIL = 'info@vibegeorgia.com'
+export const SITE_PHONE = '+995596550099'
+export const SITE_LOGO_PATH = '/images/icon-512.png'
+export const SITE_SOCIAL_PROFILES = [
+  'https://www.facebook.com/vibegeorgia',
+  'https://www.instagram.com/vibegeorgia',
+] as const
+export const SITE_ADDRESS = {
+  '@type': 'PostalAddress',
+  addressLocality: 'Tbilisi',
+  addressCountry: 'GE',
+} as const
 
 function asLocale(value: string): Locale {
   if (locales.includes(value as Locale)) {
@@ -16,85 +31,55 @@ function normalizedPath(path: string): string {
 }
 
 export function absoluteUrl(path: string): string {
+  if (/^https?:\/\//.test(path)) {
+    return path
+  }
+
   return `${SITE_URL}${normalizedPath(path)}`
 }
-
-/**
- * ✅ FIX: localePath
- *
- * ადრე:  ka → /ka/tours/slug   (redirect URL — Google-ს canonical N/A ჩანდა)
- * ახლა:  ka → /tours/slug      (root, prefix გარეშე)
- *        en → /en/tours/slug
- *        ru → /ru/tours/slug
- *
- * რატომ: next-intl 'as-needed' რეჟიმში default locale (ka)
- * არასოდეს იღებს prefix-ს. /ka/* ავტომატურად redirect-დება /*-ზე,
- * ამიტომ Google ვერ პოულობს canonical-ს და წერს N/A.
- */
 export function localePath(locale: string, pathAfterLocale = ''): string {
   const safeLocale = asLocale(locale)
   const path = normalizedPath(pathAfterLocale)
-
-  // default locale (ka) → prefix გარეშე
-  if (safeLocale === defaultLocale) {
-    return path || '/'
-  }
-
-  // სხვა locale-ები → /en/..., /ru/...
   return `/${safeLocale}${path}`
 }
+export function buildCanonicalUrl(locale: string, pathAfterLocale = ''): string {
+  return absoluteUrl(localePath(locale, pathAfterLocale))
+}
 
-/**
- * ✅ FIX: localizedAlternates
- *
- * მაგალითი locale=en, path=/tours/some-slug:
- *   canonical:          https://vibegeorgia.com/en/tours/some-slug
- *   languages:
- *     ka:               https://vibegeorgia.com/tours/some-slug      ← prefix გარეშე!
- *     ka-GE:            https://vibegeorgia.com/tours/some-slug
- *     en:               https://vibegeorgia.com/en/tours/some-slug
- *     en-US:            https://vibegeorgia.com/en/tours/some-slug
- *     ru:               https://vibegeorgia.com/ru/tours/some-slug
- *     ru-RU:            https://vibegeorgia.com/ru/tours/some-slug
- *     x-default:        https://vibegeorgia.com/tours/some-slug      ← root (ka = default)
- */
 export function localizedAlternates(locale: string, pathAfterLocale = '') {
-  const canonicalPath = localePath(locale, pathAfterLocale)
-
-  // ყველა locale-ის URL-ი სწორი prefix-ებით
+  const canonical = buildCanonicalUrl(locale, pathAfterLocale)
   const languageEntries = locales.flatMap((currentLocale) => {
-    const url = absoluteUrl(localePath(currentLocale, pathAfterLocale))
+    const url = buildCanonicalUrl(currentLocale, pathAfterLocale)
 
     if (currentLocale === 'ka') {
-      // ka-სთვის ორივე variant
       return [
-        ['ka',    url],
+        ['ka', url],
         ['ka-GE', url],
       ]
     }
+
     if (currentLocale === 'en') {
       return [
-        ['en',    url],
+        ['en', url],
         ['en-US', url],
       ]
     }
+
     if (currentLocale === 'ru') {
       return [
-        ['ru',    url],
+        ['ru', url],
         ['ru-RU', url],
       ]
     }
+
     return [[currentLocale, url]]
   })
 
-  // x-default = default locale (ka) = root
-  const xDefault = absoluteUrl(localePath(defaultLocale, pathAfterLocale))
-
   return {
-    canonical: absoluteUrl(canonicalPath),
+    canonical,
     languages: {
       ...Object.fromEntries(languageEntries),
-      'x-default': xDefault,
+      'x-default': buildCanonicalUrl(defaultLocale, pathAfterLocale),
     },
   }
 }

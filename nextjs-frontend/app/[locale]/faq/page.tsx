@@ -1,29 +1,28 @@
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
+import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 
-// 1. Metadata გენერაცია (Server Side)
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'faq' })
-  
+
   const title = t('seo.title')
   const description = t('seo.description')
-  const url = `https://vibegeorgia.com/${locale}/faq`
-  
+
   return {
     title,
     description,
     keywords: t('seo.keywords'),
-    authors: [{ name: 'Vibe Georgia' }],
+    authors: [{ name: SITE_NAME }],
     openGraph: {
       title,
       description,
-      url,
-      siteName: 'Vibe Georgia',
-      locale: locale === 'ka' ? 'ka_GE' : locale === 'ru' ? 'ru_RU' : 'en_US',
+      url: buildCanonicalUrl(locale, '/faq'),
+      siteName: SITE_NAME,
+      locale: openGraphLocale(locale),
       type: 'website',
       images: [{
-        url: 'https://vibegeorgia.com/og-faq.jpg',
+        url: absoluteUrl('/og-faq.jpg'),
         width: 1200,
         height: 630,
         alt: title,
@@ -33,16 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://vibegeorgia.com/og-faq.jpg'],
+      images: [absoluteUrl('/og-faq.jpg')],
     },
-    alternates: {
-      canonical: url,
-      languages: {
-        'ka': 'https://vibegeorgia.com/ka/faq',
-        'en': 'https://vibegeorgia.com/en/faq',
-        'ru': 'https://vibegeorgia.com/ru/faq',
-      },
-    },
+    alternates: localizedAlternates(locale, '/faq'),
     robots: {
       index: true,
       follow: true,
@@ -50,7 +42,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-// 2. მთავარი კომპონენტი (გადაკეთებულია Server Component-ად)
 export default async function FAQPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'faq' });
@@ -93,27 +84,8 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
     },
   ]
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.flatMap(category => 
-      category.questions.map(item => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.a,
-        },
-      }))
-    ),
-  }
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
       <main className="min-h-screen bg-gray-50">
         <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 sm:py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">

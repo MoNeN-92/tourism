@@ -170,4 +170,46 @@ export class EmailService {
       payload: params,
     });
   }
+
+  sendContactInquiryEmail(params: {
+    recipientEmail: string;
+    name: string;
+    email: string;
+    phone?: string;
+    message: string;
+  }) {
+    const phonePart = params.phone ? `Phone: ${params.phone}\n` : '';
+
+    return this.sendTemplate({
+      recipientEmail: params.recipientEmail,
+      template: 'contact-inquiry',
+      subject: `New contact inquiry from ${params.name}`,
+      text:
+        `Name: ${params.name}\n` +
+        `Email: ${params.email}\n` +
+        phonePart +
+        `\nMessage:\n${params.message}`,
+      payload: params,
+    });
+  }
+
+  sendContactAutoReplyEmail(params: {
+    name: string;
+    email: string;
+    phone?: string;
+    message: string;
+  }) {
+    return this.sendTemplate({
+      recipientEmail: params.email,
+      template: 'contact-auto-reply',
+      subject: 'We received your message',
+      text:
+        `Hello ${params.name},\n\n` +
+        'Thank you for contacting VibeGeorgia. We received your message and will get back to you shortly.\n\n' +
+        'Your message:\n' +
+        `${params.message}\n\n` +
+        'Best regards,\nVibeGeorgia',
+      payload: params,
+    });
+  }
 }

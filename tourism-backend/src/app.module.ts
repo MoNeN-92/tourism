@@ -16,6 +16,7 @@ import { BookingsModule } from './bookings/bookings.module';
 import { AdminBootstrapService } from './bootstrap/admin-bootstrap.service';
 import { HotelsModule } from './hotels/hotels.module';
 import { PartnerHotelsModule } from './partner-hotels/partner-hotels.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PartnerHotelsModule } from './partner-hotels/partner-hotels.module';
     UsersModule,
     NotificationsModule,
     EmailModule,
+    ContactModule,
     BookingsModule,
     HotelsModule,
     PartnerHotelsModule,

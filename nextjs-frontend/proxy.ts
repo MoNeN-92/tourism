@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { locales, defaultLocale } from './i18n/config'
 import { SITE_HOSTNAME, WWW_SITE_HOSTNAME } from './lib/seo'
 
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
-// 1. ინიციალიზაცია სწორი პარამეტრებით
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
@@ -33,21 +33,57 @@ function getNormalizedPathname(pathname: string): string {
   return pathname
 }
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
+function getCurrentLocale(pathname: string): string {
+  const segments = pathname.split('/')
+  return locales.includes((segments[1] || '') as (typeof locales)[number])
+    ? segments[1]
+    : defaultLocale
+}
+
+function isAdminRoute(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean)
+  return segments[1] === 'admin' && segments[2] !== 'login'
+}
+
+function getApiBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '')
+}
+
+async function getAuthenticatedUserRole(request: NextRequest): Promise<UserRole | null> {
+  const cookieHeader = request.headers.get('cookie')
+
+  if (!cookieHeader) {
+    return null
+  }
+
   try {
-    const parts = token.split('.')
-    if (parts.length < 2) return null
-    const payload = parts[1]
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')
-    const decoded = atob(padded)
-    return JSON.parse(decoded)
+    const response = await fetch(`${getApiBaseUrl()}/users/auth/me`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        cookie: cookieHeader,
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const data = await response.json()
+    const role = data?.role
+
+    if (role === 'ADMIN' || role === 'MODERATOR' || role === 'USER') {
+      return role
+    }
+
+    return null
   } catch {
     return null
   }
 }
 
-export default function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (
@@ -75,11 +111,9 @@ export default function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
-  const isAdminRoute = pathname.includes('/admin') && !pathname.includes('/admin/login')
-  if (isAdminRoute) {
+  if (isAdminRoute(pathname)) {
     const token = request.cookies.get('token')?.value
-    const segments = pathname.split('/')
-    const currentLocale = locales.includes(segments[1] as any) ? segments[1] : defaultLocale
+    const currentLocale = getCurrentLocale(pathname)
 
     if (!token) {
       const loginUrl = new URL(`/${currentLocale}/account/login`, request.url)
@@ -87,10 +121,16 @@ export default function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    const payload = decodeJwtPayload(token)
-    const role = payload?.role as AdminRole | undefined
+    const role = (await getAuthenticatedUserRole(request)) as AdminRole | 'USER' | null
+
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      return NextResponse.redirect(new URL(`/${currentLocale}/account/notifications`, request.url))
+      if (role === 'USER') {
+        return NextResponse.redirect(new URL(`/${currentLocale}/account/notifications`, request.url))
+      }
+
+      const loginUrl = new URL(`/${currentLocale}/account/login`, request.url)
+      loginUrl.searchParams.set('next', pathname)
+      return NextResponse.redirect(loginUrl)
     }
   }
 

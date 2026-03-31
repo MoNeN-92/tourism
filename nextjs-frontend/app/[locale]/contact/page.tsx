@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import emailjs from '@emailjs/browser'
 
 interface FormData {
   name: string
   email: string
   phone: string
   message: string
+  website: string
 }
 
 interface FormErrors {
@@ -26,6 +26,7 @@ export default function ContactPage() {
     email: '',
     phone: '',
     message: '',
+    website: '',
   })
 
   const [errors, setErrors] = useState<FormErrors>({})
@@ -65,37 +66,24 @@ export default function ContactPage() {
     setIsSubmitting(true)
     setSubmitStatus('idle')
 
-    // ცვლადები შენი EmailJS შაბლონებისთვის
-    const templateParams = {
-      from_name: formData.name,
-      from_email: formData.email,
-      phone: formData.phone,
-      message: formData.message,
-      name: formData.name,      // ავტომოპასუხისთვის: "Hi {{name}}"
-      title: "vibegeorgia.com"  // ავტომოპასუხისთვის: "{{title}}"
-    };
-
     try {
-      // 1. გზავნის მეილს ადმინისტრატორთან (შენთან)
-      await emailjs.send(
-        'service_i1yw3p8', 
-        'template_c0o332m', 
-        templateParams,
-        'NlwK4cZbuSEu6RCdL'
-      );
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const response = await fetch(`${apiUrl}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
 
-      // 2. გზავნის ავტო-პასუხს მომხმარებელთან
-      await emailjs.send(
-        'service_i1yw3p8', 
-        'template_5s1lpl7', 
-        templateParams,
-        'NlwK4cZbuSEu6RCdL'
-      );
+      if (!response.ok) {
+        throw new Error('Contact request failed')
+      }
 
       setSubmitStatus('success')
-      setFormData({ name: '', email: '', phone: '', message: '' })
+      setFormData({ name: '', email: '', phone: '', message: '', website: '' })
     } catch (error) {
-      console.error('EmailJS Error:', error)
+      console.error('Contact form error:', error)
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
@@ -131,6 +119,20 @@ export default function ContactPage() {
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                <div>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleChange}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
+                </div>
+
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     {t('form.name')} *

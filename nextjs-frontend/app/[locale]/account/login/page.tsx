@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { persistAdminAccessToken } from '@/lib/auth-token'
 
 type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
 
@@ -44,10 +43,6 @@ export default function AccountLoginPage() {
       if (!response.ok) {
         setError(data?.message || t('loginFailed'))
         return
-      }
-
-      if (data?.access_token) {
-        persistAdminAccessToken(data.access_token)
       }
 
       const role = (data?.user?.role as UserRole | undefined) || 'USER'

@@ -72,6 +72,18 @@ export class ContactService {
     entry.lastAcceptedAt = now;
   }
 
+  private rollbackAcceptedSubmission(ip: string) {
+    const entry = this.submissionsByIp.get(ip);
+
+    if (!entry || entry.timestamps.length === 0) {
+      return;
+    }
+
+    entry.timestamps.pop();
+    entry.lastAcceptedAt =
+      entry.timestamps.length > 0 ? entry.timestamps[entry.timestamps.length - 1] : null;
+  }
+
   async submit(dto: CreateContactMessageDto, ip: string) {
     if (dto.website) {
       return { accepted: true };
@@ -82,13 +94,21 @@ export class ContactService {
     const contactMessage = this.normalizeInput(dto);
     const recipientEmail = this.getContactRecipientEmail();
 
-    await Promise.all([
+    const results = await Promise.all([
       this.emailService.sendContactInquiryEmail({
         recipientEmail,
         ...contactMessage,
       }),
       this.emailService.sendContactAutoReplyEmail(contactMessage),
     ]);
+
+    if (results.some((result) => result !== 'sent')) {
+      this.rollbackAcceptedSubmission(ip);
+      throw new HttpException(
+        'Message could not be delivered right now. Please try again later.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
 
     return { accepted: true };
   }

@@ -177,6 +177,7 @@
       "successMessage": "Your message has been received. We will contact you soon.",
       "errorTitle": "Error!",
       "errorMessage": "Failed to send message. Please try again.",
+      "timeoutMessage": "The request timed out. Please try again in a moment.",
       "required": "This field is required",
       "invalidEmail": "Please enter a valid email",
       "invalidName": "Please enter at least 2 characters",

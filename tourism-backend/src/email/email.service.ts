@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { EmailLogStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
+export type EmailDeliveryStatus = 'sent' | 'fallback_logged' | 'failed';
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -12,18 +14,27 @@ export class EmailService {
     private readonly prisma: PrismaService,
   ) {}
 
+  private getNumberConfig(key: string, fallback: number): number {
+    const raw = this.configService.get<string>(key);
+    const value = raw ? Number(raw) : NaN;
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+  }
+
   private async sendTemplate(params: {
     recipientEmail: string;
     template: string;
     subject: string;
     text: string;
     payload?: unknown;
-  }) {
+  }): Promise<EmailDeliveryStatus> {
     const smtpHost = this.configService.get<string>('SMTP_HOST');
     const smtpPortRaw = this.configService.get<string>('SMTP_PORT');
     const smtpUser = this.configService.get<string>('SMTP_USER');
     const smtpPass = this.configService.get<string>('SMTP_PASS');
     const smtpFrom = this.configService.get<string>('SMTP_FROM') || 'no-reply@vibegeorgia.com';
+    const smtpConnectionTimeout = this.getNumberConfig('SMTP_CONNECTION_TIMEOUT_MS', 10000);
+    const smtpGreetingTimeout = this.getNumberConfig('SMTP_GREETING_TIMEOUT_MS', 10000);
+    const smtpSocketTimeout = this.getNumberConfig('SMTP_SOCKET_TIMEOUT_MS', 15000);
 
     const payload =
       params.payload === undefined
@@ -48,7 +59,7 @@ export class EmailService {
         },
       });
 
-      return;
+      return 'fallback_logged';
     }
 
     try {
@@ -60,6 +71,9 @@ export class EmailService {
         host: smtpHost,
         port: Number(smtpPortRaw),
         secure: Number(smtpPortRaw) === 465,
+        connectionTimeout: smtpConnectionTimeout,
+        greetingTimeout: smtpGreetingTimeout,
+        socketTimeout: smtpSocketTimeout,
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -79,6 +93,8 @@ export class EmailService {
           status: EmailLogStatus.SENT,
         },
       });
+
+      return 'sent';
     } catch (error: any) {
       this.logger.error(`Email send failed for ${params.recipientEmail}`, error?.stack);
 
@@ -89,6 +105,8 @@ export class EmailService {
           error: error?.message || 'Unknown error',
         },
       });
+
+      return 'failed';
     }
   }
 

@@ -78,9 +78,12 @@ export default function ContactPage() {
     setIsSubmitting(true)
     setSubmitStatus('idle')
     setSubmitError('')
+    let timeoutId: number | undefined
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const controller = new AbortController()
+      timeoutId = window.setTimeout(() => controller.abort(), 20000)
       const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
@@ -93,6 +96,7 @@ export default function ContactPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify(payload),
       })
 
@@ -108,9 +112,18 @@ export default function ContactPage() {
       setFormData({ name: '', email: '', phone: '', message: '', website: '' })
     } catch (error) {
       console.error('Contact form error:', error)
-      setSubmitError(error instanceof Error ? error.message : t('form.errorMessage'))
+      const errorMessage =
+        error instanceof DOMException && error.name === 'AbortError'
+          ? t('form.timeoutMessage')
+          : error instanceof Error
+            ? error.message
+            : t('form.errorMessage')
+      setSubmitError(errorMessage)
       setSubmitStatus('error')
     } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId)
+      }
       setIsSubmitting(false)
       setTimeout(() => setSubmitStatus('idle'), 5000)
     }

@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import ToursPageClient from './ToursPageClient'
-import { absoluteUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
+import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import JsonLd from '@/components/JsonLd'
-import { buildTouristTripSchema } from '@/lib/structured-data'
+import { buildBreadcrumbSchema, buildTouristTripSchema } from '@/lib/structured-data'
 
 const TOURS_OG_IMAGE = buildCloudinaryUrl(
   'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg',
@@ -91,25 +91,30 @@ export default async function ToursPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  const nav = await getTranslations({ locale, namespace: 'nav' })
+  const t = await getTranslations({ locale, namespace: 'tours' })
   const tours = await getTours()
+  const jsonLdData = [
+    buildBreadcrumbSchema([
+      { name: nav('home'), url: buildCanonicalUrl(locale) },
+      { name: t('title'), url: buildCanonicalUrl(locale, '/tours') },
+    ]),
+    ...tours.map((tour) =>
+      buildTouristTripSchema({
+        locale,
+        slug: tour.slug,
+        name: getLocalizedValue(tour, 'title', locale),
+        description: getLocalizedValue(tour, 'description', locale),
+        duration: tour.duration,
+        itinerary: getLocalizedValue(tour, 'location', locale) || null,
+        image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
+      }),
+    ),
+  ]
 
   return (
     <>
-      {tours.length > 0 && (
-        <JsonLd
-          data={tours.map((tour) =>
-            buildTouristTripSchema({
-              locale,
-              slug: tour.slug,
-              name: getLocalizedValue(tour, 'title', locale),
-              description: getLocalizedValue(tour, 'description', locale),
-              duration: tour.duration,
-              itinerary: getLocalizedValue(tour, 'location', locale) || null,
-              image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
-            }),
-          )}
-        />
-      )}
+      <JsonLd data={jsonLdData} />
       <ToursPageClient />
     </>
   )

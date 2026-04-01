@@ -6,63 +6,8 @@ import { notFound } from 'next/navigation'
 import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import JsonLd from '@/components/JsonLd'
-import { buildHotelSchema } from '@/lib/structured-data'
-
-interface PartnerHotelImage {
-  id: string
-  url: string
-  publicId: string
-  createdAt: string
-}
-
-interface PartnerHotel {
-  id: string
-  slug: string
-  name: string
-  starRating: number
-  coverImageUrl: string
-  shortDescription_ka: string
-  shortDescription_en: string
-  shortDescription_ru: string
-  description_ka: string
-  description_en: string
-  description_ru: string
-  address: string
-  contactPhone: string
-  website: string | null
-  images: PartnerHotelImage[]
-}
-
-function getLocalizedField(hotel: PartnerHotel, field: 'shortDescription' | 'description', locale: string) {
-  const fieldMap: Record<string, keyof PartnerHotel> = {
-    ka: `${field}_ka` as keyof PartnerHotel,
-    en: `${field}_en` as keyof PartnerHotel,
-    ru: `${field}_ru` as keyof PartnerHotel,
-  }
-
-  const localizedFieldKey = fieldMap[locale] || fieldMap.ka
-  const localizedValue = hotel[localizedFieldKey]
-  const fallbackValue = hotel[`${field}_ka` as keyof PartnerHotel]
-
-  return (localizedValue as string) || (fallbackValue as string) || ''
-}
-
-async function getPartnerHotel(slug: string): Promise<PartnerHotel | null> {
-  try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const response = await fetch(`${apiUrl}/partner-hotels/${slug}`, {
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    return response.json()
-  } catch {
-    return null
-  }
-}
+import { buildBreadcrumbSchema, buildHotelSchema } from '@/lib/structured-data'
+import { getLocalizedHotelField, getPartnerHotel } from '@/lib/partner-hotels'
 
 export async function generateMetadata({
   params,
@@ -84,7 +29,7 @@ export async function generateMetadata({
   }
 
   const title = `${hotel.name} | Vibe Georgia`
-  const description = getLocalizedField(hotel, 'shortDescription', locale).slice(0, 160)
+  const description = getLocalizedHotelField(hotel, 'shortDescription', locale).slice(0, 160)
   const image = buildCloudinaryUrl(hotel.coverImageUrl)
 
   return {
@@ -125,26 +70,34 @@ export default async function PartnerHotelPage({
 }) {
   const { locale, slug } = await params
   const t = await getTranslations({ locale, namespace: 'partnerHotels' })
+  const nav = await getTranslations({ locale, namespace: 'nav' })
   const hotel = await getPartnerHotel(slug)
 
   if (!hotel) {
     notFound()
   }
 
-  const description = getLocalizedField(hotel, 'description', locale)
-  const shortDescription = getLocalizedField(hotel, 'shortDescription', locale)
+  const description = getLocalizedHotelField(hotel, 'description', locale)
+  const shortDescription = getLocalizedHotelField(hotel, 'shortDescription', locale)
 
   return (
     <>
       <JsonLd
-        data={buildHotelSchema({
-          locale,
-          slug: hotel.slug,
-          name: hotel.name,
-          description: shortDescription,
-          address: hotel.address,
-          image: hotel.coverImageUrl ? buildCloudinaryUrl(hotel.coverImageUrl) : null,
-        })}
+        data={[
+          buildHotelSchema({
+            locale,
+            slug: hotel.slug,
+            name: hotel.name,
+            description: shortDescription,
+            address: hotel.address,
+            image: hotel.coverImageUrl ? buildCloudinaryUrl(hotel.coverImageUrl) : null,
+          }),
+          buildBreadcrumbSchema([
+            { name: nav('home'), url: buildCanonicalUrl(locale) },
+            { name: t('title'), url: buildCanonicalUrl(locale, '/partner-hotels') },
+            { name: hotel.name, url: buildCanonicalUrl(locale, `/partner-hotels/${hotel.slug}`) },
+          ]),
+        ]}
       />
       <div className="min-h-screen bg-[#f7f4ee]">
       <section className="relative overflow-hidden bg-[#101820] text-white">
@@ -162,10 +115,10 @@ export default async function PartnerHotelPage({
 
         <div className="relative mx-auto flex min-h-[420px] max-w-7xl flex-col justify-end px-4 py-16 sm:px-6 lg:px-8">
           <Link
-            href={`/${locale}`}
+            href={`/${locale}/partner-hotels`}
             className="mb-8 inline-flex min-h-[44px] w-fit items-center rounded-full border border-white/30 px-4 text-sm text-white/90 hover:bg-white/10"
           >
-            {t('backToHome')}
+            {t('backToHotels')}
           </Link>
 
           <div className="max-w-3xl">

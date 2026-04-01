@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
-import { buildFaqSchema } from '@/lib/structured-data'
+import { buildBreadcrumbSchema, buildFaqSchema } from '@/lib/structured-data'
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
@@ -45,8 +45,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function FAQPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'faq' });
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'faq' })
+  const nav = await getTranslations({ locale, namespace: 'nav' })
 
   const faqs = [
     {
@@ -89,14 +90,20 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
   return (
     <>
       <JsonLd
-        data={buildFaqSchema(
-          faqs.flatMap((category) =>
-            category.questions.map((item) => ({
-              question: item.q,
-              answer: item.a,
-            })),
+        data={[
+          buildFaqSchema(
+            faqs.flatMap((category) =>
+              category.questions.map((item) => ({
+                question: item.q,
+                answer: item.a,
+              })),
+            ),
           ),
-        )}
+          buildBreadcrumbSchema([
+            { name: nav('home'), url: buildCanonicalUrl(locale) },
+            { name: t('title'), url: buildCanonicalUrl(locale, '/faq') },
+          ]),
+        ]}
       />
       <main className="min-h-screen bg-gray-50">
         <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 sm:py-20">

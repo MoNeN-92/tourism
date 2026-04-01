@@ -27,7 +27,7 @@ export async function generateMetadata({
   return {
     title: {
       default: `${SITE_NAME} | Unique Tours & Travel Experiences`,
-      template: `%s | ${SITE_NAME}`,
+      template: '%s',
     },
     description:
       'Explore Georgia with Vibe Georgia. We offer unique tours, local experiences, and hidden gems across the country.',

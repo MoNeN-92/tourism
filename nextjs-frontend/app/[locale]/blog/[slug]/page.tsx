@@ -8,7 +8,7 @@ import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } fr
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import ShareButtons from '@/components/ShareButtons'
 import JsonLd from '@/components/JsonLd'
-import { buildBlogPostingSchema } from '@/lib/structured-data'
+import { buildBlogPostingSchema, buildBreadcrumbSchema } from '@/lib/structured-data'
 
 interface ApiBlogPost {
   id: string
@@ -85,15 +85,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
   const { post } = result
   const title = getLocalizedField(post, 'title', locale)
+  const pageTitle = `${title} | Vibe Georgia`
   const excerpt = getLocalizedField(post, 'excerpt', locale)
   const imageUrl = buildCloudinaryUrl(post.coverImage)
 
   return {
-    title,
+    title: pageTitle,
     description: excerpt,
     alternates: localizedAlternates(locale, `/blog/${slug}`),
     openGraph: {
-      title,
+      title: pageTitle,
       description: excerpt,
       url: buildCanonicalUrl(locale, `/blog/${slug}`),
       siteName: SITE_NAME,
@@ -103,7 +104,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: pageTitle,
       description: excerpt,
       images: [imageUrl],
     },
@@ -113,6 +114,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function BlogPostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params
   const t = await getTranslations('blog')
+  const nav = await getTranslations({ locale, namespace: 'nav' })
 
   const result = await getPostBySlug(slug)
   if (!result) notFound()
@@ -157,16 +159,23 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
   return (
     <>
       <JsonLd
-        data={buildBlogPostingSchema({
-          locale,
-          slug,
-          headline: title,
-          description: excerpt,
-          image: buildCloudinaryUrl(post.coverImage),
-          author,
-          datePublished: publishedDate,
-          dateModified: publishedDate,
-        })}
+        data={[
+          buildBlogPostingSchema({
+            locale,
+            slug,
+            headline: title,
+            description: excerpt,
+            image: buildCloudinaryUrl(post.coverImage),
+            author,
+            datePublished: publishedDate,
+            dateModified: publishedDate,
+          }),
+          buildBreadcrumbSchema([
+            { name: nav('home'), url: buildCanonicalUrl(locale) },
+            { name: t('title'), url: buildCanonicalUrl(locale, '/blog') },
+            { name: title, url: buildCanonicalUrl(locale, `/blog/${slug}`) },
+          ]),
+        ]}
       />
       <div className="min-h-screen bg-gray-50">
       {/* Hero */}

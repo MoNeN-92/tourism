@@ -309,6 +309,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <h2 className="text-3xl sm:text-5xl font-bold text-[#101820]">{t('partnerHotels.title')}</h2>
               <p className="mt-3 max-w-2xl text-[#556070]">{t('partnerHotels.subtitle')}</p>
             </div>
+            <Link
+              href={`/${locale}/partner-hotels`}
+              className="inline-flex min-h-[44px] items-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+            >
+              {t('partnerHotels.viewAll')}
+            </Link>
           </div>
 
           {partnerHotels.length > 0 ? (

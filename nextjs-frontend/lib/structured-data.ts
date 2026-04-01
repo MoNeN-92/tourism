@@ -1,10 +1,12 @@
 import {
   absoluteUrl,
   buildCanonicalUrl,
+  SITE_ADDRESS,
   SITE_EMAIL,
   SITE_LOGO_PATH,
   SITE_NAME,
   SITE_PHONE,
+  SITE_SOCIAL_PROFILES,
   SITE_URL,
 } from '@/lib/seo'
 
@@ -18,17 +20,22 @@ function travelAgencyReference(): JsonLd {
   }
 }
 
-export function buildTravelAgencySchema(): JsonLd {
+export function buildTravelAgencySchema(params?: { description?: string }): JsonLd {
   return {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
     '@id': `${SITE_URL}/#travelagency`,
     name: SITE_NAME,
     url: SITE_URL,
+    ...(params?.description ? { description: params.description } : {}),
     logo: {
       '@type': 'ImageObject',
       url: absoluteUrl(SITE_LOGO_PATH),
     },
+    telephone: SITE_PHONE,
+    email: SITE_EMAIL,
+    address: SITE_ADDRESS,
+    sameAs: [...SITE_SOCIAL_PROFILES],
     contactPoint: [
       {
         '@type': 'ContactPoint',
@@ -131,6 +138,21 @@ export function buildFaqSchema(
         '@type': 'Answer',
         text: item.answer,
       },
+    })),
+  }
+}
+
+export function buildBreadcrumbSchema(
+  items: Array<{ name: string; url: string }>,
+): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
     })),
   }
 }

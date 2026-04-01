@@ -1,9 +1,10 @@
-import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import ProgressiveImage from '@/components/ProgressiveImage'
+import JsonLd from '@/components/JsonLd'
 import { buildCloudinarySources } from '@/lib/cloudinary'
-import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME, SITE_URL } from '@/lib/seo'
+import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
+import { buildBreadcrumbSchema, buildTravelAgencySchema } from '@/lib/structured-data'
 
 const HERO_IMAGE = buildCloudinarySources(
   'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771399055/Tbilisi_panorama_nk1rmx.jpg',
@@ -49,30 +50,25 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-export default function AboutPage() {
-  const t = useTranslations('about')
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'TravelAgency',
-    name: SITE_NAME,
-    description: t('intro'),
-    url: SITE_URL,
-    telephone: '+995596550099',
-    email: 'info@vibegeorgia.com',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Tbilisi',
-      addressCountry: 'GE',
-    },
-    foundingDate: '2010',
-  }
+export default async function AboutPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'about' })
+  const nav = await getTranslations({ locale, namespace: 'nav' })
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <JsonLd
+        data={[
+          buildTravelAgencySchema({ description: t('intro') }),
+          buildBreadcrumbSchema([
+            { name: nav('home'), url: buildCanonicalUrl(locale) },
+            { name: t('title'), url: buildCanonicalUrl(locale, '/about') },
+          ]),
+        ]}
       />
       <main className="min-h-screen bg-gray-50">
         {/* Hero Section with Tbilisi Background */}

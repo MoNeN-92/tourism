@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   )
 
   const now = new Date()
-  const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/privacy', '/terms']
+  const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/partner-hotels', '/privacy', '/terms']
 
   const staticRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     publicPaths.map((path) => {

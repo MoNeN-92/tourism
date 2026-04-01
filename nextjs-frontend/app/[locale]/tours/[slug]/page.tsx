@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import TourDetailClient, { type TourDetail } from './TourDetailClient'
-import { absoluteUrl, localizedAlternates, openGraphLocale, localePath } from '@/lib/seo'
+import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, localePath } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import JsonLd from '@/components/JsonLd'
-import { buildTouristTripSchema } from '@/lib/structured-data'
+import { buildBreadcrumbSchema, buildTouristTripSchema } from '@/lib/structured-data'
 
 function getLocalizedField(
   tour: TourDetail,
@@ -102,6 +103,8 @@ export default async function TourPage({
   params: Promise<{ locale: string; slug: string }>
 }) {
   const { locale, slug } = await params
+  const nav = await getTranslations({ locale, namespace: 'nav' })
+  const toursT = await getTranslations({ locale, namespace: 'tours' })
   const tour = await getTour(slug)
 
   if (!tour) notFound()
@@ -109,15 +112,22 @@ export default async function TourPage({
   return (
     <>
       <JsonLd
-        data={buildTouristTripSchema({
-          locale,
-          slug: tour.slug,
-          name: getLocalizedField(tour, 'title', locale),
-          description: getLocalizedField(tour, 'description', locale),
-          duration: tour.duration,
-          itinerary: getLocalizedField(tour, 'location', locale) || null,
-          image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
-        })}
+        data={[
+          buildTouristTripSchema({
+            locale,
+            slug: tour.slug,
+            name: getLocalizedField(tour, 'title', locale),
+            description: getLocalizedField(tour, 'description', locale),
+            duration: tour.duration,
+            itinerary: getLocalizedField(tour, 'location', locale) || null,
+            image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
+          }),
+          buildBreadcrumbSchema([
+            { name: nav('home'), url: buildCanonicalUrl(locale) },
+            { name: toursT('title'), url: buildCanonicalUrl(locale, '/tours') },
+            { name: getLocalizedField(tour, 'title', locale), url: buildCanonicalUrl(locale, `/tours/${tour.slug}`) },
+          ]),
+        ]}
       />
       <TourDetailClient locale={locale} tour={tour} />
     </>

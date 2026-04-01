@@ -39,6 +39,7 @@
     "partnerHotels": {
       "title": "Our Partner Hotels",
       "subtitle": "Stay with trusted hospitality partners handpicked by Vibe Georgia.",
+      "viewAll": "View All Hotels",
       "viewHotel": "View Hotel",
       "empty": "Partner hotels will appear here soon."
     },
@@ -87,7 +88,10 @@
     }
   },
   "partnerHotels": {
+    "title": "Partner Hotels in Georgia",
+    "subtitle": "Browse trusted accommodation partners selected by Vibe Georgia for comfortable stays across the country.",
     "backToHome": "Back to Home",
+    "backToHotels": "Back to Partner Hotels",
     "stars": "stars",
     "overview": "Hotel Overview",
     "gallery": "Gallery",
@@ -96,7 +100,8 @@
     "phone": "Phone",
     "website": "Website",
     "partnerBadge": "Verified Partner",
-    "partnerIntro": "This hotel is part of our trusted partner network for premium stays across Georgia."
+    "partnerIntro": "This hotel is part of our trusted partner network for premium stays across Georgia.",
+    "empty": "Partner hotels will appear here soon."
   },
   "tours": {
     "title": "Explore Tours",
@@ -194,7 +199,9 @@
     "description": "Discover amazing destinations around the world with our curated tours and experiences.",
     "contact": "Contact",
     "followUs": "Follow Us",
-    "rights": "All rights reserved"
+    "rights": "All rights reserved",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
   },
   "cookies": {
     "title": "We Use Cookies",

@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import api from '@/lib/api'
 import { clearAdminAccessToken } from '@/lib/auth-token'
 
 interface AuthUser {
@@ -18,12 +17,17 @@ interface AuthUser {
 
 type AuthMode = 'guest' | 'user' | 'admin'
 
-export default function Header() {
+export default function Header({
+  initialAuthMode,
+  initialAuthUser,
+}: {
+  initialAuthMode: AuthMode
+  initialAuthUser: AuthUser | null
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<AuthMode>('guest')
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
-  const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode)
+  const [authUser, setAuthUser] = useState<AuthUser | null>(initialAuthUser)
   const langDropdownRef = useRef<HTMLDivElement>(null)
   const params = useParams()
   const pathname = usePathname()
@@ -42,30 +46,9 @@ export default function Header() {
   const otherLocales = locales.filter(loc => loc.code !== locale)
 
   useEffect(() => {
-    let cancelled = false
-    const checkAuth = async () => {
-      setIsAuthLoading(true)
-      try {
-        const userResponse = await api.get('/users/auth/me')
-        if (!cancelled) {
-          const user = userResponse.data ?? null
-          setAuthUser(user)
-          setAuthMode(
-            user?.role === 'ADMIN' || user?.role === 'MODERATOR' ? 'admin' : 'user'
-          )
-        }
-      } catch {
-        if (!cancelled) {
-          setAuthMode('guest')
-          setAuthUser(null)
-        }
-      } finally {
-        if (!cancelled) setIsAuthLoading(false)
-      }
-    }
-    checkAuth()
-    return () => { cancelled = true }
-  }, [pathname])
+    setAuthMode(initialAuthMode)
+    setAuthUser(initialAuthUser)
+  }, [initialAuthMode, initialAuthUser])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -91,8 +74,9 @@ export default function Header() {
     .map((part) => part[0]?.toUpperCase()).join('') || 'U'
 
   const handleLogout = async () => {
-    try { await api.post('/users/auth/logout') } catch {}
-    try { await api.post('/auth/logout') } catch {}
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    try { await fetch(`${apiUrl}/users/auth/logout`, { method: 'POST', credentials: 'include' }) } catch {}
+    try { await fetch(`${apiUrl}/auth/logout`, { method: 'POST', credentials: 'include' }) } catch {}
     finally {
       clearAdminAccessToken()
       setAuthMode('guest')
@@ -104,10 +88,6 @@ export default function Header() {
   }
 
   const renderDesktopAuth = () => {
-    if (isAuthLoading) {
-      return <div className="ml-4 border-l pl-4 text-sm text-gray-500">{t('loading')}</div>
-    }
-
     if (authMode === 'guest') {
       return (
         <div className="ml-4 border-l pl-4 flex items-center gap-2">
@@ -159,10 +139,6 @@ export default function Header() {
   }
 
   const renderMobileAuth = () => {
-    if (isAuthLoading) {
-      return <div className="pt-4 border-t text-sm text-gray-500">{t('loading')}</div>
-    }
-
     if (authMode === 'guest') {
       return (
         <div className="pt-4 border-t flex flex-col gap-2">

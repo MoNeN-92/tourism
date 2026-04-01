@@ -1,14 +1,55 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { locales } from '@/i18n/config'
-import Script from 'next/script'
 import { SITE_NAME, SITE_URL } from '@/lib/seo'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import CookieBanner from '@/components/CookieBanner'
+
+type HeaderAuthUser = {
+  id?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  role?: 'USER' | 'ADMIN' | 'MODERATOR'
+}
+
+async function getInitialHeaderAuth(): Promise<{
+  mode: 'guest' | 'user' | 'admin'
+  user: HeaderAuthUser | null
+}> {
+  const cookieStore = await cookies()
+  const cookieHeader = cookieStore.toString()
+
+  if (!cookieHeader) {
+    return { mode: 'guest', user: null }
+  }
+
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const response = await fetch(`${apiUrl}/users/auth/me`, {
+      headers: {
+        Cookie: cookieHeader,
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      return { mode: 'guest', user: null }
+    }
+
+    const user = (await response.json()) as HeaderAuthUser
+    const mode = user?.role === 'ADMIN' || user?.role === 'MODERATOR' ? 'admin' : 'user'
+
+    return { mode, user }
+  } catch {
+    return { mode: 'guest', user: null }
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -95,46 +136,14 @@ export default async function LocaleLayout({
   if (!locales.includes(locale as any)) notFound()
 
   const messages = await getMessages()
+  const headerAuth = await getInitialHeaderAuth()
 
   return (
     <html lang={locale}>
       <body className="antialiased">
-        {/* Google Analytics-ის ოპტიმიზებული ჩატვირთვა */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P"
-          strategy="afterInteractive"
-        />
-
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            (function() {
-              const loadGA = () => {
-                if (window.gaLoaded) return;
-                window.gaLoaded = true;
-
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'G-ZNGHZ2EQ9P', {
-                  page_path: window.location.pathname,
-                });
-
-                window.removeEventListener('scroll', loadGA);
-                window.removeEventListener('mousemove', loadGA);
-                window.removeEventListener('touchstart', loadGA);
-              };
-
-              window.addEventListener('scroll', loadGA, { passive: true });
-              window.addEventListener('mousemove', loadGA, { passive: true });
-              window.addEventListener('touchstart', loadGA, { passive: true });
-              setTimeout(loadGA, 4000); 
-            })();
-          `}
-        </Script>
-
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
-            <Header />
+            <Header initialAuthMode={headerAuth.mode} initialAuthUser={headerAuth.user} />
             <main className="flex-1">{children}</main>
             <Footer />
             <CookieBanner />

@@ -4,10 +4,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
-import { buildCloudinaryUrl } from '@/lib/cloudinary'
+import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
 import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
 import { buildTravelAgencySchema } from '@/lib/structured-data'
+
+const HOMEPAGE_REVALIDATE_SECONDS = 300
+const HERO_IMAGE = buildCloudinarySources(
+  'https://res.cloudinary.com/dj7qaif1i/image/upload/v1771396197/cover_1_secna5.jpg',
+)
 
 // --- Interfaces ---
 interface TourImage {
@@ -131,13 +136,19 @@ function formatDuration(duration: string, locale: string): string {
 async function getFeaturedTours(): Promise<Tour[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/tours`, { cache: 'no-store', next: { revalidate: 0 } })
+    const res = await fetch(`${apiUrl}/tours`, {
+      next: { revalidate: HOMEPAGE_REVALIDATE_SECONDS },
+    })
     if (!res.ok) return []
     const allTours: Tour[] = await res.json()
-    const activeTours = allTours.filter(tour => tour.status === true)
-    const shuffled = [...activeTours].sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, Math.min(4, shuffled.length))
-  } catch (error) {
+    const activeTours = allTours.filter((tour) => tour.status === true)
+    const sorted = [...activeTours].sort((left, right) => {
+      const leftTime = Date.parse(left.updatedAt || left.createdAt || '')
+      const rightTime = Date.parse(right.updatedAt || right.createdAt || '')
+      return rightTime - leftTime
+    })
+    return sorted.slice(0, Math.min(4, sorted.length))
+  } catch {
     return []
   }
 }
@@ -145,7 +156,9 @@ async function getFeaturedTours(): Promise<Tour[]> {
 async function getLatestBlogPosts(): Promise<BlogPost[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/blog`, { cache: 'no-store' })
+    const res = await fetch(`${apiUrl}/blog`, {
+      next: { revalidate: HOMEPAGE_REVALIDATE_SECONDS },
+    })
     if (!res.ok) return mockBlogPosts.slice(0, 3)
     const apiPosts: ApiBlogPost[] = await res.json()
     const normalized: BlogPost[] = apiPosts.map(p => ({
@@ -158,8 +171,10 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
     }))
     const apiSlugs = new Set(normalized.map(p => p.slug))
     const filteredMock = mockBlogPosts.filter(p => !apiSlugs.has(p.slug))
-    return [...normalized, ...filteredMock].slice(0, 3)
-  } catch (error) {
+    return [...normalized, ...filteredMock]
+      .sort((left, right) => Date.parse(right.publishedDate) - Date.parse(left.publishedDate))
+      .slice(0, 3)
+  } catch {
     return mockBlogPosts.slice(0, 3)
   }
 }
@@ -167,9 +182,12 @@ async function getLatestBlogPosts(): Promise<BlogPost[]> {
 async function getPartnerHotels(): Promise<PartnerHotel[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/partner-hotels`, { cache: 'no-store' })
+    const res = await fetch(`${apiUrl}/partner-hotels`, {
+      next: { revalidate: HOMEPAGE_REVALIDATE_SECONDS },
+    })
     if (!res.ok) return []
-    return res.json()
+    const hotels: PartnerHotel[] = await res.json()
+    return [...hotels].sort((left, right) => left.name.localeCompare(right.name))
   } catch {
     return []
   }
@@ -212,24 +230,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* 1. Hero Section */}
       <section className="relative h-[500px] sm:h-[600px] lg:h-[700px]">
 <Image
-  // 1. URL: დავტოვე ზუსტად შენი მითითებული ფორმატი, რომელიც ხელით მუშაობს
-  src="https://res.cloudinary.com/dj7qaif1i/image/upload/c_scale,w_1600,q_60,f_auto/v1771396197/cover_1_secna5.jpg"
+  src={HERO_IMAGE.src}
+  blurDataURL={HERO_IMAGE.lowResSrc}
+  placeholder="blur"
   alt={t('hero.imageAlt')}
-  
-  // 2. SEO & Performance: ეს ორი აუცილებელია Hero სურათისთვის
-  priority={true} // Next.js-ს ეუბნება, რომ ეს პირველივე წამს ჩატვირთოს
-  fetchPriority="high" // ბრაუზერს ეუბნება, რომ ეს პრიორიტეტული ფაილია
-  
-  // 3. Layout: fill და object-cover უზრუნველყოფს, რომ სურათი სრულად ფარავდეს კონტეინერს
+  priority
+  fetchPriority="high"
   fill
   className="object-cover"
-
-  // 4. ✅ გადამწყვეტი ცვლილება Coolify/Docker-ისთვის:
-  // sizes="100vw" მაინც აიძულებს Next.js-ს, რომ თავისი ოპტიმიზაცია გამოიყენოს.
-  // sizes="1600px" და unoptimized={true} ერთობლივად აიძულებს ბრაუზერს,
-  // რომ პირდაპირ Cloudinary-ს ლინკიდან წამოიღოს სურათი.
-  sizes="100vw" 
-  unoptimized={true} 
+  sizes="100vw"
 />
   <div className="absolute inset-0 bg-black/20" />
   <div className="absolute inset-0 flex items-center justify-center">

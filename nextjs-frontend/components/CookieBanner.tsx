@@ -3,13 +3,44 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
+
+const GA_MEASUREMENT_ID = 'G-ZNGHZ2EQ9P'
+
+function loadAnalyticsScript() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  if ((window as any).gaLoaded) {
+    return
+  }
+
+  ;(window as any).gaLoaded = true
+
+  if (!document.querySelector(`script[data-ga-id="${GA_MEASUREMENT_ID}"]`)) {
+    const script = document.createElement('script')
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`
+    script.async = true
+    script.dataset.gaId = GA_MEASUREMENT_ID
+    document.head.appendChild(script)
+  }
+
+  ;(window as any).dataLayer = (window as any).dataLayer || []
+  function gtag(...args: any[]) {
+    ;(window as any).dataLayer.push(args)
+  }
+
+  ;(window as any).gtag = gtag
+  gtag('js', new Date())
+}
 
 export default function CookieBanner() {
   const [showBanner, setShowBanner] = useState(false)
   const [showPreferences, setShowPreferences] = useState(false)
   const t = useTranslations('cookies')
   const params = useParams()
+  const pathname = usePathname()
   const locale = (params.locale as string) || 'ka'
 
   const [preferences, setPreferences] = useState({
@@ -28,6 +59,21 @@ export default function CookieBanner() {
       loadScripts(saved)
     }
   }, [])
+
+  useEffect(() => {
+    if (!preferences.analytics || typeof window === 'undefined') {
+      return
+    }
+
+    const gtag = (window as any).gtag
+    if (typeof gtag !== 'function') {
+      return
+    }
+
+    gtag('config', GA_MEASUREMENT_ID, {
+      page_path: pathname,
+    })
+  }, [pathname, preferences.analytics])
 
   const acceptAll = () => {
     const allAccepted = {
@@ -59,20 +105,14 @@ export default function CookieBanner() {
   }
 
   const loadScripts = (prefs: typeof preferences) => {
-  // Google Analytics
   if (prefs.analytics && typeof window !== 'undefined') {
-    const script = document.createElement('script')
-    script.src = `https://www.googletagmanager.com/gtag/js?id=G-ZNGHZ2EQ9P`
-    script.async = true
-    document.head.appendChild(script)
-
-    // Fix TypeScript error
-    ;(window as any).dataLayer = (window as any).dataLayer || []
-    function gtag(...args: any[]) {
-      ;(window as any).dataLayer.push(args)
+    loadAnalyticsScript()
+    const gtag = (window as any).gtag
+    if (typeof gtag === 'function') {
+      gtag('config', GA_MEASUREMENT_ID, {
+        page_path: window.location.pathname,
+      })
     }
-    gtag('js', new Date())
-    gtag('config', 'G-ZNGHZ2EQ9P')
   }
 
   // Facebook Pixel

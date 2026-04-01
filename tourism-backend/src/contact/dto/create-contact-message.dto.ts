@@ -16,7 +16,7 @@ export class CreateContactMessageDto {
   phone?: string;
 
   @IsString()
-  @MinLength(10)
+  @MinLength(2)
   @MaxLength(5000)
   message: string;
 

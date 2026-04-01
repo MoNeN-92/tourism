@@ -173,7 +173,9 @@
       "errorTitle": "Error!",
       "errorMessage": "Failed to send message. Please try again.",
       "required": "This field is required",
-      "invalidEmail": "Please enter a valid email"
+      "invalidEmail": "Please enter a valid email",
+      "invalidName": "Please enter at least 2 characters",
+      "invalidMessage": "Please enter at least 2 characters"
     },
     "info": {
       "title": "Contact Information",

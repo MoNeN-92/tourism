@@ -32,6 +32,7 @@ export default function ContactPage() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [submitError, setSubmitError] = useState('')
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -40,13 +41,24 @@ export default function ContactPage() {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
-    if (!formData.name.trim()) newErrors.name = t('form.required')
+    const trimmedName = formData.name.trim()
+    const trimmedMessage = formData.message.trim()
+
+    if (!trimmedName) {
+      newErrors.name = t('form.required')
+    } else if (trimmedName.length < 2) {
+      newErrors.name = t('form.invalidName')
+    }
     if (!formData.email.trim()) {
       newErrors.email = t('form.required')
     } else if (!validateEmail(formData.email)) {
       newErrors.email = t('form.invalidEmail')
     }
-    if (!formData.message.trim()) newErrors.message = t('form.required')
+    if (!trimmedMessage) {
+      newErrors.message = t('form.required')
+    } else if (trimmedMessage.length < 2) {
+      newErrors.message = t('form.invalidMessage')
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -65,25 +77,38 @@ export default function ContactPage() {
 
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setSubmitError('')
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        message: formData.message.trim(),
+        website: formData.website,
+      }
       const response = await fetch(`${apiUrl}/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
-        throw new Error('Contact request failed')
+        const errorData = await response.json().catch(() => null)
+        const backendMessage = Array.isArray(errorData?.message)
+          ? errorData.message[0]
+          : errorData?.message
+        throw new Error(backendMessage || 'Contact request failed')
       }
 
       setSubmitStatus('success')
       setFormData({ name: '', email: '', phone: '', message: '', website: '' })
     } catch (error) {
       console.error('Contact form error:', error)
+      setSubmitError(error instanceof Error ? error.message : t('form.errorMessage'))
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
@@ -220,7 +245,7 @@ export default function ContactPage() {
                 {submitStatus === 'error' && (
                   <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
                     <p className="font-medium">{t('form.errorTitle')}</p>
-                    <p className="text-sm mt-1">{t('form.errorMessage')}</p>
+                    <p className="text-sm mt-1">{submitError || t('form.errorMessage')}</p>
                   </div>
                 )}
               </form>

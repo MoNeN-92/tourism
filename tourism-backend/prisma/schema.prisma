@@ -50,6 +50,27 @@ model Tour {
   location_ka    String?
   location_en    String?
   location_ru    String?
+  itinerary_ka   String?
+  itinerary_en   String?
+  itinerary_ru   String?
+  highlights_ka  String?
+  highlights_en  String?
+  highlights_ru  String?
+  idealFor_ka    String?
+  idealFor_en    String?
+  idealFor_ru    String?
+  includes_ka    String?
+  includes_en    String?
+  includes_ru    String?
+  excludes_ka    String?
+  excludes_en    String?
+  excludes_ru    String?
+  pickup_ka      String?
+  pickup_en      String?
+  pickup_ru      String?
+  bestSeason_ka  String?
+  bestSeason_en  String?
+  bestSeason_ru  String?
 
   // Legacy fields
   title       String @default("")

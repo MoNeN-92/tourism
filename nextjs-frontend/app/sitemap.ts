@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { defaultLocale, locales } from '@/i18n/config'
+import { COMMERCIAL_PAGE_SLUGS } from '@/lib/commercial-pages'
 import { SITE_URL, localePath } from '@/lib/seo'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -9,7 +10,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   )
 
   const now = new Date()
-  const publicPaths = ['', '/tours', '/about', '/blog', '/contact', '/faq', '/partner-hotels', '/privacy', '/terms']
+  const publicPaths = [
+    '',
+    '/tours',
+    '/about',
+    '/blog',
+    '/contact',
+    '/faq',
+    '/partner-hotels',
+    '/privacy',
+    '/terms',
+    ...COMMERCIAL_PAGE_SLUGS.map((slug) => `/${slug}`),
+  ]
 
   const staticRoutes: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     publicPaths.map((path) => {

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
 import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
+import { getCommercialPageSummaries } from '@/lib/commercial-pages'
 import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
 import { buildTravelAgencySchema } from '@/lib/structured-data'
@@ -132,6 +133,36 @@ function formatDuration(duration: string, locale: string): string {
   return value
 }
 
+function getCommercialSectionCopy(locale: string) {
+  if (locale === 'ka') {
+    return {
+      title: 'დაგეგმე მოგზაურობა ინტერესის მიხედვით',
+      description:
+        'აღმოაჩინე საქართველოს ყველაზე მნიშვნელოვანი სამოგზაურო მიმართულებები: კერძო ტურები, ღვინის მარშრუტები და გამორჩეული მთის გამოცდილებები.',
+      cta: 'დაგეგმე Vibe Georgia-სთან',
+      explore: 'გვერდის ნახვა',
+    }
+  }
+
+  if (locale === 'ru') {
+    return {
+      title: 'Планируйте поездку по стилю путешествия',
+      description:
+        'Откройте самые важные туристические направления Грузии: частные туры, винные маршруты и знаковые горные впечатления.',
+      cta: 'Планировать с Vibe Georgia',
+      explore: 'Открыть страницу',
+    }
+  }
+
+  return {
+    title: 'Plan Your Trip by Travel Style',
+    description:
+      'Explore the most commercially important travel themes for Georgia, from private touring and wine routes to signature mountain destinations.',
+    cta: 'Plan with Vibe Georgia',
+    explore: 'Explore page',
+  }
+}
+
 // --- Data Fetching ---
 async function getFeaturedTours(): Promise<Tour[]> {
   try {
@@ -224,6 +255,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getLatestBlogPosts(),
     getPartnerHotels(),
   ])
+  const commercialPages = getCommercialPageSummaries(locale as 'ka' | 'en' | 'ru')
+  const commercialSection = getCommercialSectionCopy(locale)
 
   return (
     <>
@@ -309,6 +342,42 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <h3 className="text-xl font-bold mb-3 text-gray-900">{item.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-[#fffaf1]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl sm:text-5xl font-bold text-[#101820]">
+                {commercialSection.title}
+              </h2>
+              <p className="mt-3 text-[#556070]">
+                {commercialSection.description}
+              </p>
+            </div>
+            <Link
+              href={`/${locale}/contact`}
+              className="inline-flex min-h-[44px] items-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+            >
+              {commercialSection.cta}
+            </Link>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {commercialPages.map((page) => (
+              <article key={page.slug} className="rounded-[28px] border border-[#e5dfd4] bg-white p-6 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <h3 className="text-2xl font-semibold text-[#101820]">{page.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-[#576273]">{page.description}</p>
+                <Link
+                  href={`/${locale}/${page.slug}`}
+                  className="mt-6 inline-flex min-h-[44px] items-center rounded-full bg-[#101820] px-5 text-sm font-medium text-white transition-colors hover:bg-[#0f6b66]"
+                >
+                  {commercialSection.explore}
+                </Link>
+              </article>
             ))}
           </div>
         </div>

@@ -2,14 +2,52 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import TourDetailClient, { type TourDetail } from './TourDetailClient'
+import { mockBlogPosts, type BlogPost as MockBlogPost } from '@/lib/mockBlogData'
 import { absoluteUrl, buildCanonicalUrl, localizedAlternates, openGraphLocale, localePath } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import JsonLd from '@/components/JsonLd'
 import { buildBreadcrumbSchema, buildTouristTripSchema } from '@/lib/structured-data'
 
+type RelatedTour = {
+  slug: string
+  title: string
+  description: string
+  duration: string
+  imageUrl: string | null
+}
+
+type ApiBlogPost = {
+  id: string
+  slug: string
+  title_ka: string
+  title_en: string
+  title_ru: string
+  excerpt_ka: string
+  excerpt_en: string
+  excerpt_ru: string
+  coverImage: string
+}
+
+type RelatedPost = {
+  slug: string
+  title: string
+  excerpt: string
+  imageUrl: string | null
+}
+
 function getLocalizedField(
   tour: TourDetail,
-  field: 'title' | 'description' | 'location',
+  field:
+    | 'title'
+    | 'description'
+    | 'location'
+    | 'itinerary'
+    | 'highlights'
+    | 'idealFor'
+    | 'includes'
+    | 'excludes'
+    | 'pickup'
+    | 'bestSeason',
   locale: string,
 ): string {
   const fieldMap: Record<string, keyof TourDetail> = {
@@ -39,6 +77,126 @@ async function getTour(slug: string): Promise<TourDetail | null> {
   } catch {
     return null
   }
+}
+
+async function getAllTours(): Promise<TourDetail[]> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const response = await fetch(`${apiUrl}/tours`, {
+      next: { revalidate: 300 },
+    })
+
+    if (!response.ok) return []
+    return response.json()
+  } catch {
+    return []
+  }
+}
+
+async function getAllBlogPosts(): Promise<Array<ApiBlogPost | MockBlogPost>> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const response = await fetch(`${apiUrl}/blog`, {
+      next: { revalidate: 300 },
+    })
+
+    if (!response.ok) return mockBlogPosts
+
+    const posts: ApiBlogPost[] = await response.json()
+    const apiSlugs = new Set(posts.map((post) => post.slug))
+    const fallbackPosts = mockBlogPosts.filter((post) => !apiSlugs.has(post.slug))
+
+    return [...posts, ...fallbackPosts]
+  } catch {
+    return mockBlogPosts
+  }
+}
+
+function scoreContentMatch(haystack: string, needles: string[]): number {
+  const normalized = haystack.toLowerCase()
+  let score = 0
+
+  for (const needle of needles) {
+    const token = needle.trim().toLowerCase()
+    if (!token || token.length < 3) continue
+    if (normalized.includes(token)) score += 1
+  }
+
+  return score
+}
+
+function buildRelatedTours(currentTour: TourDetail, tours: TourDetail[], locale: string): RelatedTour[] {
+  const tokens = [
+    getLocalizedField(currentTour, 'title', locale),
+    getLocalizedField(currentTour, 'location', locale),
+    getLocalizedField(currentTour, 'description', locale),
+  ]
+    .join(' ')
+    .split(/[\s,.-]+/)
+
+  return tours
+    .filter((tour) => tour.slug !== currentTour.slug)
+    .map((tour) => ({
+      tour,
+      score: scoreContentMatch(
+        [
+          getLocalizedField(tour, 'title', locale),
+          getLocalizedField(tour, 'location', locale),
+          getLocalizedField(tour, 'description', locale),
+        ].join(' '),
+        tokens,
+      ),
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3)
+    .map(({ tour }) => ({
+      slug: tour.slug,
+      title: getLocalizedField(tour, 'title', locale),
+      description: getLocalizedField(tour, 'description', locale).slice(0, 120),
+      duration: tour.duration,
+      imageUrl: tour.images[0]?.url || null,
+    }))
+}
+
+function getLocalizedBlogField(
+  post: ApiBlogPost | MockBlogPost,
+  field: 'title' | 'excerpt',
+  locale: string,
+): string {
+  const key = `${field}_${locale}` as keyof typeof post
+  const fallbackKey = `${field}_ka` as keyof typeof post
+  return (post[key] as string) || (post[fallbackKey] as string) || ''
+}
+
+function buildRelatedPosts(
+  currentTour: TourDetail,
+  posts: Array<ApiBlogPost | MockBlogPost>,
+  locale: string,
+): RelatedPost[] {
+  const tokens = [
+    getLocalizedField(currentTour, 'title', locale),
+    getLocalizedField(currentTour, 'location', locale),
+    getLocalizedField(currentTour, 'description', locale),
+  ]
+    .join(' ')
+    .split(/[\s,.-]+/)
+
+  return posts
+    .map((post) => ({
+      post,
+      score: scoreContentMatch(
+        `${getLocalizedBlogField(post, 'title', locale)} ${getLocalizedBlogField(post, 'excerpt', locale)}`,
+        tokens,
+      ),
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3)
+    .map(({ post }) => ({
+      slug: post.slug,
+      title: getLocalizedBlogField(post, 'title', locale),
+      excerpt: getLocalizedBlogField(post, 'excerpt', locale).slice(0, 140),
+      imageUrl: post.coverImage || null,
+    }))
 }
 
 export async function generateMetadata({
@@ -105,9 +263,12 @@ export default async function TourPage({
   const { locale, slug } = await params
   const nav = await getTranslations({ locale, namespace: 'nav' })
   const toursT = await getTranslations({ locale, namespace: 'tours' })
-  const tour = await getTour(slug)
+  const [tour, tours, posts] = await Promise.all([getTour(slug), getAllTours(), getAllBlogPosts()])
 
   if (!tour) notFound()
+
+  const relatedTours = buildRelatedTours(tour, tours, locale)
+  const relatedPosts = buildRelatedPosts(tour, posts, locale)
 
   return (
     <>
@@ -119,7 +280,10 @@ export default async function TourPage({
             name: getLocalizedField(tour, 'title', locale),
             description: getLocalizedField(tour, 'description', locale),
             duration: tour.duration,
-            itinerary: getLocalizedField(tour, 'location', locale) || null,
+            itinerary:
+              getLocalizedField(tour, 'itinerary', locale) ||
+              getLocalizedField(tour, 'location', locale) ||
+              null,
             image: tour.images[0]?.url ? buildCloudinaryUrl(tour.images[0].url) : null,
           }),
           buildBreadcrumbSchema([
@@ -129,7 +293,7 @@ export default async function TourPage({
           ]),
         ]}
       />
-      <TourDetailClient locale={locale} tour={tour} />
+      <TourDetailClient locale={locale} tour={tour} relatedTours={relatedTours} relatedPosts={relatedPosts} />
     </>
   )
 }

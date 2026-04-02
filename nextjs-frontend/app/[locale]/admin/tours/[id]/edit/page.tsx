@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
+import TourLocalizedFields from '@/components/admin/TourLocalizedFields'
 
 interface TourImage {
   id: string
@@ -27,6 +28,27 @@ export default function EditTourPage() {
     location_ka: '',
     location_en: '',
     location_ru: '',
+    itinerary_ka: '',
+    itinerary_en: '',
+    itinerary_ru: '',
+    highlights_ka: '',
+    highlights_en: '',
+    highlights_ru: '',
+    idealFor_ka: '',
+    idealFor_en: '',
+    idealFor_ru: '',
+    includes_ka: '',
+    includes_en: '',
+    includes_ru: '',
+    excludes_ka: '',
+    excludes_en: '',
+    excludes_ru: '',
+    pickup_ka: '',
+    pickup_en: '',
+    pickup_ru: '',
+    bestSeason_ka: '',
+    bestSeason_en: '',
+    bestSeason_ru: '',
     duration: '',
     status: true,
   })
@@ -62,6 +84,27 @@ export default function EditTourPage() {
         location_ka: tour.location_ka || '',
         location_en: tour.location_en || '',
         location_ru: tour.location_ru || '',
+        itinerary_ka: tour.itinerary_ka || '',
+        itinerary_en: tour.itinerary_en || '',
+        itinerary_ru: tour.itinerary_ru || '',
+        highlights_ka: tour.highlights_ka || '',
+        highlights_en: tour.highlights_en || '',
+        highlights_ru: tour.highlights_ru || '',
+        idealFor_ka: tour.idealFor_ka || '',
+        idealFor_en: tour.idealFor_en || '',
+        idealFor_ru: tour.idealFor_ru || '',
+        includes_ka: tour.includes_ka || '',
+        includes_en: tour.includes_en || '',
+        includes_ru: tour.includes_ru || '',
+        excludes_ka: tour.excludes_ka || '',
+        excludes_en: tour.excludes_en || '',
+        excludes_ru: tour.excludes_ru || '',
+        pickup_ka: tour.pickup_ka || '',
+        pickup_en: tour.pickup_en || '',
+        pickup_ru: tour.pickup_ru || '',
+        bestSeason_ka: tour.bestSeason_ka || '',
+        bestSeason_en: tour.bestSeason_en || '',
+        bestSeason_ru: tour.bestSeason_ru || '',
         duration: tour.duration || '',
         status: tour.status ?? true,
       })
@@ -198,71 +241,9 @@ export default function EditTourPage() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-8">
           
-          {/* Georgian Section */}
-          <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">🇬🇪 Georgian (ქართული)</h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="title_ka" className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                <input type="text" id="title_ka" name="title_ka" value={formData.title_ka} onChange={handleChange} required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="description_ka" className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                <textarea id="description_ka" name="description_ka" value={formData.description_ka} onChange={handleChange} required rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="location_ka" className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <input type="text" id="location_ka" name="location_ka" value={formData.location_ka} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* English Section */}
-          <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">🇬🇧 English</h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="title_en" className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                <input type="text" id="title_en" name="title_en" value={formData.title_en} onChange={handleChange} required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="description_en" className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                <textarea id="description_en" name="description_en" value={formData.description_en} onChange={handleChange} required rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="location_en" className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <input type="text" id="location_en" name="location_en" value={formData.location_en} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* Russian Section */}
-          <div className="border-b border-gray-200 pb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">🇷🇺 Russian (Русский)</h2>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="title_ru" className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                <input type="text" id="title_ru" name="title_ru" value={formData.title_ru} onChange={handleChange} required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="description_ru" className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                <textarea id="description_ru" name="description_ru" value={formData.description_ru} onChange={handleChange} required rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-              <div>
-                <label htmlFor="location_ru" className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <input type="text" id="location_ru" name="location_ru" value={formData.location_ru} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-              </div>
-            </div>
-          </div>
+          <TourLocalizedFields localeKey="ka" formData={formData} onChange={handleChange} />
+          <TourLocalizedFields localeKey="en" formData={formData} onChange={handleChange} />
+          <TourLocalizedFields localeKey="ru" formData={formData} onChange={handleChange} />
 
           {/* Common Fields */}
           <div className="space-y-4">

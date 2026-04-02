@@ -8,7 +8,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/seo'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import CookieBanner from '@/components/CookieBanner'
+import CookieBannerMount from '@/components/CookieBannerMount'
 
 type HeaderAuthUser = {
   id?: string
@@ -23,11 +23,13 @@ async function getInitialHeaderAuth(): Promise<{
   user: HeaderAuthUser | null
 }> {
   const cookieStore = await cookies()
-  const cookieHeader = cookieStore.toString()
+  const hasAuthCookie = cookieStore.has('token') || cookieStore.has('user_token')
 
-  if (!cookieHeader) {
+  if (!hasAuthCookie) {
     return { mode: 'guest', user: null }
   }
+
+  const cookieHeader = cookieStore.toString()
 
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -143,10 +145,10 @@ export default async function LocaleLayout({
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen flex flex-col">
-            <Header initialAuthMode={headerAuth.mode} initialAuthUser={headerAuth.user} />
+            <Header locale={locale} initialAuthMode={headerAuth.mode} initialAuthUser={headerAuth.user} />
             <main className="flex-1">{children}</main>
-            <Footer />
-            <CookieBanner />
+            <Footer locale={locale} />
+            <CookieBannerMount />
           </div>
         </NextIntlClientProvider>
       </body>

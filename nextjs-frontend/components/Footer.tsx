@@ -1,15 +1,10 @@
-'use client'
-
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
-import { useParams } from 'next/navigation'
-import { Mail, Phone, Facebook, Instagram, Send } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
+import { Mail, Phone, Facebook } from 'lucide-react'
 
-export default function Footer() {
-  const t = useTranslations('footer')
-  const params = useParams()
-  const locale = (params.locale as string) || 'ka'
-  
+export default async function Footer({ locale }: { locale: string }) {
+  const t = await getTranslations('footer')
+
   return (
     <footer className="bg-gray-900 text-gray-300 mt-auto border-t border-gray-800">
       <div className="container mx-auto px-4 py-12">

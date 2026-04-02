@@ -11,7 +11,7 @@ export default function imageLoader({
 }) {
   // Cloudinary სურათები - width და quality transformation ვამატებთ
   if (src.includes('res.cloudinary.com')) {
-    const q = quality || 75
+    const q = quality ? `q_${quality}` : 'q_auto:eco'
 
     // თუ უკვე transformation აქვს (f_auto,q_auto ან blur placeholder)
     // ამოვიღოთ ძველი transformation და ახალი ჩავსვათ
@@ -25,11 +25,11 @@ export default function imageLoader({
       if (versionMatch) {
         const publicPath = versionMatch[2] || afterUpload
         const baseUrl = src.slice(0, uploadIndex + 8)
-        return `${baseUrl}w_${width},q_${q},f_auto,c_limit/${publicPath}`
+        return `${baseUrl}w_${width},${q},f_auto,dpr_auto,c_limit/${publicPath}`
       }
 
       // fallback - transformation-ს ვამატებთ პირდაპირ
-      return src.replace('/upload/', `/upload/w_${width},q_${q},f_auto,c_limit/`)
+      return src.replace('/upload/', `/upload/w_${width},${q},f_auto,dpr_auto,c_limit/`)
     }
 
     return src

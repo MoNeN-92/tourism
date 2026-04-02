@@ -219,9 +219,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params
   const t = await getTranslations('home')
 
-  const featuredTours = await getFeaturedTours()
-  const latestPosts = await getLatestBlogPosts()
-  const partnerHotels = await getPartnerHotels()
+  const [featuredTours, latestPosts, partnerHotels] = await Promise.all([
+    getFeaturedTours(),
+    getLatestBlogPosts(),
+    getPartnerHotels(),
+  ])
 
   return (
     <>
@@ -239,6 +241,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   fill
   className="object-cover"
   sizes="100vw"
+  quality={70}
 />
   <div className="absolute inset-0 bg-black/20" />
   <div className="absolute inset-0 flex items-center justify-center">
@@ -271,7 +274,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       src={buildCloudinaryUrl(tour.images[0]?.url || '')}
                       alt={getLocalizedField(tour, 'title', locale)}
                       fill
-                      sizes="(max-width: 768px) 100vw, 25vw"
+                      sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw"
+                      quality={60}
                       className="object-cover group-hover:scale-105 transition-transform"
                     />
                   </div>
@@ -339,7 +343,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         src={buildCloudinaryUrl(hotel.coverImageUrl)}
                         alt={hotel.name}
                         fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
+                        sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
+                        quality={60}
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     </div>
@@ -393,7 +398,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   src={post.coverImage || '/fallback-image.jpg'}
                   alt={getLocalizedField(post, 'title', locale)}
                   fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
+                  sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                  quality={60}
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
               </div>

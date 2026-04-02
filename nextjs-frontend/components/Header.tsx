@@ -2,7 +2,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useParams, usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { clearAdminAccessToken } from '@/lib/auth-token'
@@ -18,9 +18,11 @@ interface AuthUser {
 type AuthMode = 'guest' | 'user' | 'admin'
 
 export default function Header({
+  locale,
   initialAuthMode,
   initialAuthUser,
 }: {
+  locale: string
   initialAuthMode: AuthMode
   initialAuthUser: AuthUser | null
 }) {
@@ -29,12 +31,9 @@ export default function Header({
   const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode)
   const [authUser, setAuthUser] = useState<AuthUser | null>(initialAuthUser)
   const langDropdownRef = useRef<HTMLDivElement>(null)
-  const params = useParams()
   const pathname = usePathname()
   const router = useRouter()
   const t = useTranslations('nav')
-
-  const locale = params.locale as string
 
   const locales = [
     { code: 'ka', name: 'KA', flag: '🇬🇪' },

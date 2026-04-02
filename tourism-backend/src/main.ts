@@ -7,6 +7,11 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.use((req, res, next) => {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    next();
+  });
+
   const configuredCorsOrigins =
     process.env.CORS_ORIGINS?.split(',')
       .map((origin) => origin.trim())

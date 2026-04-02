@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, NotFoundException, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -12,7 +12,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    throw new NotFoundException('Not Found');
   }
 
   @Get('health')

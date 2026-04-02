@@ -67,7 +67,12 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [actionId, setActionId] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
+  const [resettingPasswordUser, setResettingPasswordUser] = useState<UserItem | null>(null)
   const [creatingUser, setCreatingUser] = useState(false)
+  const [passwordResetForm, setPasswordResetForm] = useState({
+    password: '',
+    confirmPassword: '',
+  })
   const [createForm, setCreateForm] = useState<CreateUserForm>({
     email: '',
     password: '',
@@ -138,6 +143,45 @@ export default function AdminUsersPage() {
       setEditingUser(null)
     } catch (requestError: any) {
       setError(requestError?.response?.data?.message || t('failedEdit'))
+    } finally {
+      setActionId(null)
+    }
+  }
+
+  const openPasswordResetDialog = (item: UserItem) => {
+    setPasswordResetForm({
+      password: '',
+      confirmPassword: '',
+    })
+    setResettingPasswordUser(item)
+  }
+
+  const handleAdminPasswordReset = async () => {
+    if (!resettingPasswordUser) return
+
+    if (passwordResetForm.password.length < 6) {
+      setError(t('passwordTooShort'))
+      return
+    }
+
+    if (passwordResetForm.password !== passwordResetForm.confirmPassword) {
+      setError(t('passwordMismatch'))
+      return
+    }
+
+    try {
+      setActionId(`reset-password-${resettingPasswordUser.id}`)
+      await api.patch(`/admin/users/${resettingPasswordUser.id}/password`, {
+        password: passwordResetForm.password,
+      })
+      setResettingPasswordUser(null)
+      setPasswordResetForm({
+        password: '',
+        confirmPassword: '',
+      })
+      setError('')
+    } catch (requestError: any) {
+      setError(requestError?.response?.data?.message || t('failedPasswordReset'))
     } finally {
       setActionId(null)
     }
@@ -283,17 +327,24 @@ export default function AdminUsersPage() {
                       <div className="inline-flex gap-2">
                         <button
                           onClick={() => handleToggleActive(item)}
-                          disabled={actionId === item.id}
+                          disabled={actionId === item.id || actionId === `reset-password-${item.id}`}
                           className="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-60"
                         >
                           {item.isActive ? t('deactivate') : t('activate')}
                         </button>
                         <button
                           onClick={() => openEditDialog(item)}
-                          disabled={actionId === item.id}
+                          disabled={actionId === item.id || actionId === `reset-password-${item.id}`}
                           className="px-3 py-1.5 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                         >
                           {t('edit')}
+                        </button>
+                        <button
+                          onClick={() => openPasswordResetDialog(item)}
+                          disabled={actionId === item.id || actionId === `reset-password-${item.id}`}
+                          className="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                        >
+                          {t('resetPassword')}
                         </button>
                       </div>
                     </td>
@@ -386,6 +437,58 @@ export default function AdminUsersPage() {
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {actionId === editingUser.id ? t('saving') : t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resettingPasswordUser && (
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900">{t('resetPasswordTitle')}</h2>
+            <p className="text-sm text-gray-600 mt-1">{resettingPasswordUser.email}</p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptPassword')}</label>
+                <input
+                  type="password"
+                  minLength={6}
+                  value={passwordResetForm.password}
+                  onChange={(event) =>
+                    setPasswordResetForm((prev) => ({ ...prev, password: event.target.value }))
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('promptConfirmPassword')}</label>
+                <input
+                  type="password"
+                  minLength={6}
+                  value={passwordResetForm.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordResetForm((prev) => ({ ...prev, confirmPassword: event.target.value }))
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setResettingPasswordUser(null)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {t('close')}
+              </button>
+              <button
+                onClick={handleAdminPasswordReset}
+                disabled={actionId === `reset-password-${resettingPasswordUser.id}`}
+                className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {actionId === `reset-password-${resettingPasswordUser.id}` ? t('saving') : t('resetPassword')}
               </button>
             </div>
           </div>

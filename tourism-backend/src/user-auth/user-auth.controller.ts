@@ -12,6 +12,8 @@ import type { Response } from 'express';
 import { UserAuthService } from './user-auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserJwtAuthGuard } from './guards/user-jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 
@@ -70,6 +72,18 @@ export class UserAuthController {
     response.clearCookie('token', this.getAuthCookieBaseOptions());
     response.clearCookie('user_token', this.getAuthCookieBaseOptions());
     return { message: 'Logged out successfully' };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.userAuthService.forgotPassword(dto.email, dto.locale ?? 'en');
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.userAuthService.resetPassword(dto.token, dto.password);
   }
 
   @Get('me')

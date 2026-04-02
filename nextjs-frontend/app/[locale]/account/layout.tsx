@@ -30,7 +30,11 @@ export default function AccountLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
 
-  const isAuthPage = pathname.endsWith('/account/login') || pathname.endsWith('/account/register')
+  const isAuthPage =
+    pathname.endsWith('/account/login') ||
+    pathname.endsWith('/account/register') ||
+    pathname.endsWith('/account/forgot-password') ||
+    pathname.endsWith('/account/reset-password')
 
   useEffect(() => {
     let cancelled = false

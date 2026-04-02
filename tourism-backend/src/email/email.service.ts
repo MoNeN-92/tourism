@@ -230,4 +230,25 @@ export class EmailService {
       payload: params,
     });
   }
+
+  sendPasswordResetEmail(params: {
+    recipientEmail: string;
+    name: string;
+    resetUrl: string;
+    expiresInMinutes: number;
+  }) {
+    return this.sendTemplate({
+      recipientEmail: params.recipientEmail,
+      template: 'password-reset',
+      subject: 'Reset your VibeGeorgia password',
+      text:
+        `Hello ${params.name},\n\n` +
+        'We received a request to reset your VibeGeorgia password.\n\n' +
+        `Reset link: ${params.resetUrl}\n\n` +
+        `This link expires in ${params.expiresInMinutes} minutes.\n` +
+        'If you did not request a password reset, you can safely ignore this email.\n\n' +
+        'Best regards,\nVibeGeorgia',
+      payload: params,
+    });
+  }
 }

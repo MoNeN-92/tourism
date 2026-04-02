@@ -2,60 +2,67 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
-type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
-
-export default function AccountLoginPage() {
+export default function ResetPasswordPage() {
   const params = useParams()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const locale = params.locale as string
-  const t = useTranslations('account.login')
+  const token = searchParams.get('token') || ''
+  const t = useTranslations('account.resetPassword')
 
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  const customerNext = searchParams.get('next') || `/${locale}/account/notifications`
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setError('')
+    setSuccess('')
+
+    if (!token) {
+      setError(t('missingToken'))
+      return
+    }
+
+    if (password.length < 6) {
+      setError(t('passwordTooShort'))
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError(t('passwordMismatch'))
+      return
+    }
+
+    setLoading(true)
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
-      const response = await fetch(`${apiUrl}/users/auth/login`, {
+      const response = await fetch(`${apiUrl}/users/auth/reset-password`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          token,
+          password,
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data?.message || t('loginFailed'))
+        setError(data?.message || t('requestFailed'))
         return
       }
 
-      const role = (data?.user?.role as UserRole | undefined) || 'USER'
-
-      if (role === 'ADMIN') {
-        router.replace(`/${locale}/admin`)
-      } else if (role === 'MODERATOR') {
-        router.replace(`/${locale}/admin/bookings`)
-      } else {
-        router.replace(customerNext)
-      }
-
-      router.refresh()
+      setSuccess(t('successMessage'))
+      setPassword('')
+      setConfirmPassword('')
     } catch {
       setError(t('requestFailed'))
     } finally {
@@ -71,54 +78,44 @@ export default function AccountLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('password')}</label>
             <input
-              type="email"
+              type="password"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              minLength={6}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('password')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('confirmPassword')}</label>
             <input
               type="password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
               className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {success && <p className="text-sm text-green-700">{success}</p>}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {loading ? t('signingIn') : t('signIn')}
+            {loading ? t('saving') : t('submit')}
           </button>
         </form>
 
-        <div className="mt-4 text-right">
-          <Link
-            href={`/${locale}/account/forgot-password`}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            {t('forgotPassword')}
-          </Link>
-        </div>
-
         <p className="text-sm text-gray-600 mt-5">
-          {t('noAccount')}{' '}
-          <Link
-            href={`/${locale}/account/register?next=${encodeURIComponent(customerNext)}`}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            {t('createOne')}
+          <Link href={`/${locale}/account/login`} className="text-blue-600 hover:text-blue-700">
+            {t('backToLogin')}
           </Link>
         </p>
       </div>

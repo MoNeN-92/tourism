@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { trackMetaPixelEvent } from '@/lib/tracking'
 
 interface FormData {
   name: string
@@ -109,6 +110,10 @@ export default function ContactPageClient() {
       }
 
       setSubmitStatus('success')
+      trackMetaPixelEvent('Lead', {
+        content_name: 'Contact Form',
+        content_category: 'Contact',
+      })
       setFormData({ name: '', email: '', phone: '', message: '', website: '' })
     } catch (error) {
       console.error('Contact form error:', error)

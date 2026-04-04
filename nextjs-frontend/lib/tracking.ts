@@ -103,3 +103,19 @@ export function trackMetaPixelPageView() {
 
   window.fbq('track', 'PageView')
 }
+
+export function trackMetaPixelEvent(
+  eventName: string,
+  parameters?: Record<string, string | number | boolean>,
+) {
+  if (!isBrowser() || !META_PIXEL_ID || typeof window.fbq !== 'function') {
+    return
+  }
+
+  if (parameters) {
+    window.fbq('track', eventName, parameters)
+    return
+  }
+
+  window.fbq('track', eventName)
+}

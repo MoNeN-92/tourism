@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import SwipeGallery from '@/components/SwipeGallery'
+import { trackMetaPixelEvent } from '@/lib/tracking'
 
 interface TourImage {
   id: string
@@ -208,6 +209,14 @@ export default function TourDetailClient({
   const pickup = getLocalizedField(tour, 'pickup', locale)
   const bestSeason = getLocalizedField(tour, 'bestSeason', locale)
   const labels = getSectionLabels(locale)
+
+  useEffect(() => {
+    trackMetaPixelEvent('ViewContent', {
+      content_ids: tour.id,
+      content_name: title,
+      content_type: 'product',
+    })
+  }, [title, tour.id])
 
   return (
     <>

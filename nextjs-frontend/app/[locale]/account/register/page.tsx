@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { trackMetaPixelEvent } from '@/lib/tracking'
 
 export default function AccountRegisterPage() {
   const params = useParams()
@@ -46,6 +47,10 @@ export default function AccountRegisterPage() {
         return
       }
 
+      trackMetaPixelEvent('CompleteRegistration', {
+        content_name: 'User Account',
+        status: true,
+      })
       router.replace(next)
       router.refresh()
     } catch {

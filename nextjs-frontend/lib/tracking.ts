@@ -60,6 +60,8 @@ export function loadMetaPixelScript() {
   window.metaPixelLoaded = true
 
   if (typeof window.fbq !== 'function') {
+    type FbqInstance = NonNullable<Window['fbq']>
+
     const fbq = function (...args: unknown[]) {
       if (typeof fbq.callMethod === 'function') {
         fbq.callMethod(...args)
@@ -68,7 +70,7 @@ export function loadMetaPixelScript() {
 
       fbq.queue = fbq.queue || []
       fbq.queue.push(args)
-    } as typeof window.fbq
+    } as FbqInstance
 
     fbq.queue = []
     fbq.loaded = true

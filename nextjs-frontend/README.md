@@ -4,7 +4,7 @@
 
 ```bash
 npm install
-cp .env.local.example .env.local # if you keep a template
+cp .env.example .env.local
 ```
 
 Required envs for local run:
@@ -14,6 +14,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_ENABLE_LEGACY_TOKEN=false
 NEXT_PUBLIC_ENABLE_MOCK_CONTENT=false
 NEXT_PUBLIC_MERGE_MOCK_WITH_API=false
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ZNGHZ2EQ9P
+NEXT_PUBLIC_META_PIXEL_ID=your_meta_pixel_id
 ```
 
 ## Run

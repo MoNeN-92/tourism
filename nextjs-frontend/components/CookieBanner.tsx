@@ -3,80 +3,89 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { useParams, usePathname } from 'next/navigation'
+import { useParams, usePathname, useSearchParams } from 'next/navigation'
+import {
+  loadAnalyticsScript,
+  loadMetaPixelScript,
+  trackAnalyticsPageView,
+  trackMetaPixelPageView,
+} from '@/lib/tracking'
 
-const GA_MEASUREMENT_ID = 'G-ZNGHZ2EQ9P'
+type CookiePreferences = {
+  necessary: true
+  analytics: boolean
+  marketing: boolean
+}
 
-function loadAnalyticsScript() {
+function readStoredPreferences(): CookiePreferences | null {
   if (typeof window === 'undefined') {
-    return
+    return null
   }
 
-  if ((window as any).gaLoaded) {
-    return
+  const consent = window.localStorage.getItem('cookie-consent')
+  if (!consent) {
+    return null
   }
 
-  ;(window as any).gaLoaded = true
-
-  if (!document.querySelector(`script[data-ga-id="${GA_MEASUREMENT_ID}"]`)) {
-    const script = document.createElement('script')
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`
-    script.async = true
-    script.dataset.gaId = GA_MEASUREMENT_ID
-    document.head.appendChild(script)
+  try {
+    const saved = JSON.parse(consent) as Partial<CookiePreferences>
+    return {
+      necessary: true,
+      analytics: saved.analytics ?? false,
+      marketing: saved.marketing ?? false,
+    }
+  } catch {
+    return null
   }
-
-  ;(window as any).dataLayer = (window as any).dataLayer || []
-  function gtag(...args: any[]) {
-    ;(window as any).dataLayer.push(args)
-  }
-
-  ;(window as any).gtag = gtag
-  gtag('js', new Date())
 }
 
 export default function CookieBanner() {
-  const [showBanner, setShowBanner] = useState(false)
+  const storedPreferences = readStoredPreferences()
+  const [showBanner, setShowBanner] = useState(() => storedPreferences === null)
   const [showPreferences, setShowPreferences] = useState(false)
   const t = useTranslations('cookies')
   const params = useParams()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const locale = (params.locale as string) || 'ka'
+  const queryString = searchParams.toString()
+  const currentPath = queryString ? `${pathname}?${queryString}` : pathname
 
-  const [preferences, setPreferences] = useState({
-    necessary: true, // Always true
-    analytics: false,
-    marketing: false,
-  })
+  const [preferences, setPreferences] = useState<CookiePreferences>(
+    () =>
+      storedPreferences || {
+        necessary: true,
+        analytics: false,
+        marketing: false,
+      },
+  )
 
   useEffect(() => {
-    const consent = localStorage.getItem('cookie-consent')
-    if (!consent) {
-      setShowBanner(true)
-    } else {
-      const saved = JSON.parse(consent)
-      setPreferences(saved)
-      loadScripts(saved)
+    if (preferences.analytics) {
+      loadAnalyticsScript()
     }
-  }, [])
+
+    if (preferences.marketing) {
+      loadMetaPixelScript()
+    }
+  }, [preferences.analytics, preferences.marketing])
 
   useEffect(() => {
-    if (!preferences.analytics || typeof window === 'undefined') {
+    if (!currentPath) {
       return
     }
 
-    const gtag = (window as any).gtag
-    if (typeof gtag !== 'function') {
-      return
+    if (preferences.analytics) {
+      trackAnalyticsPageView(currentPath)
     }
 
-    gtag('config', GA_MEASUREMENT_ID, {
-      page_path: pathname,
-    })
-  }, [pathname, preferences.analytics])
+    if (preferences.marketing) {
+      trackMetaPixelPageView()
+    }
+  }, [currentPath, preferences.analytics, preferences.marketing])
 
   const acceptAll = () => {
-    const allAccepted = {
+    const allAccepted: CookiePreferences = {
       necessary: true,
       analytics: true,
       marketing: true,
@@ -85,7 +94,7 @@ export default function CookieBanner() {
   }
 
   const acceptNecessary = () => {
-    const necessaryOnly = {
+    const necessaryOnly: CookiePreferences = {
       necessary: true,
       analytics: false,
       marketing: false,
@@ -100,26 +109,9 @@ export default function CookieBanner() {
 
   const saveConsent = (prefs: typeof preferences) => {
     localStorage.setItem('cookie-consent', JSON.stringify(prefs))
+    setPreferences(prefs)
     setShowBanner(false)
-    loadScripts(prefs)
   }
-
-  const loadScripts = (prefs: typeof preferences) => {
-  if (prefs.analytics && typeof window !== 'undefined') {
-    loadAnalyticsScript()
-    const gtag = (window as any).gtag
-    if (typeof gtag === 'function') {
-      gtag('config', GA_MEASUREMENT_ID, {
-        page_path: window.location.pathname,
-      })
-    }
-  }
-
-  // Facebook Pixel
-  if (prefs.marketing && typeof window !== 'undefined') {
-    // Add Facebook Pixel here if needed
-  }
-}
 
   if (!showBanner) return null
 

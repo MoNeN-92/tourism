@@ -9,7 +9,8 @@ type AdminRole = 'ADMIN' | 'MODERATOR'
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always'
+  localePrefix: 'always',
+  alternateLinks: false,
 })
 
 function isLocalizedPath(pathname: string): boolean {

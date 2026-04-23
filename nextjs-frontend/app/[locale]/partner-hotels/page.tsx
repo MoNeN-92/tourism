@@ -116,18 +116,6 @@ export default async function PartnerHotelsPage({
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="mb-10 rounded-[28px] border border-[#d9cfbe] bg-[#fffaf1] p-6 shadow-sm sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8b6f3d]">
-              {t('partnerBadge')}
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#101820]">
-              {trustCopy.partnerTitle}
-            </h2>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-[#576273]">
-              {trustCopy.partnerSubtitle}
-            </p>
-          </div>
-
           {hotels.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {hotels.map((hotel) => (

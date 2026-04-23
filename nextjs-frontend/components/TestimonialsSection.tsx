@@ -19,13 +19,15 @@ export default function TestimonialsSection({
   return (
     <section className="bg-white py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <h2 className="text-3xl font-semibold tracking-tight text-[#101820]">{title}</h2>
-          <p className="mt-4 text-base leading-8 text-[#4f5f70]">{subtitle}</p>
-        </div>
+        {title || subtitle ? (
+          <div className="max-w-3xl">
+            {title ? <h2 className="text-3xl font-semibold tracking-tight text-[#101820]">{title}</h2> : null}
+            {subtitle ? <p className="mt-4 text-base leading-8 text-[#4f5f70]">{subtitle}</p> : null}
+          </div>
+        ) : null}
 
         {testimonials.length > 0 ? (
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+          <div className={`${title || subtitle ? 'mt-10 ' : ''}grid gap-6 lg:grid-cols-2`}>
             {testimonials.map((testimonial) => (
               <article
                 key={testimonial.id}

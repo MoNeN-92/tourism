@@ -169,11 +169,9 @@ export function getTrustSignalsCopy(locale: string): TrustCopy {
   if (locale === 'ka') {
     return {
       testimonialsTitle: 'მოგზაურის ისტორიები და დასამოწმებელი feedback',
-      testimonialsSubtitle:
-        'აქ ვაჩვენებთ მხოლოდ იმ guest signals-ს, რომლებიც რეალურ ისტორიას, წყაროს ან CMS-იდან მოწოდებულ feedback-ს ეყრდნობა.',
-      partnerTitle: 'პარტნიორული ქსელი, რომელიც აძლიერებს ნდობას',
-      partnerSubtitle:
-        'როდესაც სასტუმროები და ადგილობრივი სერვისები ერთ ხარისხიან ქსელად მუშაობს, მოგზაურობის შესრულებაც უფრო საიმედო ხდება.',
+      testimonialsSubtitle: '',
+      partnerTitle: '',
+      partnerSubtitle: '',
       partnerCta: 'ყველა პარტნიორი სასტუმროს ნახვა',
       testimonialCta: 'მოგზაურის ისტორიის ნახვა',
       emptyTestimonials: 'რეალური traveler feedback აქ გამოჩნდება, როგორც კი CMS-ში დაემატება.',

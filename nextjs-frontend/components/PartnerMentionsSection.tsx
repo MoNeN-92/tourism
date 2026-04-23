@@ -19,18 +19,29 @@ export default function PartnerMentionsSection({
   return (
     <section className="py-14 bg-[#f6f3ee]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-[#101820]">{title}</h2>
-            <p className="mt-4 text-base leading-8 text-[#4f5f70]">{subtitle}</p>
+        {title || subtitle ? (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              {title ? <h2 className="text-3xl font-semibold tracking-tight text-[#101820]">{title}</h2> : null}
+              {subtitle ? <p className="mt-4 text-base leading-8 text-[#4f5f70]">{subtitle}</p> : null}
+            </div>
+            <Link
+              href={`/${locale}/partner-hotels`}
+              className="inline-flex min-h-[44px] items-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+            >
+              {ctaLabel}
+            </Link>
           </div>
-          <Link
-            href={`/${locale}/partner-hotels`}
-            className="inline-flex min-h-[44px] items-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
-          >
-            {ctaLabel}
-          </Link>
-        </div>
+        ) : (
+          <div className="flex justify-end">
+            <Link
+              href={`/${locale}/partner-hotels`}
+              className="inline-flex min-h-[44px] items-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+            >
+              {ctaLabel}
+            </Link>
+          </div>
+        )}
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {partners.map((partner) => (

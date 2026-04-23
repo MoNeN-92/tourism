@@ -46,6 +46,26 @@ export function buildTravelAgencySchema(params?: { description?: string }): Json
         availableLanguage: ['ka', 'en', 'ru'],
       },
     ],
+    areaServed: {
+      '@type': 'Country',
+      name: 'Georgia',
+    },
+    knowsLanguage: ['ka', 'en', 'ru'],
+  }
+}
+
+export function buildWebSiteSchema(): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE_URL}/#website`,
+    url: SITE_URL,
+    name: SITE_NAME,
+    description: 'Travel planning, tours, partner hotels, and destination guides for Georgia.',
+    publisher: {
+      '@id': `${SITE_URL}/#travelagency`,
+    },
+    inLanguage: ['ka', 'en', 'ru'],
   }
 }
 
@@ -122,6 +142,90 @@ export function buildBlogPostingSchema(params: {
       '@id': buildCanonicalUrl(params.locale, `/blog/${params.slug}`),
     },
     publisher: travelAgencyReference(),
+  }
+}
+
+export function buildPersonSchema(params: {
+  locale: string
+  slug: string
+  name: string
+  description: string
+  jobTitle: string
+  knowsAbout?: string[]
+}): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': `${buildCanonicalUrl(params.locale, `/authors/${params.slug}`)}#person`,
+    name: params.name,
+    url: buildCanonicalUrl(params.locale, `/authors/${params.slug}`),
+    description: params.description,
+    jobTitle: params.jobTitle,
+    ...(params.knowsAbout && params.knowsAbout.length > 0
+      ? { knowsAbout: params.knowsAbout }
+      : {}),
+    worksFor: travelAgencyReference(),
+  }
+}
+
+export function buildCollectionPageSchema(params: {
+  locale: string
+  path: string
+  name: string
+  description: string
+}): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: params.name,
+    description: params.description,
+    url: buildCanonicalUrl(params.locale, params.path),
+    isPartOf: {
+      '@id': `${SITE_URL}/#website`,
+    },
+  }
+}
+
+export function buildServiceSchema(params: {
+  locale: string
+  path: string
+  name: string
+  description: string
+  serviceType: string
+}): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: params.name,
+    description: params.description,
+    serviceType: params.serviceType,
+    provider: travelAgencyReference(),
+    areaServed: {
+      '@type': 'Country',
+      name: 'Georgia',
+    },
+    availableLanguage: ['ka', 'en', 'ru'],
+    url: buildCanonicalUrl(params.locale, params.path),
+  }
+}
+
+export function buildItemListSchema(params: {
+  name: string
+  url: string
+  items: Array<{ name: string; url: string; description?: string }>
+}): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: params.name,
+    url: params.url,
+    itemListElement: params.items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: item.url,
+      name: item.name,
+      ...(item.description ? { description: item.description } : {}),
+    })),
   }
 }
 

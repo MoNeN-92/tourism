@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { buildAuthorSlug } from '@/lib/authors'
 import { mockBlogPosts, type BlogPost } from '@/lib/mockBlogData'
 import api from '@/lib/api'
 import ProgressiveImage from '@/components/ProgressiveImage'
@@ -148,23 +149,25 @@ export default function BlogPageClient() {
               const excerpt = getLocalizedField(post, 'excerpt', locale)
               const author = getLocalizedField(post, 'author', locale)
               const date = formatDate(post.publishedDate, locale)
+              const authorSlug = buildAuthorSlug(post.author_en)
 
               return (
-                <Link
+                <article
                   key={post.id}
-                  href={`/${locale}/blog/${post.slug}`}
                   className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-gray-200">
-                    <Image
-                      src={buildCloudinaryUrl(post.coverImage)}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
+                  <Link href={`/${locale}/blog/${post.slug}`} className="block">
+                    <div className="relative aspect-[16/9] overflow-hidden bg-gray-200">
+                      <Image
+                        src={buildCloudinaryUrl(post.coverImage)}
+                        alt={title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                  </Link>
 
                   <div className="flex flex-col flex-grow p-5 sm:p-6">
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
@@ -172,9 +175,11 @@ export default function BlogPageClient() {
                       <time dateTime={post.publishedDate}>{date}</time>
                     </div>
 
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors sm:text-xl">
-                      {title}
-                    </h3>
+                    <Link href={`/${locale}/blog/${post.slug}`} className="block">
+                      <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors sm:text-xl">
+                        {title}
+                      </h3>
+                    </Link>
 
                     <p className="text-gray-600 mb-5 line-clamp-3 flex-grow text-sm sm:text-base">
                       {excerpt}
@@ -183,17 +188,25 @@ export default function BlogPageClient() {
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span>✍️</span>
-                        <span>{author}</span>
+                        <Link
+                          href={`/${locale}/authors/${authorSlug}`}
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {author}
+                        </Link>
                       </div>
-                      <div className="flex items-center gap-1.5 text-blue-600 font-medium text-sm group-hover:gap-2 transition-all">
+                      <Link
+                        href={`/${locale}/blog/${post.slug}`}
+                        className="flex items-center gap-1.5 text-blue-600 font-medium text-sm group-hover:gap-2 transition-all"
+                      >
                         <span>{t('readMore')}</span>
                         <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                      </div>
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </article>
               )
             })}
           </div>

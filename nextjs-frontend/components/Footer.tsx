@@ -4,6 +4,8 @@ import { Mail, Phone, Facebook } from 'lucide-react'
 
 export default async function Footer({ locale }: { locale: string }) {
   const t = await getTranslations('footer')
+  const authorityLabel =
+    locale === 'ka' ? 'რატომ გვირჩევენ' : locale === 'ru' ? 'Почему нам доверяют' : 'Why Trust Us'
 
   return (
     <footer className="bg-gray-900 text-gray-300 mt-auto border-t border-gray-800">
@@ -60,7 +62,7 @@ export default async function Footer({ locale }: { locale: string }) {
             </h4>
             <div className="flex gap-4">
               <a 
-                href="https://www.facebook.com/vibege" 
+                href="https://www.facebook.com/vibegeorgia" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="bg-gray-800 p-3 rounded-xl text-gray-400 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-lg inline-flex items-center justify-center"
@@ -77,6 +79,13 @@ export default async function Footer({ locale }: { locale: string }) {
         <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[12px] uppercase tracking-widest text-gray-500">
           <p>&copy; {new Date().getFullYear()} Vibe Georgia. {t('rights')}</p>
           <div className="flex gap-6">
+            <Link
+              href={`/${locale}/travel-experts`}
+              className="hover:text-white transition-colors"
+              aria-label="View why travelers trust Vibe Georgia"
+            >
+              {authorityLabel}
+            </Link>
             <Link 
               href={`/${locale}/privacy`} 
               className="hover:text-white transition-colors"

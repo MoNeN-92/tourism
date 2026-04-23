@@ -9,6 +9,8 @@ import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import CookieBannerMount from '@/components/CookieBannerMount'
+import JsonLd from '@/components/JsonLd'
+import { buildTravelAgencySchema, buildWebSiteSchema } from '@/lib/structured-data'
 
 type HeaderAuthUser = {
   id?: string
@@ -135,15 +137,28 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  if (!locales.includes(locale as any)) notFound()
+  if (!locales.includes(locale as (typeof locales)[number])) notFound()
 
   const messages = await getMessages()
   const headerAuth = await getInitialHeaderAuth()
+  const organizationDescriptions: Record<string, string> = {
+    ka: 'Vibe Georgia აერთიანებს ტურების დაგეგმვას, პარტნიორ სასტუმროებს, ტრანსფერს და რეალურ სამოგზაურო გზამკვლევებს საქართველოს მასშტაბით.',
+    en: 'Vibe Georgia combines route planning, partner hotels, transfers, and first-hand travel guidance across Georgia.',
+    ru: 'Vibe Georgia объединяет планирование маршрутов, партнерские отели, трансферы и практические гиды по Грузии.',
+  }
 
   return (
     <html lang={locale}>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
+          <JsonLd
+            data={[
+              buildTravelAgencySchema({
+                description: organizationDescriptions[locale] || organizationDescriptions.en,
+              }),
+              buildWebSiteSchema(),
+            ]}
+          />
           <div className="min-h-screen flex flex-col">
             <Header locale={locale} initialAuthMode={headerAuth.mode} initialAuthUser={headerAuth.user} />
             <main className="flex-1">{children}</main>

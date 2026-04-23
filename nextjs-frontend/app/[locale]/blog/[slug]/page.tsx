@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import Image from 'next/image'
 import Link from 'next/link'
 import { mockBlogPosts, blogContentData, type BlogPost } from '@/lib/mockBlogData'
+import { buildAuthorSlug } from '@/lib/authors'
 import { buildCanonicalUrl, localizedAlternates, openGraphLocale, SITE_NAME } from '@/lib/seo'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import ShareButtons from '@/components/ShareButtons'
@@ -124,6 +125,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
   const title = getLocalizedField(post, 'title', locale)
   const excerpt = getLocalizedField(post, 'excerpt', locale)
   const author = getLocalizedField(post, 'author', locale)
+  const authorSlug = buildAuthorSlug(post.author_en)
 
   const publishedDate = isApi
     ? (post as ApiBlogPost).publishedAt || new Date().toISOString()
@@ -210,7 +212,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ local
           <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 lg:p-12 mb-8">
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
               <div className="flex items-center gap-2"><span>📅</span><span>{formattedDate}</span></div>
-              <div className="flex items-center gap-2"><span>✍️</span><span>{author}</span></div>
+              <div className="flex items-center gap-2">
+                <span>✍️</span>
+                <Link href={`/${locale}/authors/${authorSlug}`} className="hover:text-blue-600 transition-colors">
+                  {author}
+                </Link>
+              </div>
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">{title}</h1>

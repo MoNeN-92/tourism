@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { defaultLocale, locales } from '@/i18n/config'
+import { buildAuthorSlug } from '@/lib/authors'
 import { COMMERCIAL_PAGE_SLUGS } from '@/lib/commercial-pages'
+import { mockBlogPosts } from '@/lib/mockBlogData'
 import { SITE_URL, localePath } from '@/lib/seo'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -17,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/blog',
     '/contact',
     '/faq',
+    '/travel-experts',
     '/partner-hotels',
     '/privacy',
     '/terms',
@@ -38,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   )
 
-  const [tourRoutes, blogRoutes, partnerHotelRoutes] = await Promise.all([
+  const [tourRoutes, blogRoutes, partnerHotelRoutes, authorRoutes] = await Promise.all([
     getDynamicRoutes({
       apiUrl,
       contentPathPrefix: '/tours',
@@ -60,9 +63,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.7,
     }),
+    getAuthorRoutes({
+      apiUrl,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    }),
   ])
 
-  return [...staticRoutes, ...tourRoutes, ...blogRoutes, ...partnerHotelRoutes]
+  return [...staticRoutes, ...tourRoutes, ...blogRoutes, ...partnerHotelRoutes, ...authorRoutes]
 }
 
 type DynamicContentItem = {
@@ -165,6 +173,107 @@ function dedupeBySlug(items: DynamicContentItem[]): DynamicContentItem[] {
   for (const item of items) {
     if (!unique.has(item.slug)) {
       unique.set(item.slug, item)
+    }
+  }
+
+  return Array.from(unique.values())
+}
+
+type AuthorRouteItem = {
+  author_en: string
+  updatedAt?: string
+}
+
+async function getAuthorRoutes({
+  apiUrl,
+  changeFrequency,
+  priority,
+}: {
+  apiUrl: string
+  changeFrequency: 'daily' | 'weekly' | 'monthly'
+  priority: number
+}): Promise<MetadataRoute.Sitemap> {
+  const items = await fetchAuthorItems(`${apiUrl}/blog`)
+  const fallbackItems = mockBlogPosts.map((post) => ({
+    author_en: post.author_en,
+    updatedAt: post.publishedDate,
+  }))
+  const uniqueAuthors = dedupeAuthorRoutes([...items, ...fallbackItems])
+
+  return locales.flatMap((locale) =>
+    uniqueAuthors.map((item) => {
+      const authorSlug = buildAuthorSlug(item.author_en)
+      const path = localePath(locale, `/authors/${authorSlug}`)
+
+      return {
+        url: `${SITE_URL}${path}`,
+        lastModified: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+        changeFrequency,
+        priority,
+        alternates: {
+          languages: buildLanguageAlternates(`/authors/${authorSlug}`),
+        },
+      }
+    }),
+  )
+}
+
+async function fetchAuthorItems(url: string): Promise<AuthorRouteItem[]> {
+  try {
+    const response = await fetch(url, { next: { revalidate: 3600 } })
+
+    if (!response.ok) {
+      return []
+    }
+
+    const payload: unknown = await response.json()
+
+    if (!Array.isArray(payload)) {
+      return []
+    }
+
+    const items: AuthorRouteItem[] = []
+
+    for (const item of payload) {
+      if (typeof item !== 'object' || item === null) {
+        continue
+      }
+
+      const candidate = item as {
+        author_en?: unknown
+        updatedAt?: unknown
+        publishedAt?: unknown
+      }
+
+      if (typeof candidate.author_en !== 'string' || candidate.author_en.trim().length === 0) {
+        continue
+      }
+
+      items.push({
+        author_en: candidate.author_en,
+        updatedAt:
+          typeof candidate.updatedAt === 'string'
+            ? candidate.updatedAt
+            : typeof candidate.publishedAt === 'string'
+              ? candidate.publishedAt
+              : undefined,
+      })
+    }
+
+    return items
+  } catch {
+    return []
+  }
+}
+
+function dedupeAuthorRoutes(items: AuthorRouteItem[]): AuthorRouteItem[] {
+  const unique = new Map<string, AuthorRouteItem>()
+
+  for (const item of items) {
+    const key = buildAuthorSlug(item.author_en)
+
+    if (!unique.has(key)) {
+      unique.set(key, item)
     }
   }
 

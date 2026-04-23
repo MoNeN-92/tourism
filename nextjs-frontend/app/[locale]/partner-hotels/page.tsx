@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import JsonLd from '@/components/JsonLd'
+import TestimonialsSection from '@/components/TestimonialsSection'
 import { getLocalizedHotelField, getPartnerHotels } from '@/lib/partner-hotels'
+import { getLocalizedTrustTestimonials, getTrustSignalsCopy, getTrustTestimonials } from '@/lib/trust-signals'
 import {
   absoluteUrl,
   buildCanonicalUrl,
@@ -12,7 +14,7 @@ import {
   openGraphLocale,
   SITE_NAME,
 } from '@/lib/seo'
-import { buildBreadcrumbSchema, buildHotelSchema } from '@/lib/structured-data'
+import { buildBreadcrumbSchema, buildHotelSchema, buildItemListSchema, buildServiceSchema } from '@/lib/structured-data'
 
 export async function generateMetadata({
   params,
@@ -61,7 +63,9 @@ export default async function PartnerHotelsPage({
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'partnerHotels' })
   const nav = await getTranslations({ locale, namespace: 'nav' })
-  const hotels = await getPartnerHotels()
+  const [hotels, testimonials] = await Promise.all([getPartnerHotels(), getTrustTestimonials()])
+  const trustCopy = getTrustSignalsCopy(locale)
+  const localizedTestimonials = getLocalizedTrustTestimonials(testimonials, locale)
 
   return (
     <>
@@ -71,6 +75,22 @@ export default async function PartnerHotelsPage({
             { name: nav('home'), url: buildCanonicalUrl(locale) },
             { name: t('title'), url: buildCanonicalUrl(locale, '/partner-hotels') },
           ]),
+          buildServiceSchema({
+            locale,
+            path: '/partner-hotels',
+            name: t('title'),
+            description: t('subtitle'),
+            serviceType: 'Trusted accommodation partner network in Georgia',
+          }),
+          buildItemListSchema({
+            name: t('title'),
+            url: buildCanonicalUrl(locale, '/partner-hotels'),
+            items: hotels.map((hotel) => ({
+              name: hotel.name,
+              url: buildCanonicalUrl(locale, `/partner-hotels/${hotel.slug}`),
+              description: getLocalizedHotelField(hotel, 'shortDescription', locale),
+            })),
+          }),
           ...hotels.map((hotel) =>
             buildHotelSchema({
               locale,
@@ -96,6 +116,18 @@ export default async function PartnerHotelsPage({
         </section>
 
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-10 rounded-[28px] border border-[#d9cfbe] bg-[#fffaf1] p-6 shadow-sm sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8b6f3d]">
+              {t('partnerBadge')}
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#101820]">
+              {trustCopy.partnerTitle}
+            </h2>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-[#576273]">
+              {trustCopy.partnerSubtitle}
+            </p>
+          </div>
+
           {hotels.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {hotels.map((hotel) => (
@@ -140,6 +172,15 @@ export default async function PartnerHotelsPage({
             </div>
           )}
         </section>
+
+        <TestimonialsSection
+          locale={locale}
+          title={trustCopy.testimonialsTitle}
+          subtitle={trustCopy.testimonialsSubtitle}
+          ctaLabel={trustCopy.testimonialCta}
+          emptyLabel={trustCopy.emptyTestimonials}
+          testimonials={localizedTestimonials}
+        />
       </div>
     </>
   )

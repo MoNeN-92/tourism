@@ -5,10 +5,14 @@ import Link from 'next/link'
 import { mockBlogPosts } from '@/lib/mockData'
 import type { Metadata } from 'next'
 import { buildCloudinarySources, buildCloudinaryUrl } from '@/lib/cloudinary'
+import { getAuthorityHubCopy } from '@/lib/authority'
 import { getCommercialPageSummaries } from '@/lib/commercial-pages'
 import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
+import PartnerMentionsSection from '@/components/PartnerMentionsSection'
+import TestimonialsSection from '@/components/TestimonialsSection'
 import { buildTravelAgencySchema } from '@/lib/structured-data'
+import { getLocalizedPartnerMentions, getLocalizedTrustTestimonials, getTrustSignalsCopy, getTrustTestimonials } from '@/lib/trust-signals'
 
 const HOMEPAGE_REVALIDATE_SECONDS = 300
 const HERO_IMAGE = buildCloudinarySources(
@@ -97,8 +101,8 @@ interface ApiBlogPost {
 }
 
 // --- Helper Functions ---
-function getLocalizedField(
-  item: any,
+function getLocalizedField<T extends object>(
+  item: T,
   field: 'title' | 'excerpt' | 'description' | 'location' | 'shortDescription',
   locale: string
 ): string {
@@ -108,8 +112,8 @@ function getLocalizedField(
     ru: `${field}_ru`,
   }
   const localizedFieldKey = fieldMap[locale] || fieldMap['ka']
-  const localizedValue = item[localizedFieldKey]
-  const fallbackValue = item[`${field}_ka`]
+  const localizedValue = (item as Record<string, unknown>)[localizedFieldKey]
+  const fallbackValue = (item as Record<string, unknown>)[`${field}_ka`]
   return (localizedValue as string) || (fallbackValue as string) || ''
 }
 
@@ -255,8 +259,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getLatestBlogPosts(),
     getPartnerHotels(),
   ])
+  const testimonials = await getTrustTestimonials()
   const commercialPages = getCommercialPageSummaries(locale as 'ka' | 'en' | 'ru')
   const commercialSection = getCommercialSectionCopy(locale)
+  const authority = getAuthorityHubCopy(locale)
+  const trustCopy = getTrustSignalsCopy(locale)
+  const localizedTestimonials = getLocalizedTrustTestimonials(testimonials, locale)
+  const partnerMentions = getLocalizedPartnerMentions(partnerHotels, locale, 3)
 
   return (
     <>
@@ -346,6 +355,80 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      <section className="py-16 bg-[#f6f3ee]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8b6f3d]">
+                {authority.heroEyebrow}
+              </p>
+              <h2 className="mt-3 text-3xl sm:text-5xl font-bold text-[#101820]">
+                {authority.title}
+              </h2>
+              <p className="mt-3 text-[#556070]">{authority.summaryText}</p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`/${locale}/travel-experts`}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#101820] px-5 text-sm font-medium text-white transition-colors hover:bg-[#0f6b66]"
+              >
+                {authority.inlineCtaLabel}
+              </Link>
+              <Link
+                href={`/${locale}/contact`}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#101820] px-5 text-sm font-medium text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+              >
+                {authority.primaryCtaLabel}
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {authority.metrics.map((metric) => (
+              <article
+                key={metric.label}
+                className="rounded-[28px] border border-[#e5dfd4] bg-white p-6 shadow-sm"
+              >
+                <p className="text-3xl font-semibold text-[#101820]">{metric.value}</p>
+                <h3 className="mt-4 text-xl font-semibold text-[#101820]">{metric.label}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#576273]">{metric.description}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10 rounded-[28px] border border-[#d9cfbe] bg-[#fffaf1] p-6 shadow-sm lg:p-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b6f3d]">
+                  {authority.travelerStory.eyebrow}
+                </p>
+                <h3 className="mt-3 text-2xl font-semibold text-[#101820]">
+                  {authority.travelerStory.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-[#576273]">
+                  {authority.travelerStory.excerpt}
+                </p>
+              </div>
+              <Link
+                href={`/${locale}/blog/${authority.travelerStory.postSlug}`}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#101820] px-5 text-sm font-medium text-white transition-colors hover:bg-[#0f6b66]"
+              >
+                {t('blog.readMore')}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <TestimonialsSection
+        locale={locale}
+        title={trustCopy.testimonialsTitle}
+        subtitle={trustCopy.testimonialsSubtitle}
+        ctaLabel={trustCopy.testimonialCta}
+        emptyLabel={trustCopy.emptyTestimonials}
+        testimonials={localizedTestimonials}
+      />
 
       <section className="py-16 bg-[#fffaf1]">
         <div className="container mx-auto px-4">
@@ -442,6 +525,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           )}
         </div>
       </section>
+
+      {partnerMentions.length > 0 ? (
+        <PartnerMentionsSection
+          locale={locale}
+          title={trustCopy.partnerTitle}
+          subtitle={trustCopy.partnerSubtitle}
+          ctaLabel={trustCopy.partnerCta}
+          partners={partnerMentions}
+        />
+      ) : null}
+
       {/* 5. Blog Section */}
 <section className="py-16 bg-white">
   <div className="container mx-auto px-4">

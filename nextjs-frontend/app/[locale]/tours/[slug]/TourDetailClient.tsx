@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { getAuthorityHubCopy } from '@/lib/authority'
 import { buildCloudinaryUrl } from '@/lib/cloudinary'
 import SwipeGallery from '@/components/SwipeGallery'
 import { trackMetaPixelEvent } from '@/lib/tracking'
@@ -209,6 +211,7 @@ export default function TourDetailClient({
   const pickup = getLocalizedField(tour, 'pickup', locale)
   const bestSeason = getLocalizedField(tour, 'bestSeason', locale)
   const labels = getSectionLabels(locale)
+  const authority = getAuthorityHubCopy(locale)
 
   useEffect(() => {
     trackMetaPixelEvent('ViewContent', {
@@ -419,6 +422,38 @@ export default function TourDetailClient({
               )}
             </div>
           )}
+
+          <section className="mt-6 sm:mt-8 rounded-xl sm:rounded-2xl border border-[#e5dfd4] bg-[#fffaf1] px-5 py-6 sm:px-8 sm:py-8 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b6f3d]">
+                  {authority.heroEyebrow}
+                </p>
+                <h2 className="mt-3 text-2xl sm:text-3xl font-bold text-[#101820]">
+                  {authority.title}
+                </h2>
+                <p className="mt-3 text-sm sm:text-base leading-7 text-[#576273]">
+                  {authority.summaryText}
+                </p>
+              </div>
+              <Link
+                href={`/${locale}/travel-experts`}
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[#101820] px-6 text-sm font-semibold text-[#101820] transition-colors hover:bg-[#101820] hover:text-white"
+              >
+                {authority.inlineCtaLabel}
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {authority.metrics.map((metric) => (
+                <article key={metric.label} className="rounded-2xl border border-[#e5dfd4] bg-white p-5">
+                  <p className="text-2xl font-semibold text-[#101820]">{metric.value}</p>
+                  <h3 className="mt-3 text-base font-semibold text-[#101820]">{metric.label}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#576273]">{metric.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
 
           <section className="mt-6 sm:mt-8 rounded-xl sm:rounded-2xl bg-[#101820] px-5 py-6 sm:px-8 sm:py-8 text-white shadow-lg">
             <div className="max-w-3xl">

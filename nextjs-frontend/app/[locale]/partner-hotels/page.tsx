@@ -110,7 +110,9 @@ export default async function PartnerHotelsPage({
               <h1 className="text-4xl font-semibold tracking-tight text-[#101820] sm:text-6xl">
                 {t('title')}
               </h1>
-              <p className="mt-5 text-lg leading-8 text-[#556070]">{t('subtitle')}</p>
+              {t('subtitle') ? (
+                <p className="mt-5 text-lg leading-8 text-[#556070]">{t('subtitle')}</p>
+              ) : null}
             </div>
           </div>
         </section>

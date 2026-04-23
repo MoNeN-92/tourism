@@ -9,10 +9,9 @@ import { getAuthorityHubCopy } from '@/lib/authority'
 import { getCommercialPageSummaries } from '@/lib/commercial-pages'
 import { buildCanonicalUrl, localizedAlternates, SITE_NAME } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
-import PartnerMentionsSection from '@/components/PartnerMentionsSection'
 import TestimonialsSection from '@/components/TestimonialsSection'
 import { buildTravelAgencySchema } from '@/lib/structured-data'
-import { getLocalizedPartnerMentions, getLocalizedTrustTestimonials, getTrustSignalsCopy, getTrustTestimonials } from '@/lib/trust-signals'
+import { getLocalizedTrustTestimonials, getTrustSignalsCopy, getTrustTestimonials } from '@/lib/trust-signals'
 
 const HOMEPAGE_REVALIDATE_SECONDS = 300
 const HERO_IMAGE = buildCloudinarySources(
@@ -265,7 +264,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const authority = getAuthorityHubCopy(locale)
   const trustCopy = getTrustSignalsCopy(locale)
   const localizedTestimonials = getLocalizedTrustTestimonials(testimonials, locale)
-  const partnerMentions = getLocalizedPartnerMentions(partnerHotels, locale, 3)
 
   return (
     <>
@@ -472,7 +470,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
             <div>
               <h2 className="text-3xl sm:text-5xl font-bold text-[#101820]">{t('partnerHotels.title')}</h2>
-              <p className="mt-3 max-w-2xl text-[#556070]">{t('partnerHotels.subtitle')}</p>
+              {t('partnerHotels.subtitle') ? (
+                <p className="mt-3 max-w-2xl text-[#556070]">{t('partnerHotels.subtitle')}</p>
+              ) : null}
             </div>
             <Link
               href={`/${locale}/partner-hotels`}
@@ -525,16 +525,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           )}
         </div>
       </section>
-
-      {partnerMentions.length > 0 ? (
-        <PartnerMentionsSection
-          locale={locale}
-          title={trustCopy.partnerTitle}
-          subtitle={trustCopy.partnerSubtitle}
-          ctaLabel={trustCopy.partnerCta}
-          partners={partnerMentions}
-        />
-      ) : null}
 
       {/* 5. Blog Section */}
 <section className="py-16 bg-white">

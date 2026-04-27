@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { PartnerType, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -8,6 +8,26 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private resolvePartnerType(params: {
+    role: UserRole;
+    partnerType?: PartnerType | null;
+    fallback?: PartnerType | null;
+  }): PartnerType | null {
+    if (params.role === UserRole.DRIVER) {
+      return PartnerType.DRIVER;
+    }
+
+    if (params.role === UserRole.GUIDE) {
+      return PartnerType.GUIDE;
+    }
+
+    if (params.partnerType !== undefined) {
+      return params.partnerType;
+    }
+
+    return params.fallback ?? null;
+  }
 
   async create(dto: CreateUserDto) {
     const email = dto.email.trim().toLowerCase();
@@ -21,6 +41,11 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const role = dto.role ?? UserRole.USER;
+    const partnerType = this.resolvePartnerType({
+      role,
+      partnerType: dto.partnerType ?? null,
+    });
 
     return this.prisma.user.create({
       data: {
@@ -29,8 +54,8 @@ export class UsersService {
         firstName: dto.firstName.trim(),
         lastName: dto.lastName.trim(),
         phone: dto.phone.trim(),
-        role: dto.role ?? UserRole.USER,
-        partnerType: dto.partnerType ?? null,
+        role,
+        partnerType,
         isActive: dto.isActive ?? true,
       },
       select: {
@@ -123,11 +148,21 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    const role = dto.role ?? existing.role;
+    const partnerType = this.resolvePartnerType({
+      role,
+      partnerType: dto.partnerType,
+      fallback: existing.partnerType,
+    });
 
     return this.prisma.user.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        role,
+        partnerType,
+      },
       select: {
         id: true,
         email: true,

@@ -307,4 +307,8 @@ export class BookingsService {
   async getCalendar(month: string) {
     return this.adminReadService.getCalendar(month);
   }
+
+  async getPartnerCalendar(userId: string, month: string) {
+    return this.adminReadService.getPartnerCalendar(userId, month);
+  }
 }

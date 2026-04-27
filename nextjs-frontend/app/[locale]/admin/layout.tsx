@@ -9,7 +9,7 @@ import api from '@/lib/api'
 import { clearAdminAccessToken } from '@/lib/auth-token'
 
 type AdminRole = 'ADMIN' | 'MODERATOR'
-type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
 
 export default function AdminLayout({
   children,
@@ -44,7 +44,11 @@ export default function AdminLayout({
           if (!cancelled) {
             setIsAuthenticated(false)
             setAdminRole(null)
-            router.replace(`/${locale}/account/notifications`)
+            router.replace(
+              role === 'DRIVER' || role === 'GUIDE'
+                ? `/${locale}/account/calendar`
+                : `/${locale}/account/notifications`,
+            )
           }
           return
         }

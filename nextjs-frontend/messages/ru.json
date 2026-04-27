@@ -334,6 +334,7 @@
       "loading": "Загрузка аккаунта...",
       "title": "Аккаунт",
       "myBookings": "Мои бронирования",
+      "calendar": "Календарь партнера",
       "notifications": "Уведомления",
       "logout": "Выйти"
     },
@@ -441,6 +442,44 @@
       "failedMarkAll": "Не удалось отметить все как прочитанные",
       "noNotifications": "Пока нет уведомлений.",
       "markRead": "Отметить как прочитанное"
+    },
+    "calendar": {
+      "title": "Календарь партнера",
+      "subtitle": "Здесь показывается только операционная информация. Личные и финансовые данные скрыты.",
+      "loading": "Календарь загружается...",
+      "loadFailed": "Не удалось загрузить календарь",
+      "visibleLabel": "Видимые записи",
+      "assignedLabel": "Назначено мне",
+      "restrictedLabel": "Ограничено",
+      "assignedDayCount": "Мне: {count}",
+      "bookingsOn": "Записи на {date}",
+      "selectDate": "Выберите дату",
+      "noBookings": "На выбранную дату записей нет.",
+      "lockedBooking": "Занятый слот",
+      "lockedHint": "Эта запись не назначена вам, поэтому детали ограничены.",
+      "restrictedBadge": "Закрыто",
+      "openDetails": "Открыть детали",
+      "hideDetails": "Скрыть детали",
+      "assignmentRole": "Моя роль",
+      "assignmentRoleValue": {
+        "driver": "Водитель",
+        "guide": "Гид"
+      },
+      "date": "Дата",
+      "vehicle": "Транспорт",
+      "adults": "Взрослые",
+      "children": "Дети",
+      "driver": "Водитель",
+      "guide": "Гид",
+      "serviceStatus": "Статус сервиса",
+      "statusValue": {
+        "pending": "В ожидании",
+        "completed": "Завершено"
+      },
+      "hotelName": "Отель",
+      "checkIn": "Заезд",
+      "checkOut": "Выезд",
+      "roomsCount": "Количество комнат"
     }
   },
   "bookingForm": {
@@ -593,7 +632,9 @@
       "roleValue": {
         "user": "Клиент",
         "moderator": "Модератор",
-        "admin": "Администратор"
+        "admin": "Администратор",
+        "driver": "Водитель",
+        "guide": "Гид"
       },
       "partnerTypeValue": {
         "driver": "Водитель",

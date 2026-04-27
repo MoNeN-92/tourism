@@ -334,6 +334,7 @@
       "loading": "Loading account...",
       "title": "Account",
       "myBookings": "My bookings",
+      "calendar": "Partner calendar",
       "notifications": "Notifications",
       "logout": "Logout"
     },
@@ -441,6 +442,44 @@
       "failedMarkAll": "Failed to mark all notifications as read",
       "noNotifications": "No notifications yet.",
       "markRead": "Mark read"
+    },
+    "calendar": {
+      "title": "Partner Calendar",
+      "subtitle": "Only operational information is shown here. Personal and financial details stay hidden.",
+      "loading": "Calendar is loading...",
+      "loadFailed": "Failed to load calendar",
+      "visibleLabel": "Visible entries",
+      "assignedLabel": "Assigned to me",
+      "restrictedLabel": "Restricted",
+      "assignedDayCount": "Mine: {count}",
+      "bookingsOn": "Entries for {date}",
+      "selectDate": "Select a date",
+      "noBookings": "There are no entries for the selected date.",
+      "lockedBooking": "Reserved slot",
+      "lockedHint": "This entry is not assigned to you, so its details are restricted.",
+      "restrictedBadge": "Locked",
+      "openDetails": "Open details",
+      "hideDetails": "Hide details",
+      "assignmentRole": "My role",
+      "assignmentRoleValue": {
+        "driver": "Driver",
+        "guide": "Guide"
+      },
+      "date": "Date",
+      "vehicle": "Vehicle",
+      "adults": "Adults",
+      "children": "Children",
+      "driver": "Driver",
+      "guide": "Guide",
+      "serviceStatus": "Service status",
+      "statusValue": {
+        "pending": "Pending",
+        "completed": "Completed"
+      },
+      "hotelName": "Hotel",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "roomsCount": "Room count"
     }
   },
   "bookingForm": {
@@ -593,7 +632,9 @@
       "roleValue": {
         "user": "Customer",
         "moderator": "Moderator",
-        "admin": "Admin"
+        "admin": "Admin",
+        "driver": "Driver",
+        "guide": "Guide"
       },
       "partnerTypeValue": {
         "driver": "Driver",

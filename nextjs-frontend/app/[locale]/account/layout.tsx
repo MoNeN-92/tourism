@@ -13,6 +13,8 @@ interface UserProfile {
   firstName: string
   lastName: string
   phone: string
+  role: 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
+  partnerType: 'DRIVER' | 'GUIDE' | 'PARTNER' | 'CUSTOMER' | null
 }
 
 export default function AccountLayout({
@@ -35,6 +37,11 @@ export default function AccountLayout({
     pathname.endsWith('/account/register') ||
     pathname.endsWith('/account/forgot-password') ||
     pathname.endsWith('/account/reset-password')
+  const hasPartnerCalendarAccess =
+    user?.role === 'DRIVER' ||
+    user?.role === 'GUIDE' ||
+    user?.partnerType === 'DRIVER' ||
+    user?.partnerType === 'GUIDE'
 
   useEffect(() => {
     let cancelled = false
@@ -113,6 +120,14 @@ export default function AccountLayout({
             </div>
 
             <nav className="space-y-2">
+              {hasPartnerCalendarAccess && (
+                <Link
+                  href={`/${locale}/account/calendar`}
+                  className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {t('calendar')}
+                </Link>
+              )}
               <Link
                 href={`/${locale}/account/notifications`}
                 className="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"

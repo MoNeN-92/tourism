@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import api from '@/lib/api'
 
-type UserRole = 'USER' | 'MODERATOR' | 'ADMIN'
+type UserRole = 'USER' | 'MODERATOR' | 'ADMIN' | 'DRIVER' | 'GUIDE'
 
 interface HotelItem {
   id: string

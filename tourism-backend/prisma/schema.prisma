@@ -369,6 +369,8 @@ enum UserRole {
   USER
   ADMIN
   MODERATOR
+  DRIVER
+  GUIDE
 }
 
 enum PartnerType {

@@ -79,7 +79,9 @@ export class UserJwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
     const isValidRole =
       user.role === UserRole.USER ||
       user.role === UserRole.ADMIN ||
-      user.role === UserRole.MODERATOR;
+      user.role === UserRole.MODERATOR ||
+      user.role === UserRole.DRIVER ||
+      user.role === UserRole.GUIDE;
 
     if (!isValidRole || payload?.role !== user.role) {
       throw new UnauthorizedException('User token role is invalid');

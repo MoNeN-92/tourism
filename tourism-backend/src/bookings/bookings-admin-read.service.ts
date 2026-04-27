@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { BookingStatus, Prisma } from '@prisma/client';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { BookingStatus, PartnerType, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminRevenueQueryDto } from './dto/admin-revenue-query.dto';
@@ -337,6 +342,233 @@ export class BookingsAdminReadService {
     return {
       month,
       summary,
+      days,
+    };
+  }
+
+  async getPartnerCalendar(userId: string, month: string) {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new BadRequestException('month must be in YYYY-MM format');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        isActive: true,
+        role: true,
+        partnerType: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      throw new ForbiddenException('Partner calendar is not available');
+    }
+
+    const canAccessPartnerCalendar =
+      user.role === UserRole.DRIVER ||
+      user.role === UserRole.GUIDE ||
+      user.partnerType === PartnerType.DRIVER ||
+      user.partnerType === PartnerType.GUIDE;
+
+    if (!canAccessPartnerCalendar) {
+      throw new ForbiddenException('Partner calendar is not available');
+    }
+
+    const [year, monthValue] = month.split('-').map(Number);
+    const monthIndex = monthValue - 1;
+
+    if (monthIndex < 0 || monthIndex > 11) {
+      throw new BadRequestException('month must be in YYYY-MM format');
+    }
+
+    const start = new Date(Date.UTC(year, monthIndex, 1));
+    const end = new Date(Date.UTC(year, monthIndex + 1, 1));
+
+    const entries = await this.prisma.bookingTour.findMany({
+      where: {
+        desiredDate: {
+          gte: start,
+          lt: end,
+        },
+        booking: {
+          isDeleted: false,
+          status: BookingStatus.APPROVED,
+        },
+      },
+      include: {
+        booking: {
+          select: {
+            id: true,
+            serviceStatus: true,
+            hotelName: true,
+            hotelCheckIn: true,
+            hotelCheckOut: true,
+            hotelGuests: true,
+            hotelRoomType: true,
+            hotelService: {
+              include: {
+                hotel: {
+                  select: {
+                    name: true,
+                  },
+                },
+                rooms: {
+                  orderBy: { createdAt: 'asc' },
+                  select: {
+                    roomType: true,
+                    guestCount: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        tour: {
+          select: {
+            id: true,
+            slug: true,
+            title_ka: true,
+            title_en: true,
+            title_ru: true,
+          },
+        },
+        driver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        guide: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: [{ desiredDate: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    const dayMap = new Map<
+      string,
+      Array<{
+        id: string;
+        bookingId: string;
+        desiredDate: string;
+        hasAccess: boolean;
+        assignmentRole: 'DRIVER' | 'GUIDE' | null;
+        details: {
+          serviceStatus: string;
+          carType: string;
+          adults: number;
+          children: number;
+          driverName: string | null;
+          guideName: string | null;
+          tour: {
+            id: string;
+            slug: string;
+            title_ka: string;
+            title_en: string;
+            title_ru: string;
+          };
+          hotel: {
+            name: string;
+            checkIn: Date | null;
+            checkOut: Date | null;
+            rooms: Array<{
+              roomType: string;
+              guestCount: number;
+            }>;
+          } | null;
+        } | null;
+      }>
+    >();
+
+    for (const entry of entries) {
+      const hasAccess = entry.driverId === userId || entry.guideId === userId;
+      const assignmentRole =
+        entry.driverId === userId ? 'DRIVER' : entry.guideId === userId ? 'GUIDE' : null;
+      const hotelService = entry.booking.hotelService;
+      const hotel =
+        hotelService || entry.booking.hotelName
+          ? {
+              name: hotelService?.hotel.name || entry.booking.hotelName || 'Hotel service',
+              checkIn: hotelService?.checkIn || entry.booking.hotelCheckIn || null,
+              checkOut: hotelService?.checkOut || entry.booking.hotelCheckOut || null,
+              rooms:
+                hotelService?.rooms.length && hotelService.rooms.length > 0
+                  ? hotelService.rooms.map((room) => ({
+                      roomType: room.roomType,
+                      guestCount: room.guestCount,
+                    }))
+                  : entry.booking.hotelRoomType
+                    ? [
+                        {
+                          roomType: entry.booking.hotelRoomType,
+                          guestCount: entry.booking.hotelGuests ?? 1,
+                        },
+                      ]
+                    : [],
+            }
+          : null;
+
+      const key = toDateOnly(entry.desiredDate);
+      const existing = dayMap.get(key) || [];
+
+      existing.push({
+        id: entry.id,
+        bookingId: entry.bookingId,
+        desiredDate: entry.desiredDate.toISOString(),
+        hasAccess,
+        assignmentRole,
+        details: hasAccess
+          ? {
+              serviceStatus: entry.booking.serviceStatus,
+              carType: entry.carType,
+              adults: entry.adults,
+              children: entry.children,
+              driverName: entry.driver
+                ? `${entry.driver.firstName} ${entry.driver.lastName}`.trim()
+                : null,
+              guideName: entry.guide
+                ? `${entry.guide.firstName} ${entry.guide.lastName}`.trim()
+                : null,
+              tour: entry.tour,
+              hotel,
+            }
+          : null,
+      });
+
+      dayMap.set(key, existing);
+    }
+
+    const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+    const days = Array.from({ length: daysInMonth }, (_, index) => {
+      const date = new Date(Date.UTC(year, monthIndex, index + 1));
+      const key = toDateOnly(date);
+      const bookings = dayMap.get(key) || [];
+
+      return {
+        date: key,
+        bookingCount: bookings.length,
+        accessibleCount: bookings.filter((item) => item.hasAccess).length,
+        bookings,
+      };
+    });
+
+    const accessible = entries.filter(
+      (entry) => entry.driverId === userId || entry.guideId === userId,
+    ).length;
+
+    return {
+      month,
+      summary: {
+        total: entries.length,
+        accessible,
+        restricted: entries.length - accessible,
+      },
       days,
     };
   }

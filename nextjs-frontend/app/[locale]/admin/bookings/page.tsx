@@ -122,6 +122,7 @@ interface AdminUserOption {
   lastName: string
   email: string
   phone: string
+  role?: 'USER' | 'MODERATOR' | 'ADMIN' | 'DRIVER' | 'GUIDE'
   partnerType?: PartnerType | null
 }
 
@@ -309,8 +310,14 @@ export default function AdminBookingsPage() {
   }
 
   const getUserLabel = (user: AdminUserOption) => `${user.firstName} ${user.lastName} (${user.email})`
-  const driverUsers = useMemo(() => users.filter((user) => user.partnerType === 'DRIVER'), [users])
-  const guideUsers = useMemo(() => users.filter((user) => user.partnerType === 'GUIDE'), [users])
+  const driverUsers = useMemo(
+    () => users.filter((user) => user.partnerType === 'DRIVER' || user.role === 'DRIVER'),
+    [users],
+  )
+  const guideUsers = useMemo(
+    () => users.filter((user) => user.partnerType === 'GUIDE' || user.role === 'GUIDE'),
+    [users],
+  )
 
   const filteredBookings = useMemo(() => {
     const term = search.trim().toLowerCase()

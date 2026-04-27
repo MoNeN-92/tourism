@@ -17,7 +17,7 @@ interface UserItem {
   createdAt: string
 }
 
-type UserRole = 'USER' | 'MODERATOR' | 'ADMIN'
+type UserRole = 'USER' | 'MODERATOR' | 'ADMIN' | 'DRIVER' | 'GUIDE'
 type PartnerType = 'DRIVER' | 'GUIDE' | 'PARTNER' | 'CUSTOMER'
 
 interface UsersResponse {
@@ -403,6 +403,8 @@ export default function AdminUsersPage() {
                   <option value="USER">{t('roleValue.user')}</option>
                   <option value="MODERATOR">{t('roleValue.moderator')}</option>
                   <option value="ADMIN">{t('roleValue.admin')}</option>
+                  <option value="DRIVER">{t('roleValue.driver')}</option>
+                  <option value="GUIDE">{t('roleValue.guide')}</option>
                 </select>
               </div>
               <div>
@@ -557,6 +559,8 @@ export default function AdminUsersPage() {
                   <option value="USER">{t('roleValue.user')}</option>
                   <option value="MODERATOR">{t('roleValue.moderator')}</option>
                   <option value="ADMIN">{t('roleValue.admin')}</option>
+                  <option value="DRIVER">{t('roleValue.driver')}</option>
+                  <option value="GUIDE">{t('roleValue.guide')}</option>
                 </select>
               </div>
               <div>

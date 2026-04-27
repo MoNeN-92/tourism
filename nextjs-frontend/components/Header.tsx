@@ -12,7 +12,7 @@ interface AuthUser {
   firstName?: string
   lastName?: string
   email?: string
-  role?: 'USER' | 'ADMIN' | 'MODERATOR'
+  role?: 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
 }
 
 type AuthMode = 'guest' | 'user' | 'admin'
@@ -68,6 +68,10 @@ export default function Header({
 
   const fullName = [authUser?.firstName, authUser?.lastName].filter(Boolean).join(' ').trim()
   const accountLabel = fullName || authUser?.email || t('myAccount')
+  const accountHref =
+    authUser?.role === 'DRIVER' || authUser?.role === 'GUIDE'
+      ? `/${locale}/account/calendar`
+      : `/${locale}/account/notifications`
   const accountInitials = accountLabel
     .split(' ').filter(Boolean).slice(0, 2)
     .map((part) => part[0]?.toUpperCase()).join('') || 'U'
@@ -105,7 +109,7 @@ export default function Header({
     if (authMode === 'user') {
       return (
         <div className="ml-4 border-l pl-4 flex items-center gap-2">
-          <Link href={`/${locale}/account/notifications`}
+          <Link href={accountHref}
             className="px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2 max-w-[220px]"
             title={accountLabel}>
             <span className="h-7 w-7 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
@@ -158,7 +162,7 @@ export default function Header({
     if (authMode === 'user') {
       return (
         <div className="pt-4 border-t flex flex-col gap-2">
-          <Link href={`/${locale}/account/notifications`}
+          <Link href={accountHref}
             className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-center"
             onClick={() => setIsMenuOpen(false)}>
             {accountLabel}

@@ -245,6 +245,7 @@ export class UserAuthService {
         lastName: true,
         phone: true,
         isActive: true,
+        partnerType: true,
         lastLoginAt: true,
         role: true,
         createdAt: true,

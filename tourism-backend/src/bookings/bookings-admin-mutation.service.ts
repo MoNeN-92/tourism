@@ -8,6 +8,7 @@ import {
   PaymentAmountMode,
   Prisma,
   RoomType,
+  UserRole,
 } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -79,6 +80,7 @@ export class BookingsAdminMutationService {
       select: {
         id: true,
         isActive: true,
+        role: true,
         partnerType: true,
       },
     });
@@ -91,7 +93,12 @@ export class BookingsAdminMutationService {
       throw new BadRequestException('Assigned partner must be active');
     }
 
-    if (user.partnerType !== partnerType) {
+    const hasMatchingPartnerType = user.partnerType === partnerType;
+    const hasMatchingRole =
+      (partnerType === PartnerType.DRIVER && user.role === UserRole.DRIVER) ||
+      (partnerType === PartnerType.GUIDE && user.role === UserRole.GUIDE);
+
+    if (!hasMatchingPartnerType && !hasMatchingRole) {
       const label = partnerType === PartnerType.DRIVER ? 'Driver' : 'Guide';
       throw new BadRequestException(`${label} assignment requires a matching partner type`);
     }
@@ -319,6 +326,75 @@ export class BookingsAdminMutationService {
     return withBalance(record);
   }
 
+  private buildAssignmentKeys(record: AdminBookingRecord): Set<string> {
+    const keys = new Set<string>();
+
+    for (const tourItem of record.tours) {
+      const date = toDateOnly(tourItem.desiredDate);
+
+      if (tourItem.driverId) {
+        keys.add(`DRIVER:${tourItem.driverId}:${tourItem.tourId}:${date}`);
+      }
+
+      if (tourItem.guideId) {
+        keys.add(`GUIDE:${tourItem.guideId}:${tourItem.tourId}:${date}`);
+      }
+    }
+
+    return keys;
+  }
+
+  private async notifyAssignedPartners(
+    record: AdminBookingRecord,
+    previousAssignments?: Set<string>,
+  ) {
+    const tasks: Array<Promise<unknown>> = [];
+
+    for (const tourItem of record.tours) {
+      const date = toDateOnly(tourItem.desiredDate);
+      const tourTitle =
+        tourItem.tour.title_en || tourItem.tour.title_ka || tourItem.tour.title_ru || 'Assigned tour';
+
+      if (tourItem.driverId && tourItem.driver?.email) {
+        const key = `DRIVER:${tourItem.driverId}:${tourItem.tourId}:${date}`;
+
+        if (!previousAssignments || !previousAssignments.has(key)) {
+          tasks.push(
+            this.emailService.sendPartnerAssignmentEmail({
+              recipientEmail: tourItem.driver.email,
+              partnerName:
+                `${tourItem.driver.firstName} ${tourItem.driver.lastName}`.trim() || 'Partner',
+              partnerRole: 'driver',
+              tourTitle,
+              desiredDate: date,
+            }),
+          );
+        }
+      }
+
+      if (tourItem.guideId && tourItem.guide?.email) {
+        const key = `GUIDE:${tourItem.guideId}:${tourItem.tourId}:${date}`;
+
+        if (!previousAssignments || !previousAssignments.has(key)) {
+          tasks.push(
+            this.emailService.sendPartnerAssignmentEmail({
+              recipientEmail: tourItem.guide.email,
+              partnerName:
+                `${tourItem.guide.firstName} ${tourItem.guide.lastName}`.trim() || 'Partner',
+              partnerRole: 'guide',
+              tourTitle,
+              desiredDate: date,
+            }),
+          );
+        }
+      }
+    }
+
+    if (tasks.length > 0) {
+      await Promise.all(tasks);
+    }
+  }
+
   async createAdmin(dto: AdminCreateBookingDto) {
     const guestName = normalizeNullableString(dto.guestName);
     const guestEmail = normalizeNullableString(dto.guestEmail);
@@ -478,11 +554,14 @@ export class BookingsAdminMutationService {
       });
     }
 
+    await this.notifyAssignedPartners(record);
+
     return this.mapBooking(record);
   }
 
   async updateAdmin(id: string, dto: AdminUpdateBookingDto) {
     const existing = await this.findAdminBookingOrThrow(id);
+    const previousAssignments = this.buildAssignmentKeys(existing);
 
     if (existing.isDeleted) {
       throw new BadRequestException('Cannot update a deleted booking');
@@ -781,6 +860,10 @@ export class BookingsAdminMutationService {
           updated.guestName ||
           (updated.user ? `${updated.user.firstName} ${updated.user.lastName}`.trim() : 'Guest customer'),
       });
+    }
+
+    if (shouldReplaceTours) {
+      await this.notifyAssignedPartners(updated, previousAssignments);
     }
 
     return this.mapBooking(updated);

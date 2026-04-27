@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { locales, defaultLocale } from './i18n/config'
 import { SITE_HOSTNAME, WWW_SITE_HOSTNAME } from './lib/seo'
 
-type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
 type AdminRole = 'ADMIN' | 'MODERATOR'
 
 const intlMiddleware = createMiddleware({
@@ -74,7 +74,7 @@ async function getAuthenticatedUserRole(request: NextRequest): Promise<UserRole 
     const data = await response.json()
     const role = data?.role
 
-    if (role === 'ADMIN' || role === 'MODERATOR' || role === 'USER') {
+    if (role === 'ADMIN' || role === 'MODERATOR' || role === 'USER' || role === 'DRIVER' || role === 'GUIDE') {
       return role
     }
 
@@ -125,6 +125,10 @@ export default async function proxy(request: NextRequest) {
     const role = (await getAuthenticatedUserRole(request)) as AdminRole | 'USER' | null
 
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
+      if (role === 'DRIVER' || role === 'GUIDE') {
+        return NextResponse.redirect(new URL(`/${currentLocale}/account/calendar`, request.url))
+      }
+
       if (role === 'USER') {
         return NextResponse.redirect(new URL(`/${currentLocale}/account/notifications`, request.url))
       }

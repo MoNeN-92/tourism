@@ -251,4 +251,26 @@ export class EmailService {
       payload: params,
     });
   }
+
+  sendPartnerAssignmentEmail(params: {
+    recipientEmail: string;
+    partnerName: string;
+    partnerRole: 'driver' | 'guide';
+    tourTitle: string;
+    desiredDate: string;
+  }) {
+    const roleLabel = params.partnerRole === 'driver' ? 'driver' : 'guide';
+
+    return this.sendTemplate({
+      recipientEmail: params.recipientEmail,
+      template: `partner-assignment-${params.partnerRole}`,
+      subject: `New ${roleLabel} assignment for ${params.tourTitle}`,
+      text:
+        `Hello ${params.partnerName},\n\n` +
+        `You have been assigned as ${roleLabel} for "${params.tourTitle}" on ${params.desiredDate}.\n\n` +
+        'Please log in to the partner calendar to review the operational details.\n\n' +
+        'Best regards,\nVibeGeorgia',
+      payload: params,
+    });
+  }
 }

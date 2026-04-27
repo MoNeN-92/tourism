@@ -334,6 +334,7 @@
       "loading": "ანგარიში იტვირთება...",
       "title": "ანგარიში",
       "myBookings": "ჩემი ჯავშნები",
+      "calendar": "პარტნიორის კალენდარი",
       "notifications": "შეტყობინებები",
       "logout": "გასვლა"
     },
@@ -441,6 +442,44 @@
       "failedMarkAll": "ყველას წაკითხულად მონიშვნა ვერ მოხერხდა",
       "noNotifications": "შეტყობინებები ჯერ არ გაქვთ.",
       "markRead": "წაკითხულად მონიშვნა"
+    },
+    "calendar": {
+      "title": "პარტნიორის კალენდარი",
+      "subtitle": "აქ ნაჩვენებია მხოლოდ ოპერაციული ინფორმაცია. პირადი და ფინანსური დეტალები დამალულია.",
+      "loading": "კალენდარი იტვირთება...",
+      "loadFailed": "კალენდრის ჩატვირთვა ვერ მოხერხდა",
+      "visibleLabel": "ხილული ჩანაწერები",
+      "assignedLabel": "ჩემზე მონიშნული",
+      "restrictedLabel": "შეზღუდული",
+      "assignedDayCount": "ჩემზე: {count}",
+      "bookingsOn": "ჩანაწერები თარიღზე {date}",
+      "selectDate": "აირჩიეთ თარიღი",
+      "noBookings": "არჩეულ თარიღზე ჩანაწერები არ არის.",
+      "lockedBooking": "დაჯავშნილი სლოტი",
+      "lockedHint": "ეს ჩანაწერი თქვენზე არ არის მონიშნული, ამიტომ დეტალები შეზღუდულია.",
+      "restrictedBadge": "დაბლოკილი",
+      "openDetails": "დეტალების ნახვა",
+      "hideDetails": "დეტალების დამალვა",
+      "assignmentRole": "ჩემი როლი",
+      "assignmentRoleValue": {
+        "driver": "მძღოლი",
+        "guide": "გიდი"
+      },
+      "date": "თარიღი",
+      "vehicle": "ტრანსპორტი",
+      "adults": "მოზრდილი",
+      "children": "ბავშვი",
+      "driver": "მძღოლი",
+      "guide": "გიდი",
+      "serviceStatus": "სერვისის სტატუსი",
+      "statusValue": {
+        "pending": "მოლოდინში",
+        "completed": "დასრულებული"
+      },
+      "hotelName": "სასტუმრო",
+      "checkIn": "ჩექ-ინი",
+      "checkOut": "ჩექ-აუთი",
+      "roomsCount": "ოთახების რაოდენობა"
     }
   },
   "bookingForm": {
@@ -593,7 +632,9 @@
       "roleValue": {
         "user": "მომხმარებელი",
         "moderator": "მოდერატორი",
-        "admin": "ადმინი"
+        "admin": "ადმინი",
+        "driver": "მძღოლი",
+        "guide": "გიდი"
       },
       "partnerTypeValue": {
         "driver": "მძღოლი",

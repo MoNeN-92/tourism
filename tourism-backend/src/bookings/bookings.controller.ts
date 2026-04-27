@@ -39,6 +39,11 @@ export class UserBookingsController {
     return this.bookingsService.findMy(user.id);
   }
 
+  @Get('partner-calendar')
+  getPartnerCalendar(@CurrentUser() user: any, @Query('month') month: string) {
+    return this.bookingsService.getPartnerCalendar(user.id, month);
+  }
+
   @Get('my/:id')
   findMyOne(@CurrentUser() user: any, @Param('id') id: string) {
     return this.bookingsService.findMyOne(user.id, id);

@@ -17,7 +17,7 @@ type HeaderAuthUser = {
   firstName?: string
   lastName?: string
   email?: string
-  role?: 'USER' | 'ADMIN' | 'MODERATOR'
+  role?: 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
 }
 
 async function getInitialHeaderAuth(): Promise<{

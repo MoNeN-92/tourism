@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
-type UserRole = 'USER' | 'ADMIN' | 'MODERATOR'
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
 
 export default function AccountLoginPage() {
   const params = useParams()
@@ -51,6 +51,8 @@ export default function AccountLoginPage() {
         router.replace(`/${locale}/admin`)
       } else if (role === 'MODERATOR') {
         router.replace(`/${locale}/admin/bookings`)
+      } else if (role === 'DRIVER' || role === 'GUIDE') {
+        router.replace(`/${locale}/account/calendar`)
       } else {
         router.replace(customerNext)
       }

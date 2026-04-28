@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { locales, defaultLocale } from './i18n/config'
 import { SITE_HOSTNAME, WWW_SITE_HOSTNAME } from './lib/seo'
 
-type UserRole = 'USER' | 'ADMIN' | 'MODERATOR' | 'DRIVER' | 'GUIDE'
-type AdminRole = 'ADMIN' | 'MODERATOR'
-
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
@@ -50,7 +47,7 @@ function getApiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '')
 }
 
-async function getAuthenticatedUserRole(request: NextRequest): Promise<UserRole | null> {
+async function getAuthenticatedUserRole(request: NextRequest): Promise<string | null> {
   const cookieHeader = request.headers.get('cookie')
 
   if (!cookieHeader) {
@@ -122,10 +119,11 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    const role = (await getAuthenticatedUserRole(request)) as AdminRole | 'USER' | null
+    const role = await getAuthenticatedUserRole(request)
+    const partnerRoles = new Set(['DRIVER', 'GUIDE'])
 
     if (role !== 'ADMIN' && role !== 'MODERATOR') {
-      if (role === 'DRIVER' || role === 'GUIDE') {
+      if (role && partnerRoles.has(role)) {
         return NextResponse.redirect(new URL(`/${currentLocale}/account/calendar`, request.url))
       }
 

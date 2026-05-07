@@ -53,12 +53,12 @@ function formatDate(dateString: string, locale: string): string {
 async function getPostBySlug(slug: string): Promise<{ post: BlogPost | ApiBlogPost; isApi: boolean } | null> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    const res = await fetch(`${apiUrl}/blog/${slug}`, { cache: 'no-store' })
+    const res = await fetch(`${apiUrl}/blog/${slug}`, { next: { revalidate: 900 } })
     if (res.ok) {
       const apiPost: ApiBlogPost = await res.json()
       return { post: apiPost, isApi: true }
     }
-  } catch (err) {
+  } catch {
     // API ვერ მოიტანა, mock-ზე გადავდივართ
   }
 

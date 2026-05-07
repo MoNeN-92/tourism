@@ -19,17 +19,13 @@ type AuthMode = 'guest' | 'user' | 'admin'
 
 export default function Header({
   locale,
-  initialAuthMode,
-  initialAuthUser,
 }: {
   locale: string
-  initialAuthMode: AuthMode
-  initialAuthUser: AuthUser | null
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode)
-  const [authUser, setAuthUser] = useState<AuthUser | null>(initialAuthUser)
+  const [authMode, setAuthMode] = useState<AuthMode>('guest')
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const langDropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
@@ -45,11 +41,6 @@ export default function Header({
   const otherLocales = locales.filter(loc => loc.code !== locale)
 
   useEffect(() => {
-    setAuthMode(initialAuthMode)
-    setAuthUser(initialAuthUser)
-  }, [initialAuthMode, initialAuthUser])
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
         setIsLangDropdownOpen(false)
@@ -57,6 +48,49 @@ export default function Header({
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAuth = async () => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+      try {
+        const response = await fetch(`${apiUrl}/users/auth/me`, {
+          credentials: 'include',
+          cache: 'no-store',
+        })
+
+        if (!response.ok) {
+          if (!cancelled) {
+            setAuthMode('guest')
+            setAuthUser(null)
+          }
+          return
+        }
+
+        const user = (await response.json()) as AuthUser
+
+        if (cancelled) {
+          return
+        }
+
+        setAuthUser(user)
+        setAuthMode(user?.role === 'ADMIN' || user?.role === 'MODERATOR' ? 'admin' : 'user')
+      } catch {
+        if (!cancelled) {
+          setAuthMode('guest')
+          setAuthUser(null)
+        }
+      }
+    }
+
+    void loadAuth()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const switchLocale = (newLocale: string) => {

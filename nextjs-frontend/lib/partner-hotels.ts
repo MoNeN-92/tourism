@@ -5,6 +5,8 @@ export interface PartnerHotelImage {
   createdAt: string
 }
 
+const PARTNER_HOTELS_REVALIDATE_SECONDS = 3600
+
 export interface PartnerHotel {
   id: string
   slug: string
@@ -45,7 +47,7 @@ export async function getPartnerHotels(): Promise<PartnerHotel[]> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const response = await fetch(`${apiUrl}/partner-hotels`, {
-      cache: 'no-store',
+      next: { revalidate: PARTNER_HOTELS_REVALIDATE_SECONDS },
     })
 
     if (!response.ok) {
@@ -62,7 +64,7 @@ export async function getPartnerHotel(slug: string): Promise<PartnerHotel | null
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     const response = await fetch(`${apiUrl}/partner-hotels/${slug}`, {
-      cache: 'no-store',
+      next: { revalidate: PARTNER_HOTELS_REVALIDATE_SECONDS },
     })
 
     if (!response.ok) {

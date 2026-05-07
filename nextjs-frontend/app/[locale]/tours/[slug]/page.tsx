@@ -68,7 +68,7 @@ async function getTour(slug: string): Promise<TourDetail | null> {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
     const response = await fetch(`${apiUrl}/tours/${slug}`, {
-      cache: 'no-store',
+      next: { revalidate: 900 },
     })
 
     if (!response.ok) return null

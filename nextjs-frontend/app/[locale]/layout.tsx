@@ -7,6 +7,7 @@ import { SITE_NAME, SITE_URL } from '@/lib/seo'
 import '../globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import AnalyticsBootstrap from '@/components/AnalyticsBootstrap'
 import CookieBannerMount from '@/components/CookieBannerMount'
 import JsonLd from '@/components/JsonLd'
 import { buildTravelAgencySchema, buildWebSiteSchema } from '@/lib/structured-data'
@@ -106,6 +107,7 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
+          <AnalyticsBootstrap />
           <JsonLd
             data={[
               buildTravelAgencySchema({

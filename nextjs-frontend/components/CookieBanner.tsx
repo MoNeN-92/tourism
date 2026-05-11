@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import {
-  loadAnalyticsScript,
+  initializeAnalytics,
+  updateAnalyticsConsent,
   loadMetaPixelScript,
   trackAnalyticsPageView,
   trackMetaPixelPageView,
@@ -61,9 +62,8 @@ export default function CookieBanner() {
   )
 
   useEffect(() => {
-    if (preferences.analytics) {
-      loadAnalyticsScript()
-    }
+    initializeAnalytics()
+    updateAnalyticsConsent(preferences.analytics)
 
     if (preferences.marketing) {
       loadMetaPixelScript()
@@ -75,9 +75,7 @@ export default function CookieBanner() {
       return
     }
 
-    if (preferences.analytics) {
-      trackAnalyticsPageView(currentPath)
-    }
+    trackAnalyticsPageView(currentPath)
 
     if (preferences.marketing) {
       trackMetaPixelPageView()

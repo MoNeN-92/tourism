@@ -5,27 +5,15 @@ export const GA_MEASUREMENT_ID =
 
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || ''
 
+type ConsentValue = 'granted' | 'denied'
+
 function isBrowser() {
   return typeof window !== 'undefined'
 }
 
-export function loadAnalyticsScript() {
+function ensureAnalyticsRuntime() {
   if (!isBrowser() || !GA_MEASUREMENT_ID) {
     return
-  }
-
-  if (window.gaLoaded) {
-    return
-  }
-
-  window.gaLoaded = true
-
-  if (!document.querySelector(`script[data-ga-id="${GA_MEASUREMENT_ID}"]`)) {
-    const script = document.createElement('script')
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`
-    script.async = true
-    script.dataset.gaId = GA_MEASUREMENT_ID
-    document.head.appendChild(script)
   }
 
   window.dataLayer = window.dataLayer || []
@@ -34,8 +22,41 @@ export function loadAnalyticsScript() {
     function gtag(...args: unknown[]) {
       window.dataLayer.push(args)
     }
+}
 
-  window.gtag('js', new Date())
+export function initializeAnalytics() {
+  if (!isBrowser() || !GA_MEASUREMENT_ID || window.gaLoaded) {
+    return
+  }
+
+  ensureAnalyticsRuntime()
+  window.gaLoaded = true
+  window.gtag?.('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    wait_for_update: 500,
+  })
+  window.gtag?.('js', new Date())
+  window.gtag?.('config', GA_MEASUREMENT_ID, {
+    send_page_view: false,
+  })
+}
+
+export function updateAnalyticsConsent(enabled: boolean) {
+  if (!isBrowser() || !GA_MEASUREMENT_ID || typeof window.gtag !== 'function') {
+    return
+  }
+
+  const analyticsStorage: ConsentValue = enabled ? 'granted' : 'denied'
+
+  window.gtag('consent', 'update', {
+    analytics_storage: analyticsStorage,
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  })
 }
 
 export function trackAnalyticsPageView(pagePath: string) {
@@ -43,8 +64,10 @@ export function trackAnalyticsPageView(pagePath: string) {
     return
   }
 
-  window.gtag('config', GA_MEASUREMENT_ID, {
+  window.gtag('event', 'page_view', {
     page_path: pagePath,
+    page_location: window.location.href,
+    send_to: GA_MEASUREMENT_ID,
   })
 }
 

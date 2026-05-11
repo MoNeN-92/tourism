@@ -19,6 +19,10 @@ function shouldForceCanonicalHost(hostname: string): boolean {
   return hostname === SITE_HOSTNAME || hostname === WWW_SITE_HOSTNAME
 }
 
+function isRootPath(pathname: string): boolean {
+  return pathname === '/' || pathname === ''
+}
+
 function getNormalizedPathname(pathname: string): string {
   if (pathname === '/') {
     return `/${defaultLocale}`
@@ -95,12 +99,34 @@ export default async function proxy(request: NextRequest) {
   const hostname = request.nextUrl.hostname.toLowerCase()
   const forwardedProto = request.headers.get('x-forwarded-proto')
   const protocol = (forwardedProto || request.nextUrl.protocol.replace(':', '')).toLowerCase()
+  const canonicalLocalePath = `/${defaultLocale}`
   const normalizedPathname = getNormalizedPathname(pathname)
   const shouldRedirectToCanonicalHost =
     shouldForceCanonicalHost(hostname) &&
     (hostname !== SITE_HOSTNAME || protocol !== 'https')
 
-  if (shouldRedirectToCanonicalHost || normalizedPathname !== pathname) {
+  if (shouldRedirectToCanonicalHost) {
+    const url = request.nextUrl.clone()
+    url.protocol = 'https:'
+    url.hostname = SITE_HOSTNAME
+    url.port = ''
+
+    if (isRootPath(pathname)) {
+      url.pathname = canonicalLocalePath
+    } else {
+      url.pathname = normalizedPathname
+    }
+
+    return NextResponse.redirect(url, 308)
+  }
+
+  if (isRootPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = canonicalLocalePath
+    return NextResponse.rewrite(url)
+  }
+
+  if (normalizedPathname !== pathname) {
     const url = request.nextUrl.clone()
     url.protocol = 'https:'
     url.hostname = SITE_HOSTNAME

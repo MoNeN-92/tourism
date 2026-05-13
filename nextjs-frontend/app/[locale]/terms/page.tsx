@@ -16,7 +16,7 @@ export async function generateMetadata({
     description: t('section1_text'),
     alternates: localizedAlternates(locale, '/terms'),
     robots: {
-      index: true,
+      index: false,
       follow: true,
     },
   }

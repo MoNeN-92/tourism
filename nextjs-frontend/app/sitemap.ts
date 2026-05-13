@@ -21,8 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/faq',
     '/travel-experts',
     '/partner-hotels',
-    '/privacy',
-    '/terms',
     ...COMMERCIAL_PAGE_SLUGS.map((slug) => `/${slug}`),
   ]
 

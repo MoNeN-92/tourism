@@ -8,6 +8,7 @@ const intlMiddleware = createMiddleware({
   defaultLocale,
   localePrefix: 'always',
   alternateLinks: false,
+  localeDetection: false,
 })
 
 function isLocalizedPath(pathname: string): boolean {

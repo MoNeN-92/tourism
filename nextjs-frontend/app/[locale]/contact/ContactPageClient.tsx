@@ -114,6 +114,9 @@ export default function ContactPageClient() {
         content_name: 'Contact Form',
         content_category: 'Contact',
       })
+      if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+        window.gtag('event', 'ads_conversion_Contact_1', {})
+      }
       setFormData({ name: '', email: '', phone: '', message: '', website: '' })
     } catch (error) {
       console.error('Contact form error:', error)

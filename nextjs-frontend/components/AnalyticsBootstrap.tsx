@@ -1,7 +1,7 @@
 'use client'
 
 import Script from 'next/script'
-import { GA_MEASUREMENT_ID, initializeAnalytics } from '@/lib/tracking'
+import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID, initializeAnalytics } from '@/lib/tracking'
 
 export default function AnalyticsBootstrap() {
   if (!GA_MEASUREMENT_ID) {
@@ -26,6 +26,7 @@ export default function AnalyticsBootstrap() {
             });
             window.gtag('js', new Date());
             window.gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+            window.gtag('config', '${GOOGLE_ADS_ID}');
             window.gaLoaded = true;
           `,
         }}

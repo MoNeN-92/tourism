@@ -1,7 +1,11 @@
 const DEFAULT_GA_MEASUREMENT_ID = 'G-ZNGHZ2EQ9P'
+const DEFAULT_GOOGLE_ADS_ID = 'AW-17647947732'
 
 export const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || DEFAULT_GA_MEASUREMENT_ID
+
+export const GOOGLE_ADS_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() || DEFAULT_GOOGLE_ADS_ID
 
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || ''
 
@@ -42,6 +46,7 @@ export function initializeAnalytics() {
   window.gtag?.('config', GA_MEASUREMENT_ID, {
     send_page_view: false,
   })
+  window.gtag?.('config', GOOGLE_ADS_ID)
 }
 
 export function updateAnalyticsConsent(enabled: boolean) {
